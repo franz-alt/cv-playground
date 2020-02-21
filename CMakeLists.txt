@@ -25,6 +25,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 option(BUILD_SHARED_LIBS "Build shared instead of static libraries." ON)
 option(BUILD_TESTS "Build module tests." ON)
 
+# add include files from asynchronous
+include_directories(./asynchronous)
+
 add_subdirectory(src)
 
 if(BUILD_TESTS)
