@@ -15,6 +15,7 @@ add_library(${PROJECT_NAME} INTERFACE)
 # dependencies
 find_package(Threads REQUIRED)
 find_package(PNG REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system thread)
 
 # set output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
