@@ -4,6 +4,8 @@
 #include <string.h>
 #include <png.h>
 
+#include <libcvpg/core/exception.hpp>
+
 namespace cvpg {
 
 image_gray_8bit read_gray_8bit_png(std::string const & filename)
@@ -18,7 +20,7 @@ image_gray_8bit read_gray_8bit_png(std::string const & filename)
 
     if (!fp)
     {
-        return image_gray_8bit();
+        throw io_exception("cannot open file");
     }
 
     char header[8];    // 8 is the maximum size that can be checked
@@ -27,7 +29,7 @@ image_gray_8bit read_gray_8bit_png(std::string const & filename)
     {
         fclose(fp);
 
-        return image_gray_8bit();
+        throw io_exception("file is not a PNG image");
     }
 
     png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -36,7 +38,7 @@ image_gray_8bit read_gray_8bit_png(std::string const & filename)
     {
         fclose(fp);
 
-        return image_gray_8bit();
+        throw io_exception("file is not a PNG image");
     }
 
     png_infop info = png_create_info_struct(png);
@@ -45,14 +47,14 @@ image_gray_8bit read_gray_8bit_png(std::string const & filename)
     {
         fclose(fp);
 
-        return image_gray_8bit();
+        throw io_exception("file is not a PNG image");
     }
 
     if (setjmp(png_jmpbuf(png)))
     {
         fclose(fp);
 
-        return image_gray_8bit();
+        throw io_exception("file is not a PNG image");
     }
 
     png_init_io(png, fp);
@@ -70,16 +72,14 @@ image_gray_8bit read_gray_8bit_png(std::string const & filename)
     {
         fclose(fp);
 
-        // TODO Throw unsupported channel exception!
-        return image_gray_8bit();
+        throw io_exception("invalid bit depth");
     }
 
     if (color_type != PNG_COLOR_TYPE_GRAY)
     {
         fclose(fp);
 
-        // TODO Throw unsupported channel exception!
-        return image_gray_8bit();
+        throw io_exception("invalid color type");
     }
 
     if (png_get_valid(png, info, PNG_INFO_tRNS))
@@ -126,7 +126,7 @@ image_rgb_8bit read_rgb_8bit_png(std::string const & filename)
 
     if (!fp)
     {
-        return image_rgb_8bit();
+        throw io_exception("cannot open file");
     }
 
     char header[8];    // 8 is the maximum size that can be checked
@@ -135,7 +135,7 @@ image_rgb_8bit read_rgb_8bit_png(std::string const & filename)
     {
         fclose(fp);
 
-        return image_rgb_8bit();
+        throw io_exception("file is not a PNG image");
     }
 
     png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -144,7 +144,7 @@ image_rgb_8bit read_rgb_8bit_png(std::string const & filename)
     {
         fclose(fp);
 
-        return image_rgb_8bit();
+        throw io_exception("file is not a PNG image");
     }
 
     png_infop info = png_create_info_struct(png);
@@ -153,14 +153,14 @@ image_rgb_8bit read_rgb_8bit_png(std::string const & filename)
     {
         fclose(fp);
 
-        return image_rgb_8bit();
+        throw io_exception("file is not a PNG image");
     }
 
     if (setjmp(png_jmpbuf(png)))
     {
         fclose(fp);
 
-        return image_rgb_8bit();
+        throw io_exception("file is not a PNG image");
     }
 
     png_init_io(png, fp);
@@ -178,16 +178,14 @@ image_rgb_8bit read_rgb_8bit_png(std::string const & filename)
     {
         fclose(fp);
 
-        // TODO Throw unsupported channel exception!
-        return image_rgb_8bit();
+        throw io_exception("invalid bit depth");
     }
 
     if (color_type != PNG_COLOR_TYPE_RGB)
     {
         fclose(fp);
 
-        // TODO Throw unsupported channel exception!
-        return image_rgb_8bit();
+        throw io_exception("invalid color type");
     }
 
     if (png_get_valid(png, info, PNG_INFO_tRNS))
@@ -242,7 +240,7 @@ void write_png(image_gray_8bit const & img, std::string const & filename)
 
     if (!fp)
     {
-        return;
+        throw io_exception("cannot open file");
     }
 
     png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -251,7 +249,7 @@ void write_png(image_gray_8bit const & img, std::string const & filename)
     {
         fclose(fp);
 
-        return;
+        throw io_exception("cannot write PNG header");
     }
 
     info_ptr = png_create_info_struct(png_ptr);
@@ -260,7 +258,7 @@ void write_png(image_gray_8bit const & img, std::string const & filename)
     {
         fclose(fp);
 
-        return;
+        throw io_exception("cannot write PNG header");
     }
 
     png_set_IHDR(png_ptr, info_ptr, img.width(), img.height(),
@@ -296,7 +294,7 @@ void write_png(image_rgb_8bit const & img, std::string const & filename)
 
     if (!fp)
     {
-        return;
+        throw io_exception("cannot open file");
     }
 
     png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -305,7 +303,7 @@ void write_png(image_rgb_8bit const & img, std::string const & filename)
     {
         fclose(fp);
 
-        return;
+        throw io_exception("cannot write PNG header");
     }
 
     info_ptr = png_create_info_struct(png_ptr);
@@ -314,7 +312,7 @@ void write_png(image_rgb_8bit const & img, std::string const & filename)
     {
         fclose(fp);
 
-        return;
+        throw io_exception("cannot write PNG header");
     }
 
     png_set_IHDR(png_ptr, info_ptr, img.width(), img.height(),
