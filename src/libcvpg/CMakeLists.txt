@@ -3,6 +3,7 @@ set(target libcvpg)
 message(STATUS "library ${target}")
 
 set(headers
+    core/exception.hpp
     core/image.hpp
     imageproc/tiling.hpp
     imageproc/tiling/diff.hpp
@@ -11,6 +12,7 @@ set(headers
 )
 
 set(sources
+    core/exception.cpp
     core/image.cpp
     imageproc/tiling.cpp
     imageproc/tiling/diff.cpp
