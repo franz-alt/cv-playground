@@ -1,10 +1,12 @@
 #ifndef LIBCVPG_CORE_IMAGE_HPP
 #define LIBCVPG_CORE_IMAGE_HPP
 
+#include <any>
 #include <array>
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <tuple>
 
 namespace cvpg {
 
@@ -74,6 +76,8 @@ using image_rgb_8bit = image<std::uint8_t, 3>;
 
 image_gray_8bit read_gray_8bit_png(std::string const & filename);
 image_rgb_8bit read_rgb_8bit_png(std::string const & filename);
+
+std::tuple<std::uint8_t, std::any> read_png(std::string const & filename);
 
 void write_png(image_gray_8bit const & img, std::string const & filename);
 void write_png(image_rgb_8bit const & img, std::string const & filename);
