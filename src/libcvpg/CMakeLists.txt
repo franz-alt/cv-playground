@@ -4,10 +4,18 @@ message(STATUS "library ${target}")
 
 set(headers
     core/image.hpp
+    imageproc/tiling.hpp
+    imageproc/tiling/diff.hpp
+    imageproc/tiling/mean.hpp
+    imageproc/tiling/multiply_add.hpp
 )
 
 set(sources
     core/image.cpp
+    imageproc/tiling.cpp
+    imageproc/tiling/diff.cpp
+    imageproc/tiling/mean.cpp
+    imageproc/tiling/multiply_add.cpp
 )
 
 add_library(${target} ${sources} ${headers})
