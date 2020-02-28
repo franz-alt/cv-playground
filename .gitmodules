@@ -1,6 +1,6 @@
 [submodule "googletest"]
-	path = googletest
+	path = extern/googletest
 	url = https://github.com/google/googletest.git
 [submodule "asynchronous"]
-	path = asynchronous
+	path = extern/asynchronous
 	url = https://github.com/henry-ch/asynchronous.git

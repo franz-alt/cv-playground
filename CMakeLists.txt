@@ -28,12 +28,12 @@ option(BUILD_SHARED_LIBS "Build shared instead of static libraries." ON)
 option(BUILD_TESTS "Build module tests." ON)
 
 # add include files from asynchronous
-include_directories(./asynchronous)
+include_directories(./extern/asynchronous)
 
 add_subdirectory(src)
 
 if(BUILD_TESTS)
-    add_subdirectory(./googletest)
+    add_subdirectory(./extern/googletest)
 
     enable_testing()
     include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
