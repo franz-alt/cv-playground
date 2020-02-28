@@ -1,5 +1,5 @@
-#ifndef LIBCVPG_IMAGEPROC_TILING_HPP
-#define LIBCVPG_IMAGEPROC_TILING_HPP
+#ifndef LIBCVPG_IMAGEPROC_ALGORITHMS_TILING_HPP
+#define LIBCVPG_IMAGEPROC_ALGORITHMS_TILING_HPP
 
 #include <cstdint>
 
@@ -7,7 +7,7 @@
 
 #include <libcvpg/core/image.hpp>
 
-namespace cvpg { namespace imageproc {
+namespace cvpg { namespace imageproc { namespace algorithms {
 
 enum class tiling_algorithms
 {
@@ -39,6 +39,6 @@ boost::asynchronous::detail::callback_continuation<image_gray_8bit> tiling(image
 boost::asynchronous::detail::callback_continuation<image_rgb_8bit> tiling(image_rgb_8bit image, tiling_params params);
 boost::asynchronous::detail::callback_continuation<image_rgb_8bit> tiling(image_rgb_8bit image1, image_rgb_8bit image2, tiling_params params);
 
-}} // namespace cvpg::imageproc
+}}} // namespace cvpg::imageproc::algoritms
 
-#endif // LIBCVPG_IMAGEPROC_TILING_HPP
+#endif // LIBCVPG_IMAGEPROC_ALGORITHMS_TILING_HPP

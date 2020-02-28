@@ -1,17 +1,17 @@
-#include <libcvpg/imageproc/tiling.hpp>
+#include <libcvpg/imageproc/algorithms/tiling.hpp>
 
 #include <memory>
 
-#include <libcvpg/imageproc/tiling/diff.hpp>
-#include <libcvpg/imageproc/tiling/mean.hpp>
-#include <libcvpg/imageproc/tiling/multiply_add.hpp>
+#include <libcvpg/imageproc/algorithms/tiling/diff.hpp>
+#include <libcvpg/imageproc/algorithms/tiling/mean.hpp>
+#include <libcvpg/imageproc/algorithms/tiling/multiply_add.hpp>
 
 namespace {
 
 template<class pixel>
 struct horizontal_tiling_task : public boost::asynchronous::continuation_task<void>
 {
-    horizontal_tiling_task(std::shared_ptr<pixel> src1, std::shared_ptr<pixel> src2, std::shared_ptr<pixel> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::tiling_params params)
+    horizontal_tiling_task(std::shared_ptr<pixel> src1, std::shared_ptr<pixel> src2, std::shared_ptr<pixel> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_params params)
         : boost::asynchronous::continuation_task<void>("horizontal_tiling_task")
         , m_src1(src1)
         , m_src2(src2)
@@ -31,21 +31,21 @@ struct horizontal_tiling_task : public boost::asynchronous::continuation_task<vo
         {
             switch (m_params.algorithm)
             {
-                case cvpg::imageproc::tiling_algorithms::diff:
+                case cvpg::imageproc::algorithms::tiling_algorithms::diff:
                 {
-                    cvpg::imageproc::diff_gray_8bit(m_src1.get(), m_src2.get(), m_dst.get(), m_from_x, m_to_x, m_from_y, m_to_y, std::move(m_params));
+                    cvpg::imageproc::algorithms::diff_gray_8bit(m_src1.get(), m_src2.get(), m_dst.get(), m_from_x, m_to_x, m_from_y, m_to_y, std::move(m_params));
                     break;
                 }
 
-                case cvpg::imageproc::tiling_algorithms::mean:
+                case cvpg::imageproc::algorithms::tiling_algorithms::mean:
                 {
-                    cvpg::imageproc::mean_gray_8bit(m_src1.get(), m_dst.get(), m_from_x, m_to_x, m_from_y, m_to_y, std::move(m_params));
+                    cvpg::imageproc::algorithms::mean_gray_8bit(m_src1.get(), m_dst.get(), m_from_x, m_to_x, m_from_y, m_to_y, std::move(m_params));
                     break;
                 }
 
-                case cvpg::imageproc::tiling_algorithms::multiply_add:
+                case cvpg::imageproc::algorithms::tiling_algorithms::multiply_add:
                 {
-                    cvpg::imageproc::multiply_add_gray_8bit(m_src1.get(), m_dst.get(), m_from_x, m_to_x, m_from_y, m_to_y, std::move(m_params));
+                    cvpg::imageproc::algorithms::multiply_add_gray_8bit(m_src1.get(), m_dst.get(), m_from_x, m_to_x, m_from_y, m_to_y, std::move(m_params));
                     break;
                 }
 
@@ -93,13 +93,13 @@ private:
     std::size_t m_from_y;
     std::size_t m_to_y;
 
-    cvpg::imageproc::tiling_params m_params;
+    cvpg::imageproc::algorithms::tiling_params m_params;
 };
 
 template<class pixel>
 struct vertical_tiling_task : public boost::asynchronous::continuation_task<void>
 {
-    vertical_tiling_task(std::shared_ptr<pixel> src1, std::shared_ptr<pixel> src2, std::shared_ptr<pixel> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::tiling_params params)
+    vertical_tiling_task(std::shared_ptr<pixel> src1, std::shared_ptr<pixel> src2, std::shared_ptr<pixel> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_params params)
         : boost::asynchronous::continuation_task<void>("vertical_tiling_task")
         , m_src1(src1)
         , m_src2(src2)
@@ -170,12 +170,12 @@ private:
     std::size_t m_from_y;
     std::size_t m_to_y;
 
-    cvpg::imageproc::tiling_params m_params;
+    cvpg::imageproc::algorithms::tiling_params m_params;
 };
 
 struct tiling_gray_8bit_task : public boost::asynchronous::continuation_task<cvpg::image_gray_8bit>
 {
-    tiling_gray_8bit_task(cvpg::image_gray_8bit image, cvpg::imageproc::tiling_params params)
+    tiling_gray_8bit_task(cvpg::image_gray_8bit image, cvpg::imageproc::algorithms::tiling_params params)
         : boost::asynchronous::continuation_task<cvpg::image_gray_8bit>("tiling_gray_8bit")
         , m_image1(image)
         , m_image2()
@@ -186,7 +186,7 @@ struct tiling_gray_8bit_task : public boost::asynchronous::continuation_task<cvp
         m_params.image_height = image.height();
     }
 
-    tiling_gray_8bit_task(cvpg::image_gray_8bit image1, cvpg::image_gray_8bit image2, cvpg::imageproc::tiling_params params)
+    tiling_gray_8bit_task(cvpg::image_gray_8bit image1, cvpg::image_gray_8bit image2, cvpg::imageproc::algorithms::tiling_params params)
         : boost::asynchronous::continuation_task<cvpg::image_gray_8bit>("tiling_gray_8bit")
         , m_image1(image1)
         , m_image2(image2)
@@ -229,12 +229,12 @@ private:
 
     cvpg::image_gray_8bit m_output;
 
-    cvpg::imageproc::tiling_params m_params;
+    cvpg::imageproc::algorithms::tiling_params m_params;
 };
 
 struct tiling_rgb_8bit_task : public boost::asynchronous::continuation_task<cvpg::image_rgb_8bit>
 {
-    tiling_rgb_8bit_task(cvpg::image_rgb_8bit image, cvpg::imageproc::tiling_params params)
+    tiling_rgb_8bit_task(cvpg::image_rgb_8bit image, cvpg::imageproc::algorithms::tiling_params params)
         : boost::asynchronous::continuation_task<cvpg::image_rgb_8bit>("tiling_rgb_8bit")
         , m_image1(std::move(image))
         , m_image2()
@@ -242,7 +242,7 @@ struct tiling_rgb_8bit_task : public boost::asynchronous::continuation_task<cvpg
         , m_params(std::move(params))
     {}
 
-    tiling_rgb_8bit_task(cvpg::image_rgb_8bit image1, cvpg::image_rgb_8bit image2, cvpg::imageproc::tiling_params params)
+    tiling_rgb_8bit_task(cvpg::image_rgb_8bit image1, cvpg::image_rgb_8bit image2, cvpg::imageproc::algorithms::tiling_params params)
         : boost::asynchronous::continuation_task<cvpg::image_rgb_8bit>("tiling_gray_8bit")
         , m_image1(image1)
         , m_image2(image2)
@@ -269,12 +269,12 @@ private:
 
     cvpg::image_rgb_8bit m_output;
 
-    cvpg::imageproc::tiling_params m_params;
+    cvpg::imageproc::algorithms::tiling_params m_params;
 };
 
 }
 
-namespace cvpg { namespace imageproc {
+namespace cvpg { namespace imageproc { namespace algorithms {
 
 boost::asynchronous::detail::callback_continuation<image_gray_8bit> tiling(image_gray_8bit image, tiling_params params)
 {
@@ -304,4 +304,4 @@ boost::asynchronous::detail::callback_continuation<image_rgb_8bit> tiling(image_
            );
 }
 
-}} // namespace cvpg::imageproc
+}}} // namespace cvpg::imageproc::algorithms

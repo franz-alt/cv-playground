@@ -1,10 +1,10 @@
-#include <libcvpg/imageproc/tiling/mean.hpp>
+#include <libcvpg/imageproc/algorithms/tiling/mean.hpp>
 
 #include <deque>
 
-namespace cvpg { namespace imageproc {
+namespace cvpg { namespace imageproc { namespace algorithms {
 
-void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::tiling_params params)
+void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_params params)
 {
     const std::size_t org_from_x = from_x;
     const std::size_t org_to_x = to_x;
@@ -129,4 +129,4 @@ void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, 
     }
 }
 
-}} // namespace cvpg::imageproc
+}}} // namespace cvpg::imageproc::algorithms

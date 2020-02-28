@@ -5,19 +5,19 @@ message(STATUS "library ${target}")
 set(headers
     core/exception.hpp
     core/image.hpp
-    imageproc/tiling.hpp
-    imageproc/tiling/diff.hpp
-    imageproc/tiling/mean.hpp
-    imageproc/tiling/multiply_add.hpp
+    imageproc/algorithms/tiling.hpp
+    imageproc/algorithms/tiling/diff.hpp
+    imageproc/algorithms/tiling/mean.hpp
+    imageproc/algorithms/tiling/multiply_add.hpp
 )
 
 set(sources
     core/exception.cpp
     core/image.cpp
-    imageproc/tiling.cpp
-    imageproc/tiling/diff.cpp
-    imageproc/tiling/mean.cpp
-    imageproc/tiling/multiply_add.cpp
+    imageproc/algorithms/tiling.cpp
+    imageproc/algorithms/tiling/diff.cpp
+    imageproc/algorithms/tiling/mean.cpp
+    imageproc/algorithms/tiling/multiply_add.cpp
 )
 
 add_library(${target} ${sources} ${headers})

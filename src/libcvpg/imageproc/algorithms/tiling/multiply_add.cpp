@@ -1,8 +1,8 @@
-#include <libcvpg/imageproc/tiling/multiply_add.hpp>
+#include <libcvpg/imageproc/algorithms/tiling/multiply_add.hpp>
 
-namespace cvpg { namespace imageproc {
+namespace cvpg { namespace imageproc { namespace algorithms {
 
-void multiply_add_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::tiling_params params)
+void multiply_add_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_params params)
 {
     const std::size_t image_width = params.image_width;
 
@@ -28,4 +28,4 @@ void multiply_add_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t 
     }
 }
 
-}} // namespace cvpg::imageproc
+}}} // namespace cvpg::imageproc::algorithms
