@@ -4,3 +4,6 @@
 [submodule "asynchronous"]
 	path = extern/asynchronous
 	url = https://github.com/henry-ch/asynchronous.git
+[submodule "extern/chaiscript"]
+	path = extern/chaiscript
+	url = https://github.com/ChaiScript/ChaiScript.git

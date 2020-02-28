@@ -30,6 +30,9 @@ option(BUILD_TESTS "Build module tests." ON)
 # add include files from asynchronous
 include_directories(./extern/asynchronous)
 
+# add include files from ChaiScript
+include_directories(SYSTEM ./extern/chaiscript/include)
+
 add_subdirectory(src)
 
 if(BUILD_TESTS)
