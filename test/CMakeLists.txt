@@ -5,6 +5,7 @@ message(STATUS "${target}")
 set(sources
     main.cpp
     core/image.cpp
+    imageproc/scripting/image_processor.cpp
 )
 
 add_executable(${target} ${sources})
@@ -17,6 +18,7 @@ target_link_libraries(${target}
         gtest_main
         png
         libcvpg
+        dl
 )
 
 add_test(NAME image COMMAND image)
