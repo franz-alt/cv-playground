@@ -20,35 +20,9 @@
 #include <boost/asynchronous/scheduler/threadpool_scheduler.hpp>
 
 #include <libcvpg/core/image.hpp>
-
-class imageprocessor : public boost::asynchronous::trackable_servant<>
-{
-public:
-    imageprocessor(boost::asynchronous::any_weak_scheduler<> scheduler, boost::asynchronous::any_shared_scheduler_proxy<> pool)
-        : boost::asynchronous::trackable_servant<>(scheduler, pool)
-    {}
-
-    void process(cvpg::image_gray_8bit image, std::function<void(std::any)> callback)
-    {
-        // TODO implement me
-    }
-
-    void process(cvpg::image_rgb_8bit image, std::function<void(std::any)> callback)
-    {
-        // TODO implement me
-    }
-};
-
-class imageprocessor_proxy : public boost::asynchronous::servant_proxy<imageprocessor_proxy, imageprocessor>
-{
-public:
-    template<typename... Args>
-    imageprocessor_proxy(Args... args)
-        : boost::asynchronous::servant_proxy<imageprocessor_proxy, imageprocessor>(args...)
-    {}
-
-    BOOST_ASYNC_POST_MEMBER(process, 1)
-};
+#include <libcvpg/imageproc/scripting/algorithm_set.hpp>
+#include <libcvpg/imageproc/scripting/image_processor.hpp>
+#include <libcvpg/imageproc/scripting/algorithms/base.hpp>
 
 int main(int argc, char * argv[])
 {
@@ -61,7 +35,7 @@ int main(int argc, char * argv[])
     bool quiet = false;
 
     // image processing options
-    std::string filter_expression;
+    std::string script_filename;
 
     // performance options
     std::uint32_t xcutoff = 512;
@@ -83,8 +57,8 @@ int main(int argc, char * argv[])
 
     po::options_description image_processing_options("image processing options", window.ws_col, window.ws_col / 2);
     image_processing_options.add_options()
-        ("filters", "list of all available filters and their arguments")
-        ("expression", po::value<std::string>(&filter_expression), "filter expression in form '<name>(<argument1>, <argument2>, ...)'")
+        ("algorithms", "list of all available algorithms and their arguments")
+        ("script,s", po::value<std::string>(&script_filename), "filename of image processing script")
         ;
 
     po::options_description performance_options("performance options", window.ws_col, window.ws_col / 2);
@@ -109,6 +83,66 @@ int main(int argc, char * argv[])
         return 1;
     }
 
+    if (variables.count("algorithms"))
+    {
+        std::cout << "available algorithms" << std::endl
+                  << "====================" << std::endl << std::endl;
+
+        // create a map of algorithms by category
+        std::map<std::string, std::vector<std::shared_ptr<cvpg::imageproc::scripting::algorithms::base> > > algorithms;
+
+        for (auto const algorithm : cvpg::imageproc::scripting::algorithm_set().all())
+        {
+            algorithms[algorithm->category()].push_back(algorithm);
+        }
+
+        // print categories and their algorithms
+        for (auto const & a : algorithms)
+        {
+            auto category = a.first;
+            auto algs = a.second;
+
+            std::cout << category << ":" << std::endl << std::endl;
+
+            for (auto const & s : algs)
+            {
+                if (s->parameters().empty())
+                {
+                    std::cout << "- " << s->name() << "()" << std::endl;
+                }
+                else
+                {
+                    for (auto const & v : s->parameters())
+                    {
+                        std::cout << "- " << s->name() << "(";
+
+                        if (!v.empty())
+                        {
+                            std::cout << v.front();
+
+                            for (auto it = std::begin(v) + 1; it != std::end(v); ++it)
+                            {
+                                std::cout << ", " << *it;
+                            }
+                        }
+
+                        std::cout << ")" << std::endl;
+                    }
+                }
+
+                std::cout << std::endl;
+            }
+        }
+
+        std::cout << "example script" << std::endl
+                  << "==============" << std::endl << std::endl;
+
+        std::cout << "var input_rgb = input(\"rgb\", 8)" << std::endl
+                  << "var input_gray = convert_to_gray(input_rgb, \"use_red\")" << std::endl;
+
+        return 1;
+    }
+
     if (variables.count("input"))
     {
         input_filename = variables["input"].as<std::string>();
@@ -121,6 +155,16 @@ int main(int argc, char * argv[])
 
     output_filename = variables["output"].as<std::string>();
     quiet = variables.count("quiet");
+
+    if (variables.count("script"))
+    {
+        script_filename = variables["script"].as<std::string>();
+    }
+    else
+    {
+        std::cerr << "No script filename set." << std::endl;
+        return 1;
+    }
 
     if (variables.count("threads"))
     {
@@ -136,10 +180,10 @@ int main(int argc, char * argv[])
         threads = std::thread::hardware_concurrency();
     }
 
-    // a single-threaded world, where the imageprocessor will live
+    // a single-threaded world, where the image processor will live
     auto scheduler = boost::asynchronous::make_shared_scheduler_proxy<
                          boost::asynchronous::single_thread_scheduler<
-                             boost::asynchronous::lockfree_queue<> > >(std::string("imageprocessor"));
+                             boost::asynchronous::lockfree_queue<> > >(std::string("image_processor"));
 
     // create a threadpool
     auto pool = boost::asynchronous::make_shared_scheduler_proxy<
@@ -151,12 +195,60 @@ int main(int argc, char * argv[])
         std::cout << "Using threadpool with " << threads << " worker threads" << std::endl;
     }
 
-    // create the imageprocessor
-    imageprocessor_proxy processor(scheduler, pool);
+    // read script file
+    std::ifstream file(script_filename);
+    std::string script { std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
+    file.close();
 
-    // create a shared promise used by the callback inside the imageprocessor to finish the processing
-    auto promise = std::make_shared<std::promise<void> >();
-    auto future = promise->get_future();
+    if (!file.good())
+    {
+        std::cerr << "Error while loading script '" << script_filename << "'." << std::endl;
+        return 1;
+    }
+
+    if (!quiet)
+    {
+        std::cout << "Loaded script '" << script_filename << "'" << std::endl;
+    }
+
+    // create the image processor
+    cvpg::imageproc::scripting::image_processor_proxy processor(scheduler, pool);
+
+    // compiling script
+    auto promise_compile = std::make_shared<std::promise<std::size_t> >();
+    auto future_compile = promise_compile->get_future();
+
+    std::size_t compile_id = 0;
+
+    processor.compile(script,
+                      [promise_compile](bool /*successful*/, std::size_t compile_id)
+                      {
+                          promise_compile->set_value(compile_id);
+                      });
+
+    auto status = future_compile.wait_for(std::chrono::seconds(3));
+
+    if (status == std::future_status::deferred)
+    {
+        std::cerr << "Script compiling ended in deferred state. Abort" << std::endl;
+        return 1;
+    }
+    else if (status == std::future_status::timeout)
+    {
+        std::cerr << "Script compiling timed out. Abort" << std::endl;
+        return 1;
+    }
+
+    if (!quiet)
+    {
+        std::cout << "Script compiled" << std::endl;
+    }
+
+    compile_id = future_compile.get();
+
+    // create a shared promise used by the callback inside the image processor to finish the processing
+    auto promise_evaluate = std::make_shared<std::promise<cvpg::imageproc::scripting::item> >();
+    auto future_evaluate = promise_evaluate->get_future();
 
     try
     {
@@ -171,11 +263,12 @@ int main(int argc, char * argv[])
                 std::cout << "Loaded grayscale image with " << image.width() << "x" << image.height() << " pixels" << std::endl;
             }
 
-            processor.process(std::move(image),
-                              [promise](std::any result)
-                              {
-                                  promise->set_value();
-                              });
+            processor.evaluate(compile_id,
+                               std::move(image),
+                               [promise_evaluate](cvpg::imageproc::scripting::item result)
+                               {
+                                   promise_evaluate->set_value(std::move(result));
+                               });
         }
         else if (channels == 3)
         {
@@ -186,11 +279,12 @@ int main(int argc, char * argv[])
                 std::cout << "Loaded RGB image with " << image.width() << "x" << image.height() << " pixels" << std::endl;
             }
 
-            processor.process(std::move(image),
-                              [promise](std::any result)
-                              {
-                                  promise->set_value();
-                              });
+            processor.evaluate(compile_id,
+                               std::move(image),
+                               [promise_evaluate](cvpg::imageproc::scripting::item result)
+                               {
+                                   promise_evaluate->set_value(std::move(result));
+                               });
         }
         else
         {
@@ -204,7 +298,7 @@ int main(int argc, char * argv[])
         return 1;
     }
 
-    auto status = future.wait_for(std::chrono::seconds(timeout));
+    status = future_evaluate.wait_for(std::chrono::seconds(timeout));
 
     if (status == std::future_status::deferred)
     {
@@ -220,6 +314,27 @@ int main(int argc, char * argv[])
     if (!quiet)
     {
         std::cout << "Image processing done" << std::endl;
+    }
+
+    auto result = future_evaluate.get();
+
+    if (result.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image)
+    {
+        cvpg::write_png(std::any_cast<cvpg::image_gray_8bit>(result.value()), output_filename);
+    }
+    else if (result.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image)
+    {
+        cvpg::write_png(std::any_cast<cvpg::image_rgb_8bit>(result.value()), output_filename);
+    }
+    else
+    {
+        std::cerr << "Cannot write unsupported image type '" << result.type() << "' to file '" << output_filename << "'." << std::endl;
+        return 1;
+    }
+
+    if (!quiet)
+    {
+        std::cout << "Saved result to file '" << output_filename << "'" << std::endl;
     }
 
     return 0;

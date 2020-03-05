@@ -15,6 +15,7 @@ target_link_libraries(${target}
         ${Boost_LIBRARIES}
         png
         libcvpg
+        dl
 )
 
 set_target_properties(${target}
