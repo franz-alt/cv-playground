@@ -488,4 +488,18 @@ void write_png(image_rgb_8bit const & img, std::string const & filename)
 template class image<std::uint8_t, 1>;
 template class image<std::uint8_t, 3>;
 
+std::ostream & operator<<(std::ostream & out, image_gray_8bit const & i)
+{
+    out << "width=" << i.width() << ",height=" << i.height() << ",channels=1";
+
+    return out;
+}
+
+std::ostream & operator<<(std::ostream & out, image_rgb_8bit const & i)
+{
+    out << "width=" << i.width() << ",height=" << i.height() << ",channels=3";
+
+    return out;
+}
+
 } // namespace cvpg

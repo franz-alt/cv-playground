@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <tuple>
 
@@ -85,6 +86,9 @@ void write_png(image_rgb_8bit const & img, std::string const & filename);
 // suppress automatic instantiation of image<> for some types
 extern template class image<std::uint8_t, 1>;
 extern template class image<std::uint8_t, 3>;
+
+std::ostream & operator<<(std::ostream & out, image_gray_8bit const & i);
+std::ostream & operator<<(std::ostream & out, image_rgb_8bit const & i);
 
 } // namespace cvpg
 
