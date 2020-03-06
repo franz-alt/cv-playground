@@ -58,7 +58,7 @@ void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, 
         vert.clear();
 
         // fill vector of vertical sums
-        for (std::size_t fx = from_x - half_filter_width; fx < from_x + half_filter_width; ++fx)
+        for (std::size_t fx = from_x - half_filter_width; fx <= from_x + half_filter_width; ++fx)
         {
             std::int32_t sum = 0;
 
