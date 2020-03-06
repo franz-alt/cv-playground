@@ -85,7 +85,7 @@ private:
                std::size_t context_id,
                std::shared_ptr<std::vector<cvpg::imageproc::scripting::detail::handler::callback_type> > callbacks)
     {
-        boost::asynchronous::create_callback_continuation<>(
+        boost::asynchronous::create_callback_continuation_job<cvpg::imageproc::scripting::diagnostics::servant_job>(
             [this
             ,result = std::forward<Result>(result)
             ,it
@@ -147,7 +147,7 @@ auto executor(cvpg::imageproc::scripting::detail::compiler::result compiled,
               std::shared_ptr<cvpg::imageproc::scripting::image_processor> image_processor,
               std::size_t context_id)
 {
-    return boost::asynchronous::top_level_callback_continuation<cvpg::imageproc::scripting::item>(
+    return boost::asynchronous::top_level_callback_continuation_job<cvpg::imageproc::scripting::item, cvpg::imageproc::scripting::diagnostics::servant_job>(
                executor_task(std::move(compiled), image_processor, context_id)
            );
 }
@@ -164,8 +164,10 @@ struct image_processor::evaluation_context
     std::uint32_t last_stored = 0;
 };
 
-image_processor::image_processor(boost::asynchronous::any_weak_scheduler<> scheduler, boost::asynchronous::any_shared_scheduler_proxy<> pool, algorithm_set algorithms)
-    : boost::asynchronous::trackable_servant<>(scheduler, pool)
+image_processor::image_processor(boost::asynchronous::any_weak_scheduler<diagnostics::servant_job> scheduler,
+                                 boost::asynchronous::any_shared_scheduler_proxy<diagnostics::servant_job> pool,
+                                 algorithm_set algorithms)
+    : boost::asynchronous::trackable_servant<diagnostics::servant_job, diagnostics::servant_job>(scheduler, pool)
     , m_algorithms(std::move(algorithms))
     , m_compiled()
     , m_compiled_hashes()

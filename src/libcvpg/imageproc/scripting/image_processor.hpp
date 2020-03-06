@@ -16,16 +16,19 @@
 #include <libcvpg/imageproc/scripting/algorithm_set.hpp>
 #include <libcvpg/imageproc/scripting/item.hpp>
 #include <libcvpg/imageproc/scripting/detail/compiler.hpp>
+#include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
 
 namespace cvpg { namespace imageproc { namespace scripting {
 
-class image_processor : public boost::asynchronous::trackable_servant<>
+class image_processor : public boost::asynchronous::trackable_servant<diagnostics::servant_job, diagnostics::servant_job>
                       , public std::enable_shared_from_this<image_processor>
 {
 public:
     using parameters_type = std::map<std::string, std::any>;
 
-    image_processor(boost::asynchronous::any_weak_scheduler<> scheduler, boost::asynchronous::any_shared_scheduler_proxy<> pool, algorithm_set algorithms = algorithm_set());
+    image_processor(boost::asynchronous::any_weak_scheduler<diagnostics::servant_job> scheduler,
+                    boost::asynchronous::any_shared_scheduler_proxy<diagnostics::servant_job> pool,
+                    algorithm_set algorithms = algorithm_set());
 
     image_processor(image_processor const &) = delete;
     image_processor(image_processor &&) = default;
@@ -73,21 +76,21 @@ private:
     parameters_type m_params;
 };
 
-struct image_processor_proxy : public boost::asynchronous::servant_proxy<image_processor_proxy, image_processor>
+struct image_processor_proxy : public boost::asynchronous::servant_proxy<image_processor_proxy, image_processor, diagnostics::servant_job>
 {
    template<typename... Args>
    image_processor_proxy(Args... args)
-       : boost::asynchronous::servant_proxy<image_processor_proxy, image_processor>(args...)
+       : boost::asynchronous::servant_proxy<image_processor_proxy, image_processor, diagnostics::servant_job>(args...)
    {}
 
-   BOOST_ASYNC_POST_MEMBER(compile, 1)
+   BOOST_ASYNC_POST_MEMBER_LOG(compile, "compile", 1)
 
-   BOOST_ASYNC_POST_MEMBER(evaluate, 1)
+   BOOST_ASYNC_POST_MEMBER_LOG(evaluate, "evaluate", 1)
 
-   BOOST_ASYNC_FUTURE_MEMBER(load, 1)
+   BOOST_ASYNC_FUTURE_MEMBER_LOG(load, "load", 1)
 
-   BOOST_ASYNC_POST_MEMBER(add_param, 1)
-   BOOST_ASYNC_POST_MEMBER(parameters, 1)
+   BOOST_ASYNC_POST_MEMBER_LOG(add_param, "add_param", 1)
+   BOOST_ASYNC_POST_MEMBER_LOG(parameters, "parameters", 1)
 };
 
 }}} // namespace cvpg::imageproc::scripting

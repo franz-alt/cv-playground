@@ -9,18 +9,19 @@
 #include <boost/asynchronous/scheduler/single_thread_scheduler.hpp>
 
 #include <libcvpg/imageproc/scripting/image_processor.hpp>
+#include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
 
 TEST(test_scripting, compile_invalid_script)
 {
     // create a thread pool for a single thread
     auto pool = boost::asynchronous::make_shared_scheduler_proxy<
                     boost::asynchronous::multiqueue_threadpool_scheduler<
-                        boost::asynchronous::lockfree_queue<> > >(1, std::string("threadpool"));
+                        boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(1, std::string("threadpool"));
 
     // create image processor
     auto scheduler = boost::asynchronous::make_shared_scheduler_proxy<
                         boost::asynchronous::single_thread_scheduler<
-                            boost::asynchronous::lockfree_queue<> > >(std::string("image_processor"));
+                            boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("image_processor"));
 
     cvpg::imageproc::scripting::image_processor_proxy image_processor(scheduler, pool);
 
@@ -70,12 +71,12 @@ TEST(test_scripting, compile_simple_script)
     // create a thread pool for a single thread
     auto pool = boost::asynchronous::make_shared_scheduler_proxy<
                     boost::asynchronous::multiqueue_threadpool_scheduler<
-                        boost::asynchronous::lockfree_queue<> > >(1, std::string("threadpool"));
+                        boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(1, std::string("threadpool"));
 
     // create image processor
     auto scheduler = boost::asynchronous::make_shared_scheduler_proxy<
                         boost::asynchronous::single_thread_scheduler<
-                            boost::asynchronous::lockfree_queue<> > >(std::string("image_processor"));
+                            boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("image_processor"));
 
     cvpg::imageproc::scripting::image_processor_proxy image_processor(scheduler, pool);
 
@@ -131,12 +132,12 @@ TEST(test_scripting, evaluate_simple_script)
     // create a thread pool for a single thread
     auto pool = boost::asynchronous::make_shared_scheduler_proxy<
                     boost::asynchronous::multiqueue_threadpool_scheduler<
-                        boost::asynchronous::lockfree_queue<> > >(1, std::string("threadpool"));
+                        boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(1, std::string("threadpool"));
 
     // create image processor
     auto scheduler = boost::asynchronous::make_shared_scheduler_proxy<
                         boost::asynchronous::single_thread_scheduler<
-                            boost::asynchronous::lockfree_queue<> > >(std::string("scope"));
+                            boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("scope"));
 
     cvpg::imageproc::scripting::image_processor_proxy image_processor(scheduler, pool);
 

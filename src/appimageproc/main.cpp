@@ -3,6 +3,7 @@
 #include <any>
 #include <cstdint>
 #include <exception>
+#include <fstream>
 #include <functional>
 #include <future>
 #include <iostream>
@@ -13,6 +14,7 @@
 
 #include <boost/asynchronous/servant_proxy.hpp>
 #include <boost/asynchronous/trackable_servant.hpp>
+#include <boost/asynchronous/diagnostics/formatter.hpp>
 #include <boost/asynchronous/queue/lockfree_queue.hpp>
 #include <boost/asynchronous/scheduler/multiqueue_threadpool_scheduler.hpp>
 #include <boost/asynchronous/scheduler_shared_proxy.hpp>
@@ -23,6 +25,8 @@
 #include <libcvpg/imageproc/scripting/algorithm_set.hpp>
 #include <libcvpg/imageproc/scripting/image_processor.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/base.hpp>
+#include <libcvpg/imageproc/scripting/diagnostics/markdown_formatter.hpp>
+#include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
 
 int main(int argc, char * argv[])
 {
@@ -31,6 +35,7 @@ int main(int argc, char * argv[])
     // general options
     std::string input_filename;
     std::string output_filename;
+    std::string diagnostics_filename;
     std::uint32_t timeout = 10;
     bool quiet = false;
 
@@ -51,6 +56,7 @@ int main(int argc, char * argv[])
         ("help,h", "show this help text")
         ("input,i", po::value<std::string>(&input_filename), "filename of input image (8 bit grayscale or RGB PNG image)")
         ("output,o", po::value<std::string>(&output_filename)->default_value("output.png"), "filename of output image (8 bit grayscale or RGB PNG image)")
+        ("diagnostics", po::value<std::string>(&diagnostics_filename), "filename where programm diagnostics (in 'Markdown' format) will be generated")
         ("timeout", po::value<std::uint32_t>(&timeout)->default_value(10), "timeout in seconds the processing will be aborted")
         ("quiet", "suppress all normal (non-error) outputs at console")
         ;
@@ -154,6 +160,12 @@ int main(int argc, char * argv[])
     }
 
     output_filename = variables["output"].as<std::string>();
+
+    if (variables.count("diagnostics"))
+    {
+        diagnostics_filename = variables["diagnostics"].as<std::string>();
+    }
+
     quiet = variables.count("quiet");
 
     if (variables.count("script"))
@@ -180,15 +192,26 @@ int main(int argc, char * argv[])
         threads = std::thread::hardware_concurrency();
     }
 
-    // a single-threaded world, where the image processor will live
-    auto scheduler = boost::asynchronous::make_shared_scheduler_proxy<
-                         boost::asynchronous::single_thread_scheduler<
-                             boost::asynchronous::lockfree_queue<> > >(std::string("image_processor"));
-
     // create a threadpool
     auto pool = boost::asynchronous::make_shared_scheduler_proxy<
                     boost::asynchronous::multiqueue_threadpool_scheduler<
-                        boost::asynchronous::lockfree_queue<> > >(threads, std::string("threadpool"));
+                        boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(threads, std::string("threadpool"));
+
+    // a single-threaded world, where the image processor will live
+    auto scheduler = boost::asynchronous::make_shared_scheduler_proxy<
+                         boost::asynchronous::single_thread_scheduler<
+                             boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("image_processor"));
+
+    // formatter to produce diagnostics in markdown format
+    auto formatter_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
+                                   boost::asynchronous::single_thread_scheduler<
+                                       boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("formatter"));
+
+    using formatter_type = cvpg::imageproc::scripting::diagnostics::markdown_formatter<>;
+
+    boost::asynchronous::formatter_proxy<formatter_type> formatter(formatter_scheduler,
+                                                                   pool,
+                                                                   boost::asynchronous::make_scheduler_interfaces(scheduler, pool, formatter_scheduler));
 
     if (!quiet)
     {
@@ -213,6 +236,10 @@ int main(int argc, char * argv[])
 
     // create the image processor
     cvpg::imageproc::scripting::image_processor_proxy processor(scheduler, pool);
+
+    boost::asynchronous::formatter_proxy<formatter_type> diagnostics_formatter(formatter_scheduler,
+                                                                               pool,
+                                                                               boost::asynchronous::make_scheduler_interfaces(scheduler, pool, formatter_scheduler));
 
     // compiling script
     auto promise_compile = std::make_shared<std::promise<std::size_t> >();
@@ -335,6 +362,20 @@ int main(int argc, char * argv[])
     if (!quiet)
     {
         std::cout << "Saved result to file '" << output_filename << "'" << std::endl;
+    }
+
+    std::stringstream diagnostics_stream;
+
+    if (!diagnostics_filename.empty())
+    {
+        std::ofstream out(diagnostics_filename);
+        out << diagnostics_formatter.format().get();
+        out.close();
+
+        if (!quiet)
+        {
+            std::cerr << "Diagnostics saved at '" << diagnostics_filename << "'" << std::endl;
+        }
     }
 
     return 0;

@@ -29,6 +29,8 @@ set(headers
     imageproc/scripting/detail/parser.hpp
     imageproc/scripting/detail/sequence_node.hpp
     imageproc/scripting/detail/single_node.hpp
+    imageproc/scripting/diagnostics/markdown_formatter.hpp
+    imageproc/scripting/diagnostics/typedefs.hpp
 )
 
 set(sources
