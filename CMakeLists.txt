@@ -16,6 +16,7 @@ add_library(${PROJECT_NAME} INTERFACE)
 find_package(Threads REQUIRED)
 find_package(PNG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options system thread)
+find_package(Git QUIET)
 
 # set output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
@@ -27,16 +28,43 @@ option(BUILD_APPS "Build applications." ON)
 option(BUILD_SHARED_LIBS "Build shared instead of static libraries." ON)
 option(BUILD_TESTS "Build module tests." ON)
 
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    # update submodules as needed
+    option(GIT_SUBMODULE "Check submodules during build" ON)
+
+    if(GIT_SUBMODULE)
+        message(STATUS "Submodule update")
+
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        RESULT_VARIABLE GIT_SUBMOD_RESULT)
+
+        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+            message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+        endif()
+    endif()
+endif()
+
+# check if ChaiScript was downloaded properly
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/chaiscript/CMakeLists.txt")
+    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+endif()
+
+# check if googletest was downloaded properly
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/googletest/CMakeLists.txt")
+    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+endif()
+
 # add include files from asynchronous
-include_directories(./extern/asynchronous)
+include_directories(${PROJECT_SOURCE_DIR}/extern/asynchronous)
 
 # add include files from ChaiScript
-include_directories(SYSTEM ./extern/chaiscript/include)
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/extern/chaiscript/include)
 
 add_subdirectory(src)
 
 if(BUILD_TESTS)
-    add_subdirectory(./extern/googletest)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/extern/googletest)
 
     enable_testing()
     include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
