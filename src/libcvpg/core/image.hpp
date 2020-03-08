@@ -16,6 +16,9 @@ class image
 {
 public:
     using pixel_type = pixel;
+
+    static constexpr std::uint8_t channels_size = channels;
+
     using channel_array_type = std::array<std::shared_ptr<pixel_type>, channels>;
 
     image(std::uint32_t width = 0, std::uint32_t height = 0, std::uint32_t padding = 0)
