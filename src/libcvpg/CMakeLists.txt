@@ -7,6 +7,7 @@ set(headers
     core/image.hpp
     imageproc/algorithms/convert_to_gray.hpp
     imageproc/algorithms/tiling.hpp
+    imageproc/algorithms/tiling/convert_to_gray.hpp
     imageproc/algorithms/tiling/diff.hpp
     imageproc/algorithms/tiling/mean.hpp
     imageproc/algorithms/tiling/multiply_add.hpp
@@ -38,6 +39,7 @@ set(sources
     core/image.cpp
     imageproc/algorithms/convert_to_gray.cpp
     imageproc/algorithms/tiling.cpp
+    imageproc/algorithms/tiling/convert_to_gray.cpp
     imageproc/algorithms/tiling/diff.cpp
     imageproc/algorithms/tiling/mean.cpp
     imageproc/algorithms/tiling/multiply_add.cpp

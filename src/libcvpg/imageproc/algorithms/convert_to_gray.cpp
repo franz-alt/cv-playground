@@ -1,5 +1,7 @@
 #include <libcvpg/imageproc/algorithms/convert_to_gray.hpp>
 
+#include <libcvpg/imageproc/algorithms/tiling.hpp>
+
 namespace {
 
 struct convert_to_gray_8bit_task : public boost::asynchronous::continuation_task<cvpg::image_gray_8bit>
@@ -35,7 +37,28 @@ struct convert_to_gray_8bit_task : public boost::asynchronous::continuation_task
         }
         else if (m_mode == cvpg::imageproc::algorithms::rgb_conversion_mode::calc_average)
         {
-            // TODO implement me
+            boost::asynchronous::create_callback_continuation(
+                [task_result = this->this_task_result()](auto result)
+                {
+                    auto image = std::move(std::get<0>(result).get());
+
+                    task_result.set_value(cvpg::image_gray_8bit(image.width(),
+                                                                image.height(),
+                                                                image.padding(),
+                                                                cvpg::image_gray_8bit::channel_array_type { image.data(0) } ));
+                },
+                cvpg::imageproc::algorithms::tiling(m_image,
+                                                    cvpg::imageproc::algorithms::tiling_params
+                                                    {
+                                                        cvpg::imageproc::algorithms::tiling_algorithms::convert_to_gray,
+                                                        512, // cutoff_x
+                                                        512, // cutoff_y
+                                                        0.0,
+                                                        0,
+                                                        m_image.width(),
+                                                        m_image.height()
+                                                    })
+            );
         }
         else
         {

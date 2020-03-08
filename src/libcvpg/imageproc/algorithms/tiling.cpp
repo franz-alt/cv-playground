@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include <libcvpg/imageproc/algorithms/tiling/convert_to_gray.hpp>
 #include <libcvpg/imageproc/algorithms/tiling/diff.hpp>
 #include <libcvpg/imageproc/algorithms/tiling/mean.hpp>
 #include <libcvpg/imageproc/algorithms/tiling/multiply_add.hpp>
@@ -122,6 +123,12 @@ struct horizontal_tiling_task<image, 3> : public boost::asynchronous::continuati
         {
             switch (m_params.algorithm)
             {
+                case cvpg::imageproc::algorithms::tiling_algorithms::convert_to_gray:
+                {
+                    cvpg::imageproc::algorithms::convert_to_gray_8bit(m_src1.data(0).get(), m_src1.data(1).get(), m_src1.data(2).get(), m_dst.data(0).get(), m_from_x, m_to_x, m_from_y, m_to_y, std::move(m_params));
+                    break;
+                }
+
                 default:
                 {
                     // TODO error handling

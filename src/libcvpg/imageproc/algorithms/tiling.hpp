@@ -11,6 +11,7 @@ namespace cvpg { namespace imageproc { namespace algorithms {
 
 enum class tiling_algorithms
 {
+    convert_to_gray,
     diff,
     mean,
     multiply_add
