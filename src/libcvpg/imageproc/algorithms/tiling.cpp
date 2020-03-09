@@ -129,6 +129,30 @@ struct horizontal_tiling_task<image, 3> : public boost::asynchronous::continuati
                     break;
                 }
 
+                case cvpg::imageproc::algorithms::tiling_algorithms::diff:
+                {
+                    cvpg::imageproc::algorithms::diff_gray_8bit(m_src1.data(0).get(), m_src2.data(0).get(), m_dst.data(0).get(), m_from_x, m_to_x, m_from_y, m_to_y, m_params);
+                    cvpg::imageproc::algorithms::diff_gray_8bit(m_src1.data(1).get(), m_src2.data(1).get(), m_dst.data(1).get(), m_from_x, m_to_x, m_from_y, m_to_y, m_params);
+                    cvpg::imageproc::algorithms::diff_gray_8bit(m_src1.data(2).get(), m_src2.data(2).get(), m_dst.data(2).get(), m_from_x, m_to_x, m_from_y, m_to_y, std::move(m_params));
+                    break;
+                }
+
+                case cvpg::imageproc::algorithms::tiling_algorithms::mean:
+                {
+                    cvpg::imageproc::algorithms::mean_gray_8bit(m_src1.data(0).get(), m_dst.data(0).get(), m_from_x, m_to_x, m_from_y, m_to_y, m_params);
+                    cvpg::imageproc::algorithms::mean_gray_8bit(m_src1.data(1).get(), m_dst.data(1).get(), m_from_x, m_to_x, m_from_y, m_to_y, m_params);
+                    cvpg::imageproc::algorithms::mean_gray_8bit(m_src1.data(2).get(), m_dst.data(2).get(), m_from_x, m_to_x, m_from_y, m_to_y, std::move(m_params));
+                    break;
+                }
+
+                case cvpg::imageproc::algorithms::tiling_algorithms::multiply_add:
+                {
+                    cvpg::imageproc::algorithms::multiply_add_gray_8bit(m_src1.data(0).get(), m_dst.data(0).get(), m_from_x, m_to_x, m_from_y, m_to_y, m_params);
+                    cvpg::imageproc::algorithms::multiply_add_gray_8bit(m_src1.data(1).get(), m_dst.data(1).get(), m_from_x, m_to_x, m_from_y, m_to_y, m_params);
+                    cvpg::imageproc::algorithms::multiply_add_gray_8bit(m_src1.data(2).get(), m_dst.data(2).get(), m_from_x, m_to_x, m_from_y, m_to_y, std::move(m_params));
+                    break;
+                }
+
                 default:
                 {
                     // TODO error handling
