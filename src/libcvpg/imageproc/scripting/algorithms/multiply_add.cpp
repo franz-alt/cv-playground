@@ -63,6 +63,15 @@ struct multiply_add_task :  public boost::asynchronous::continuation_task<std::s
 
                 auto start = std::chrono::system_clock::now();
 
+                auto tf = cvpg::imageproc::algorithms::tiling_functors::image<cvpg::image_gray_8bit>({{ std::move(image) }});
+                tf.algorithm = cvpg::imageproc::algorithms::tiling_algorithms::multiply_add;
+                tf.parameters.image_width = image.width();
+                tf.parameters.image_height = image.height();
+                tf.parameters.cutoff_x = cutoff_x;
+                tf.parameters.cutoff_y = cutoff_y;
+                tf.parameters.real_numbers.push_back(factor);
+                tf.parameters.signed_integer_numbers.push_back(offset);
+
                 boost::asynchronous::create_callback_continuation(
                     [result = this->this_task_result(), image_processor = m_image_processor, result_id = m_result_id, context_id = m_context_id, start](auto cont_res) mutable
                     {
@@ -79,7 +88,7 @@ struct multiply_add_task :  public boost::asynchronous::continuation_task<std::s
                             result.set_exception(std::current_exception());
                         }
                     },
-                    cvpg::imageproc::algorithms::tiling(image, cvpg::imageproc::algorithms::tiling_params { cvpg::imageproc::algorithms::tiling_algorithms::multiply_add, cutoff_x, cutoff_y, factor, offset })
+                    cvpg::imageproc::algorithms::tiling(std::move(tf))
                 );
             }
             else if (input.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image)
@@ -88,6 +97,15 @@ struct multiply_add_task :  public boost::asynchronous::continuation_task<std::s
 
                 auto start = std::chrono::system_clock::now();
 
+                auto tf = cvpg::imageproc::algorithms::tiling_functors::image<cvpg::image_rgb_8bit>({{ std::move(image) }});
+                tf.algorithm = cvpg::imageproc::algorithms::tiling_algorithms::multiply_add;
+                tf.parameters.image_width = image.width();
+                tf.parameters.image_height = image.height();
+                tf.parameters.cutoff_x = cutoff_x;
+                tf.parameters.cutoff_y = cutoff_y;
+                tf.parameters.real_numbers.push_back(factor);
+                tf.parameters.signed_integer_numbers.push_back(offset);
+
                 boost::asynchronous::create_callback_continuation(
                     [result = this->this_task_result(), image_processor = m_image_processor, result_id = m_result_id, context_id = m_context_id, start](auto cont_res) mutable
                     {
@@ -104,7 +122,7 @@ struct multiply_add_task :  public boost::asynchronous::continuation_task<std::s
                             result.set_exception(std::current_exception());
                         }
                     },
-                    cvpg::imageproc::algorithms::tiling(image, cvpg::imageproc::algorithms::tiling_params { cvpg::imageproc::algorithms::tiling_algorithms::multiply_add, cutoff_x, cutoff_y, factor, offset })
+                    cvpg::imageproc::algorithms::tiling(std::move(tf))
                 );
             }
             else

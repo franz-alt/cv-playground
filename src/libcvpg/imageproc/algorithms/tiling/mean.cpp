@@ -1,10 +1,11 @@
 #include <libcvpg/imageproc/algorithms/tiling/mean.hpp>
 
+#include <cstring>
 #include <deque>
 
 namespace cvpg { namespace imageproc { namespace algorithms {
 
-void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_params params)
+void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
 {
     const std::size_t org_from_x = from_x;
     const std::size_t org_to_x = to_x;
@@ -12,11 +13,11 @@ void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, 
     const std::size_t org_from_y = from_y;
     const std::size_t org_to_y = to_y;
 
-    const std::size_t image_width = params.image_width;
-    const std::size_t image_height = params.image_height;
+    const std::size_t image_width = parameters.image_width;
+    const std::size_t image_height = parameters.image_height;
 
-    const std::uint32_t filter_width = params.filter_width;
-    const std::uint32_t filter_height = params.filter_height;
+    const std::uint32_t filter_width = parameters.signed_integer_numbers.at(0);
+    const std::uint32_t filter_height = parameters.signed_integer_numbers.at(1);
 
     const std::uint32_t half_filter_width = filter_width / 2;
     const std::uint32_t half_filter_height = filter_height / 2;

@@ -15,7 +15,7 @@
 
 namespace detail {
 
-struct diff_task :  public boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::image_processor> >
+struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::image_processor> >
 {
     diff_task(std::shared_ptr<cvpg::imageproc::scripting::image_processor> image_processor, std::size_t context_id, std::uint32_t result_id, cvpg::imageproc::scripting::detail::parser::item item)
         : boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::image_processor> >("algorithms::diff_task")
@@ -67,6 +67,14 @@ struct diff_task :  public boost::asynchronous::continuation_task<std::shared_pt
 
                 auto start = std::chrono::system_clock::now();
 
+                auto tf = cvpg::imageproc::algorithms::tiling_functors::image<cvpg::image_gray_8bit>({{ std::move(image1), std::move(image2) }});
+                tf.algorithm = cvpg::imageproc::algorithms::tiling_algorithms::diff;
+                tf.parameters.image_width = image1.width();
+                tf.parameters.image_height = image1.height();
+                tf.parameters.cutoff_x = cutoff_x;
+                tf.parameters.cutoff_y = cutoff_y;
+                tf.parameters.signed_integer_numbers.push_back(offset);
+
                 boost::asynchronous::create_callback_continuation(
                     [result = this->this_task_result(), image_processor = m_image_processor, context_id = m_context_id, result_id = m_result_id, start](auto cont_res) mutable
                     {
@@ -83,7 +91,7 @@ struct diff_task :  public boost::asynchronous::continuation_task<std::shared_pt
                             result.set_exception(std::current_exception());
                         }
                     },
-                    cvpg::imageproc::algorithms::tiling(image1, image2, cvpg::imageproc::algorithms::tiling_params { cvpg::imageproc::algorithms::tiling_algorithms::diff, cutoff_x, cutoff_y, 1.0, offset, image1.width(), image1.height() })
+                    cvpg::imageproc::algorithms::tiling(std::move(tf))
                 );
             }
             else if (input1.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image &&
@@ -94,6 +102,14 @@ struct diff_task :  public boost::asynchronous::continuation_task<std::shared_pt
 
                 auto start = std::chrono::system_clock::now();
 
+                auto tf = cvpg::imageproc::algorithms::tiling_functors::image<cvpg::image_rgb_8bit>({{ std::move(image1), std::move(image2) }});
+                tf.algorithm = cvpg::imageproc::algorithms::tiling_algorithms::diff;
+                tf.parameters.image_width = image1.width();
+                tf.parameters.image_height = image1.height();
+                tf.parameters.cutoff_x = cutoff_x;
+                tf.parameters.cutoff_y = cutoff_y;
+                tf.parameters.signed_integer_numbers.push_back(offset);
+
                 boost::asynchronous::create_callback_continuation(
                     [result = this->this_task_result(), image_processor = m_image_processor, context_id = m_context_id, result_id = m_result_id, start](auto cont_res) mutable
                     {
@@ -110,7 +126,7 @@ struct diff_task :  public boost::asynchronous::continuation_task<std::shared_pt
                             result.set_exception(std::current_exception());
                         }
                     },
-                    cvpg::imageproc::algorithms::tiling(image1, image2, cvpg::imageproc::algorithms::tiling_params { cvpg::imageproc::algorithms::tiling_algorithms::diff, cutoff_x, cutoff_y, 1.0, offset, image1.width(), image1.height() })
+                    cvpg::imageproc::algorithms::tiling(std::move(tf))
                 );
             }
             else

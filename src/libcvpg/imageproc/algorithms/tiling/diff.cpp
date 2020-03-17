@@ -1,12 +1,14 @@
 #include <libcvpg/imageproc/algorithms/tiling/diff.hpp>
 
+#include <algorithm>
+
 namespace cvpg { namespace imageproc { namespace algorithms {
 
-void diff_gray_8bit(std::uint8_t * src1, std::uint8_t * src2, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_params params)
+void diff_gray_8bit(std::uint8_t * src1, std::uint8_t * src2, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
 {
-    const std::size_t image_width = params.image_width;
+    const std::size_t image_width = parameters.image_width;
 
-    const std::int32_t offset = params.offset;
+    const std::int32_t offset = parameters.signed_integer_numbers.at(0);
 
     std::uint8_t * src1_line = nullptr;
     std::uint8_t * src2_line = nullptr;
