@@ -2,6 +2,7 @@
 #define LIBCVPG_IMAGEPROC_ALGORITHMS_TILING_FUNCTORS_IMAGE_HPP
 
 #include <cstdint>
+#include <functional>
 #include <vector>
 
 #include <libcvpg/imageproc/algorithms/tiling/algorithms.hpp>
@@ -30,6 +31,8 @@ struct image
     cvpg::imageproc::algorithms::tiling_algorithms algorithm = cvpg::imageproc::algorithms::tiling_algorithms::unknown;
     
     cvpg::imageproc::algorithms::tiling_parameters parameters;
+
+    std::function<boost::asynchronous::detail::callback_continuation<void>(std::shared_ptr<input_type> src1, std::shared_ptr<input_type> src2, std::shared_ptr<result_type> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)> task;
 };
 
 template<>

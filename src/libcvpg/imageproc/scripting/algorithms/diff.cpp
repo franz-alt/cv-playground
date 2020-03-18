@@ -75,6 +75,13 @@ struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr
                 tf.parameters.cutoff_y = cutoff_y;
                 tf.parameters.signed_integer_numbers.push_back(offset);
 
+                tf.task = [](std::shared_ptr<cvpg::image_gray_8bit> src1, std::shared_ptr<cvpg::image_gray_8bit> src2, std::shared_ptr<cvpg::image_gray_8bit> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)
+                {
+                    return boost::asynchronous::top_level_callback_continuation<void>(
+                               cvpg::imageproc::algorithms::tiling_functors::horizontal_tiling_task<cvpg::image_gray_8bit, cvpg::image_gray_8bit>(src1, src2, dst, from_x, to_x, from_y, to_y, algorithm, parameters)
+                           );
+                };
+
                 boost::asynchronous::create_callback_continuation(
                     [result = this->this_task_result(), image_processor = m_image_processor, context_id = m_context_id, result_id = m_result_id, start](auto cont_res) mutable
                     {
@@ -109,6 +116,13 @@ struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr
                 tf.parameters.cutoff_x = cutoff_x;
                 tf.parameters.cutoff_y = cutoff_y;
                 tf.parameters.signed_integer_numbers.push_back(offset);
+
+                tf.task = [](std::shared_ptr<cvpg::image_rgb_8bit> src1, std::shared_ptr<cvpg::image_rgb_8bit> src2, std::shared_ptr<cvpg::image_rgb_8bit> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)
+                {
+                    return boost::asynchronous::top_level_callback_continuation<void>(
+                               cvpg::imageproc::algorithms::tiling_functors::horizontal_tiling_task<cvpg::image_rgb_8bit, cvpg::image_rgb_8bit>(src1, src2, dst, from_x, to_x, from_y, to_y, algorithm, parameters)
+                           );
+                };
 
                 boost::asynchronous::create_callback_continuation(
                     [result = this->this_task_result(), image_processor = m_image_processor, context_id = m_context_id, result_id = m_result_id, start](auto cont_res) mutable

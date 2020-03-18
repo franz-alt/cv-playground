@@ -15,7 +15,7 @@ namespace detail {
 template<class input_type, class result_type>
 struct vertical_tiling_task : public boost::asynchronous::continuation_task<void>
 {
-    vertical_tiling_task(std::shared_ptr<input_type> src1, std::shared_ptr<input_type> src2, std::shared_ptr<result_type> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)
+    vertical_tiling_task(std::shared_ptr<input_type> src1, std::shared_ptr<input_type> src2, std::shared_ptr<result_type> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters, std::function<boost::asynchronous::detail::callback_continuation<void>(std::shared_ptr<input_type> src1, std::shared_ptr<input_type> src2, std::shared_ptr<result_type> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)> task)
         : boost::asynchronous::continuation_task<void>("vertical_tiling_task")
         , m_src1(std::move(src1))
         , m_src2(std::move(src2))
@@ -26,6 +26,7 @@ struct vertical_tiling_task : public boost::asynchronous::continuation_task<void
         , m_to_y(to_y)
         , m_algorithm(algorithm)
         , m_parameters(std::move(parameters))
+        , m_task(std::move(task))
     {}
 
     void operator()()
@@ -34,22 +35,29 @@ struct vertical_tiling_task : public boost::asynchronous::continuation_task<void
 
         if (distance < m_parameters.cutoff_y)
         {
-            boost::asynchronous::create_callback_continuation(
-                [task_res = this->this_task_result()](auto cont_res) mutable
-                {
-                    try
+            if (m_task)
+            {
+                boost::asynchronous::create_callback_continuation(
+                    [task_res = this->this_task_result()](auto cont_res) mutable
                     {
-                        std::get<0>(cont_res).get();
+                        try
+                        {
+                            std::get<0>(cont_res).get();
 
-                        task_res.set_value();
-                    }
-                    catch (...)
-                    {
-                        task_res.set_exception(std::current_exception());
-                    }
-                },
-                tiling_functors::horizontal_tiling_task<input_type, result_type>(std::move(m_src1), std::move(m_src2), std::move(m_dst), m_from_x, m_to_x, m_from_y, m_to_y, m_algorithm, std::move(m_parameters))
-            );
+                            task_res.set_value();
+                        }
+                        catch (...)
+                        {
+                            task_res.set_exception(std::current_exception());
+                        }
+                    },
+                    m_task(std::move(m_src1), std::move(m_src2), std::move(m_dst), m_from_x, m_to_x, m_from_y, m_to_y, m_algorithm, std::move(m_parameters))
+                );
+            }
+            else
+            {
+                // TODO error handling
+            }
         }
         else
         {
@@ -70,8 +78,8 @@ struct vertical_tiling_task : public boost::asynchronous::continuation_task<void
                         task_res.set_exception(std::current_exception());
                     }
                 },
-                vertical_tiling_task<input_type, result_type>(m_src1, m_src2, m_dst, m_from_x, m_to_x, m_from_y, half - 1, m_algorithm, m_parameters),
-                vertical_tiling_task<input_type, result_type>(m_src1, m_src2, m_dst, m_from_x, m_to_x, half, m_to_y, m_algorithm, m_parameters)
+                vertical_tiling_task<input_type, result_type>(m_src1, m_src2, m_dst, m_from_x, m_to_x, m_from_y, half - 1, m_algorithm, m_parameters, m_task),
+                vertical_tiling_task<input_type, result_type>(m_src1, m_src2, m_dst, m_from_x, m_to_x, half, m_to_y, m_algorithm, m_parameters, m_task)
             );
         }
     }
@@ -90,6 +98,8 @@ private:
     cvpg::imageproc::algorithms::tiling_algorithms m_algorithm;
 
     cvpg::imageproc::algorithms::tiling_parameters m_parameters;
+
+    std::function<boost::asynchronous::detail::callback_continuation<void>(std::shared_ptr<input_type> src1, std::shared_ptr<input_type> src2, std::shared_ptr<result_type> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)> m_task;
 };
 
 template<class functor>
@@ -138,7 +148,7 @@ struct tiling_task : public boost::asynchronous::continuation_task<typename func
                     task_res.set_exception(std::current_exception());
                 }
             },
-            vertical_tiling_task<image_type, result_type>(image1, image2, output, 0, image1->width() - 1, 0, image1->height() - 1, m_func.algorithm, std::move(m_func.parameters))
+            vertical_tiling_task<image_type, result_type>(image1, image2, output, 0, image1->width() - 1, 0, image1->height() - 1, m_func.algorithm, std::move(m_func.parameters), std::move(m_func.task))
         );
     }
 
