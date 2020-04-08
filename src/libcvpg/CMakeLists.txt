@@ -14,7 +14,6 @@ set(headers
     imageproc/algorithms/tiling/multiply_add.hpp
     imageproc/algorithms/tiling/parameters.hpp
     imageproc/algorithms/tiling/functors/image.hpp
-    imageproc/algorithms/tiling/functors/task.hpp
     imageproc/scripting/algorithm_set.hpp
     imageproc/scripting/image_processor.hpp
     imageproc/scripting/item.hpp

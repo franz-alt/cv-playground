@@ -7,6 +7,7 @@
 
 #include <libcvpg/core/image.hpp>
 #include <libcvpg/imageproc/algorithms/tiling.hpp>
+#include <libcvpg/imageproc/algorithms/tiling/diff.hpp>
 #include <libcvpg/imageproc/scripting/image_processor.hpp>
 #include <libcvpg/imageproc/scripting/item.hpp>
 #include <libcvpg/imageproc/scripting/detail/compiler.hpp>
@@ -75,11 +76,9 @@ struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr
                 tf.parameters.cutoff_y = cutoff_y;
                 tf.parameters.signed_integer_numbers.push_back(offset);
 
-                tf.task = [](std::shared_ptr<cvpg::image_gray_8bit> src1, std::shared_ptr<cvpg::image_gray_8bit> src2, std::shared_ptr<cvpg::image_gray_8bit> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)
+                tf.tile_algorithm_task = [](std::shared_ptr<cvpg::image_gray_8bit> src1, std::shared_ptr<cvpg::image_gray_8bit> src2, std::shared_ptr<cvpg::image_gray_8bit> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms /*algorithm*/, cvpg::imageproc::algorithms::tiling_parameters parameters)
                 {
-                    return boost::asynchronous::top_level_callback_continuation<void>(
-                               cvpg::imageproc::algorithms::tiling_functors::horizontal_tiling_task<cvpg::image_gray_8bit, cvpg::image_gray_8bit>(src1, src2, dst, from_x, to_x, from_y, to_y, algorithm, parameters)
-                           );
+                    cvpg::imageproc::algorithms::diff_gray_8bit(src1->data(0).get(), src2->data(0).get(), dst->data(0).get(), from_x, to_x, from_y, to_y, std::move(parameters));
                 };
 
                 boost::asynchronous::create_callback_continuation(
@@ -117,11 +116,11 @@ struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr
                 tf.parameters.cutoff_y = cutoff_y;
                 tf.parameters.signed_integer_numbers.push_back(offset);
 
-                tf.task = [](std::shared_ptr<cvpg::image_rgb_8bit> src1, std::shared_ptr<cvpg::image_rgb_8bit> src2, std::shared_ptr<cvpg::image_rgb_8bit> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)
+                tf.tile_algorithm_task = [](std::shared_ptr<cvpg::image_rgb_8bit> src1, std::shared_ptr<cvpg::image_rgb_8bit> src2, std::shared_ptr<cvpg::image_rgb_8bit> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms /*algorithm*/, cvpg::imageproc::algorithms::tiling_parameters parameters)
                 {
-                    return boost::asynchronous::top_level_callback_continuation<void>(
-                               cvpg::imageproc::algorithms::tiling_functors::horizontal_tiling_task<cvpg::image_rgb_8bit, cvpg::image_rgb_8bit>(src1, src2, dst, from_x, to_x, from_y, to_y, algorithm, parameters)
-                           );
+                    cvpg::imageproc::algorithms::diff_gray_8bit(src1->data(0).get(), src2->data(0).get(), dst->data(0).get(), from_x, to_x, from_y, to_y, parameters);
+                    cvpg::imageproc::algorithms::diff_gray_8bit(src1->data(1).get(), src2->data(1).get(), dst->data(1).get(), from_x, to_x, from_y, to_y, parameters);
+                    cvpg::imageproc::algorithms::diff_gray_8bit(src1->data(2).get(), src2->data(2).get(), dst->data(2).get(), from_x, to_x, from_y, to_y, std::move(parameters));
                 };
 
                 boost::asynchronous::create_callback_continuation(
