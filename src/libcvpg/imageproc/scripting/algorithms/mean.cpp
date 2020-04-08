@@ -62,12 +62,15 @@ struct mean_task :  public boost::asynchronous::continuation_task<std::shared_pt
             {
                 auto image = std::any_cast<cvpg::image_gray_8bit>(input.value());
 
+                const auto image_width = image.width();
+                const auto image_height = image.height();
+
                 auto start = std::chrono::system_clock::now();
 
                 auto tf = cvpg::imageproc::algorithms::tiling_functors::image<cvpg::image_gray_8bit>({{ std::move(image) }});
                 tf.algorithm = cvpg::imageproc::algorithms::tiling_algorithms::mean;
-                tf.parameters.image_width = image.width();
-                tf.parameters.image_height = image.height();
+                tf.parameters.image_width = image_width;
+                tf.parameters.image_height = image_height;
                 tf.parameters.cutoff_x = cutoff_x;
                 tf.parameters.cutoff_y = cutoff_y;
                 tf.parameters.signed_integer_numbers.push_back(width); // filter width
@@ -101,12 +104,15 @@ struct mean_task :  public boost::asynchronous::continuation_task<std::shared_pt
             {
                 auto image = std::any_cast<cvpg::image_rgb_8bit>(input.value());
 
+                const auto image_width = image.width();
+                const auto image_height = image.height();
+
                 auto start = std::chrono::system_clock::now();
 
                 auto tf = cvpg::imageproc::algorithms::tiling_functors::image<cvpg::image_rgb_8bit>({{ std::move(image) }});
                 tf.algorithm = cvpg::imageproc::algorithms::tiling_algorithms::mean;
-                tf.parameters.image_width = image.width();
-                tf.parameters.image_height = image.height();
+                tf.parameters.image_width = image_width;
+                tf.parameters.image_height = image_height;
                 tf.parameters.cutoff_x = cutoff_x;
                 tf.parameters.cutoff_y = cutoff_y;
                 tf.parameters.signed_integer_numbers.push_back(width); // filter width

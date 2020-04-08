@@ -66,12 +66,15 @@ struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr
                 auto image1 = std::any_cast<cvpg::image_gray_8bit>(input1.value());
                 auto image2 = std::any_cast<cvpg::image_gray_8bit>(input2.value());
 
+                const auto width = image1.width();
+                const auto height = image1.height();
+
                 auto start = std::chrono::system_clock::now();
 
                 auto tf = cvpg::imageproc::algorithms::tiling_functors::image<cvpg::image_gray_8bit>({{ std::move(image1), std::move(image2) }});
                 tf.algorithm = cvpg::imageproc::algorithms::tiling_algorithms::diff;
-                tf.parameters.image_width = image1.width();
-                tf.parameters.image_height = image1.height();
+                tf.parameters.image_width = width;
+                tf.parameters.image_height = height;
                 tf.parameters.cutoff_x = cutoff_x;
                 tf.parameters.cutoff_y = cutoff_y;
                 tf.parameters.signed_integer_numbers.push_back(offset);
@@ -106,12 +109,15 @@ struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr
                 auto image1 = std::any_cast<cvpg::image_rgb_8bit>(input1.value());
                 auto image2 = std::any_cast<cvpg::image_rgb_8bit>(input2.value());
 
+                const auto width = image1.width();
+                const auto height = image1.height();
+
                 auto start = std::chrono::system_clock::now();
 
                 auto tf = cvpg::imageproc::algorithms::tiling_functors::image<cvpg::image_rgb_8bit>({{ std::move(image1), std::move(image2) }});
                 tf.algorithm = cvpg::imageproc::algorithms::tiling_algorithms::diff;
-                tf.parameters.image_width = image1.width();
-                tf.parameters.image_height = image1.height();
+                tf.parameters.image_width = width;
+                tf.parameters.image_height = height;
                 tf.parameters.cutoff_x = cutoff_x;
                 tf.parameters.cutoff_y = cutoff_y;
                 tf.parameters.signed_integer_numbers.push_back(offset);
