@@ -42,13 +42,12 @@ struct convert_to_gray_8bit_task : public boost::asynchronous::continuation_task
             const auto height = m_image.height();
 
             auto tf = cvpg::imageproc::algorithms::tiling_functors::image<cvpg::image_rgb_8bit, cvpg::image_gray_8bit>({{ std::move(m_image) }});
-            tf.algorithm = cvpg::imageproc::algorithms::tiling_algorithms::convert_to_gray;
             tf.parameters.image_width = width;
             tf.parameters.image_height = height;
             tf.parameters.cutoff_x = 512;
             tf.parameters.cutoff_y = 512;
 
-            tf.tile_algorithm_task = [](std::shared_ptr<cvpg::image_rgb_8bit> src1, std::shared_ptr<cvpg::image_rgb_8bit> /*src2*/, std::shared_ptr<cvpg::image_gray_8bit> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms /*algorithm*/, cvpg::imageproc::algorithms::tiling_parameters parameters)
+            tf.tile_algorithm_task = [](std::shared_ptr<cvpg::image_rgb_8bit> src1, std::shared_ptr<cvpg::image_rgb_8bit> /*src2*/, std::shared_ptr<cvpg::image_gray_8bit> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
             {
                 cvpg::imageproc::algorithms::convert_to_gray_8bit(src1->data(0).get(), src1->data(1).get(), src1->data(2).get(), dst->data(0).get(), from_x, to_x, from_y, to_y, std::move(parameters));
             };

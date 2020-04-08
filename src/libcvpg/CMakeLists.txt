@@ -7,7 +7,6 @@ set(headers
     core/image.hpp
     imageproc/algorithms/convert_to_gray.hpp
     imageproc/algorithms/tiling.hpp
-    imageproc/algorithms/tiling/algorithms.hpp
     imageproc/algorithms/tiling/convert_to_gray.hpp
     imageproc/algorithms/tiling/diff.hpp
     imageproc/algorithms/tiling/mean.hpp

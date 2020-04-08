@@ -23,11 +23,10 @@ struct horizontal_tiling_task : public boost::asynchronous::continuation_task<vo
                            std::size_t to_x,
                            std::size_t from_y,
                            std::size_t to_y,
-                           cvpg::imageproc::algorithms::tiling_algorithms algorithm,
                            cvpg::imageproc::algorithms::tiling_parameters parameters,
                            std::function<std::tuple<std::shared_ptr<result_type>, std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst)> create_intermediate_outputs_func,
-                           std::function<void(std::shared_ptr<input_type> src1, std::shared_ptr<input_type> src2, std::shared_ptr<result_type> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)> tile_algorithm_task,
-                           std::function<boost::asynchronous::detail::callback_continuation<std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst1, std::shared_ptr<result_type> dst2, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)> horizontal_merge_task)
+                           std::function<void(std::shared_ptr<input_type> src1, std::shared_ptr<input_type> src2, std::shared_ptr<result_type> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)> tile_algorithm_task,
+                           std::function<boost::asynchronous::detail::callback_continuation<std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst1, std::shared_ptr<result_type> dst2, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)> horizontal_merge_task)
         : boost::asynchronous::continuation_task<void>("horizontal_tiling_task")
         , m_src1(std::move(src1))
         , m_src2(std::move(src2))
@@ -36,7 +35,6 @@ struct horizontal_tiling_task : public boost::asynchronous::continuation_task<vo
         , m_to_x(to_x)
         , m_from_y(from_y)
         , m_to_y(to_y)
-        , m_algorithm(algorithm)
         , m_parameters(std::move(parameters))
         , m_create_intermediate_outputs_func(std::move(create_intermediate_outputs_func))
         , m_tile_algorithm_task(std::move(tile_algorithm_task))
@@ -51,7 +49,7 @@ struct horizontal_tiling_task : public boost::asynchronous::continuation_task<vo
         {
             if (m_tile_algorithm_task)
             {
-                m_tile_algorithm_task(m_src1, m_src2, m_dst, m_from_x, m_to_x, m_from_y, m_to_y, m_algorithm, std::move(m_parameters));
+                m_tile_algorithm_task(m_src1, m_src2, m_dst, m_from_x, m_to_x, m_from_y, m_to_y, std::move(m_parameters));
 
                 this_task_result().set_value();
             }
@@ -77,7 +75,6 @@ struct horizontal_tiling_task : public boost::asynchronous::continuation_task<vo
                 ,to_x = m_to_x
                 ,from_y = m_from_y
                 ,to_y = m_to_y
-                ,algorithm = m_algorithm
                 ,parameters = m_parameters
                 ,horizontal_merge_task = m_horizontal_merge_task](auto cont_res) mutable
                 {
@@ -104,7 +101,7 @@ struct horizontal_tiling_task : public boost::asynchronous::continuation_task<vo
                                         task_res.set_exception(std::current_exception());
                                     }
                                 },
-                                horizontal_merge_task(dst1, dst2, from_x, to_x, from_y, to_y, algorithm, std::move(parameters))
+                                horizontal_merge_task(dst1, dst2, from_x, to_x, from_y, to_y, std::move(parameters))
                             );
                         }
                         else
@@ -125,7 +122,6 @@ struct horizontal_tiling_task : public boost::asynchronous::continuation_task<vo
                     half - 1,
                     m_from_y,
                     m_to_y,
-                    m_algorithm,
                     m_parameters,
                     m_create_intermediate_outputs_func,
                     m_tile_algorithm_task,
@@ -139,7 +135,6 @@ struct horizontal_tiling_task : public boost::asynchronous::continuation_task<vo
                     m_to_x,
                     m_from_y,
                     m_to_y,
-                    m_algorithm,
                     m_parameters,
                     m_create_intermediate_outputs_func,
                     m_tile_algorithm_task,
@@ -160,14 +155,12 @@ private:
     std::size_t m_from_y;
     std::size_t m_to_y;
 
-    cvpg::imageproc::algorithms::tiling_algorithms m_algorithm;
-
     cvpg::imageproc::algorithms::tiling_parameters m_parameters;
 
     std::function<std::tuple<std::shared_ptr<result_type>, std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst)> m_create_intermediate_outputs_func;
 
-    std::function<void(std::shared_ptr<input_type> src1, std::shared_ptr<input_type> src2, std::shared_ptr<result_type> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)> m_tile_algorithm_task;
-    std::function<boost::asynchronous::detail::callback_continuation<std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst1, std::shared_ptr<result_type> dst2, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)> m_horizontal_merge_task;
+    std::function<void(std::shared_ptr<input_type> src1, std::shared_ptr<input_type> src2, std::shared_ptr<result_type> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)> m_tile_algorithm_task;
+    std::function<boost::asynchronous::detail::callback_continuation<std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst1, std::shared_ptr<result_type> dst2, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)> m_horizontal_merge_task;
 };
 
 template<class input_type, class result_type>
@@ -180,12 +173,11 @@ struct vertical_tiling_task : public boost::asynchronous::continuation_task<void
                          std::size_t to_x,
                          std::size_t from_y,
                          std::size_t to_y,
-                         cvpg::imageproc::algorithms::tiling_algorithms algorithm,
                          cvpg::imageproc::algorithms::tiling_parameters parameters,
                          std::function<std::tuple<std::shared_ptr<result_type>, std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst)> create_intermediate_outputs_fct,
-                         std::function<void(std::shared_ptr<input_type> src1, std::shared_ptr<input_type> src2, std::shared_ptr<result_type> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)> tile_algorithm_task,
-                         std::function<boost::asynchronous::detail::callback_continuation<std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst1, std::shared_ptr<result_type> dst2, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)> horizontal_merge_task,
-                         std::function<boost::asynchronous::detail::callback_continuation<std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst1, std::shared_ptr<result_type> dst2, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)> vertical_merge_task)
+                         std::function<void(std::shared_ptr<input_type> src1, std::shared_ptr<input_type> src2, std::shared_ptr<result_type> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)> tile_algorithm_task,
+                         std::function<boost::asynchronous::detail::callback_continuation<std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst1, std::shared_ptr<result_type> dst2, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)> horizontal_merge_task,
+                         std::function<boost::asynchronous::detail::callback_continuation<std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst1, std::shared_ptr<result_type> dst2, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)> vertical_merge_task)
         : boost::asynchronous::continuation_task<void>("vertical_tiling_task")
         , m_src1(std::move(src1))
         , m_src2(std::move(src2))
@@ -194,7 +186,6 @@ struct vertical_tiling_task : public boost::asynchronous::continuation_task<void
         , m_to_x(to_x)
         , m_from_y(from_y)
         , m_to_y(to_y)
-        , m_algorithm(algorithm)
         , m_parameters(std::move(parameters))
         , m_create_intermediate_outputs_func(std::move(create_intermediate_outputs_fct))
         , m_tile_algorithm_task(std::move(tile_algorithm_task))
@@ -233,7 +224,6 @@ struct vertical_tiling_task : public boost::asynchronous::continuation_task<void
                     m_to_x,
                     m_from_y,
                     m_to_y,
-                    m_algorithm,
                     std::move(m_parameters),
                     std::move(m_create_intermediate_outputs_func),
                     std::move(m_tile_algorithm_task),
@@ -258,7 +248,6 @@ struct vertical_tiling_task : public boost::asynchronous::continuation_task<void
                 ,to_x = m_to_x
                 ,from_y = m_from_y
                 ,to_y = m_from_y
-                ,algorithm = m_algorithm
                 ,parameters = m_parameters
                 ,vertical_merge_task = m_vertical_merge_task](auto cont_res) mutable
                 {
@@ -283,7 +272,7 @@ struct vertical_tiling_task : public boost::asynchronous::continuation_task<void
                                         task_res.set_exception(std::current_exception());
                                     }
                                 },
-                                vertical_merge_task(dst1, dst2, from_x, to_x, from_y, to_y, algorithm, std::move(parameters))
+                                vertical_merge_task(dst1, dst2, from_x, to_x, from_y, to_y, std::move(parameters))
                             );
                         }
                         else
@@ -304,7 +293,6 @@ struct vertical_tiling_task : public boost::asynchronous::continuation_task<void
                     m_to_x,
                     m_from_y,
                     half - 1,
-                    m_algorithm,
                     m_parameters,
                     m_create_intermediate_outputs_func,
                     m_tile_algorithm_task,
@@ -319,7 +307,6 @@ struct vertical_tiling_task : public boost::asynchronous::continuation_task<void
                     m_to_x,
                     half,
                     m_to_y,
-                    m_algorithm,
                     m_parameters,
                     m_create_intermediate_outputs_func,
                     m_tile_algorithm_task,
@@ -341,16 +328,14 @@ private:
     std::size_t m_from_y;
     std::size_t m_to_y;
 
-    cvpg::imageproc::algorithms::tiling_algorithms m_algorithm;
-
     cvpg::imageproc::algorithms::tiling_parameters m_parameters;
 
     std::function<std::tuple<std::shared_ptr<result_type>, std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst)> m_create_intermediate_outputs_func;
 
-    std::function<void(std::shared_ptr<input_type> src1, std::shared_ptr<input_type> src2, std::shared_ptr<result_type> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)> m_tile_algorithm_task;
+    std::function<void(std::shared_ptr<input_type> src1, std::shared_ptr<input_type> src2, std::shared_ptr<result_type> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)> m_tile_algorithm_task;
 
-    std::function<boost::asynchronous::detail::callback_continuation<std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst1, std::shared_ptr<result_type> dst2, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)> m_horizontal_merge_task;
-    std::function<boost::asynchronous::detail::callback_continuation<std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst1, std::shared_ptr<result_type> dst2, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_algorithms algorithm, cvpg::imageproc::algorithms::tiling_parameters parameters)> m_vertical_merge_task;
+    std::function<boost::asynchronous::detail::callback_continuation<std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst1, std::shared_ptr<result_type> dst2, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)> m_horizontal_merge_task;
+    std::function<boost::asynchronous::detail::callback_continuation<std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst1, std::shared_ptr<result_type> dst2, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)> m_vertical_merge_task;
 };
 
 template<class functor>
@@ -409,7 +394,6 @@ struct tiling_task : public boost::asynchronous::continuation_task<typename func
                 image1->width() - 1,
                 0,
                 image1->height() - 1,
-                m_func.algorithm,
                 std::move(m_func.parameters),
                 std::move(create_intermediate_outputs_fct),
                 std::move(m_func.tile_algorithm_task),
