@@ -22,4 +22,5 @@ set_target_properties(${target}
     PROPERTIES
         ${DEFAULT_PROJECT_OPTIONS}
         PREFIX "cvpg-"
+        ${BUILDTYPE}_POSTFIX "${TARGET_PREFIX}"
 )

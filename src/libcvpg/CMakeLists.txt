@@ -89,6 +89,7 @@ set_target_properties(${target}
     PROPERTIES
         ${DEFAULT_PROJECT_OPTIONS}
         PREFIX ""
+        ${BUILDTYPE}_POSTFIX "${TARGET_PREFIX}"
         VERSION ${CVPG_VERSION}
         SOVERSION ${CVPG_VERSION_MAJOR}
 )

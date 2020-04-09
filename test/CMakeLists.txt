@@ -22,4 +22,10 @@ target_link_libraries(${target}
         dl
 )
 
+set_target_properties(${target}
+    PROPERTIES
+        ${DEFAULT_PROJECT_OPTIONS}
+        ${BUILDTYPE}_POSTFIX "${TARGET_PREFIX}"
+)
+
 add_test(NAME image COMMAND image)
