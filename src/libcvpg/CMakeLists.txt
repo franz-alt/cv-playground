@@ -4,6 +4,7 @@ message(STATUS "library ${target}")
 
 set(headers
     core/exception.hpp
+    core/histogram.hpp
     core/image.hpp
     imageproc/algorithms/convert_to_gray.hpp
     imageproc/algorithms/tiling.hpp
@@ -38,6 +39,7 @@ set(headers
 
 set(sources
     core/exception.cpp
+    core/histogram.cpp
     core/image.cpp
     imageproc/algorithms/convert_to_gray.cpp
     imageproc/algorithms/tiling/convert_to_gray.cpp
