@@ -5,6 +5,7 @@ message(STATUS "${target}")
 set(sources
     main.cpp
     core/image.cpp
+    imageproc/algorithms/histogram_equalization.cpp
     imageproc/scripting/image_processor.cpp
 )
 
