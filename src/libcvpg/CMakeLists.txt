@@ -10,9 +10,11 @@ set(headers
     imageproc/algorithms/tiling.hpp
     imageproc/algorithms/tiling/convert_to_gray.hpp
     imageproc/algorithms/tiling/diff.hpp
+    imageproc/algorithms/tiling/histogram.hpp
     imageproc/algorithms/tiling/mean.hpp
     imageproc/algorithms/tiling/multiply_add.hpp
     imageproc/algorithms/tiling/parameters.hpp
+    imageproc/algorithms/tiling/functors/histogram.hpp
     imageproc/algorithms/tiling/functors/image.hpp
     imageproc/scripting/algorithm_set.hpp
     imageproc/scripting/image_processor.hpp
@@ -44,6 +46,7 @@ set(sources
     imageproc/algorithms/convert_to_gray.cpp
     imageproc/algorithms/tiling/convert_to_gray.cpp
     imageproc/algorithms/tiling/diff.cpp
+    imageproc/algorithms/tiling/histogram.cpp
     imageproc/algorithms/tiling/mean.cpp
     imageproc/algorithms/tiling/multiply_add.cpp
     imageproc/scripting/algorithm_set.cpp
