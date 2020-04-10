@@ -22,6 +22,15 @@ target_link_libraries(${target}
         dl
 )
 
+if(LIST_OF_SANITIZERS)
+    if(NOT "${LIST_OF_SANITIZERS}" STREQUAL "")
+        target_compile_options(${target}
+                               INTERFACE -fsanitize=${LIST_OF_SANITIZERS})
+        target_link_libraries(${target}
+                              INTERFACE -fsanitize=${LIST_OF_SANITIZERS})
+    endif()
+endif()
+
 set_target_properties(${target}
     PROPERTIES
         ${DEFAULT_PROJECT_OPTIONS}

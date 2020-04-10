@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.12)
 
 set(CVPG_VERSION_MAJOR 0)
 set(CVPG_VERSION_MINOR 1)
@@ -29,6 +29,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 option(BUILD_APPS "Build applications." ON)
 option(BUILD_SHARED_LIBS "Build shared instead of static libraries." ON)
 option(BUILD_TESTS "Build module tests." ON)
+
+# sanitizer handling
+include(cmake/sanitizers.cmake)
 
 if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     # update submodules as needed
