@@ -109,6 +109,8 @@ image_gray_8bit read_gray_8bit_png(std::string const & filename)
         memcpy(&img.data(0).get()[y * width * sizeof(std::uint8_t)], row_pointers[y], width * sizeof(std::uint8_t));
     }
 
+    png_destroy_info_struct(png, &info);
+
     free(row_pointers);
 
     return img;
@@ -158,6 +160,8 @@ image_rgb_8bit read_rgb_8bit_png(std::string const & filename)
 
     if (setjmp(png_jmpbuf(png)))
     {
+        png_destroy_info_struct(png, &info);
+
         fclose(fp);
 
         throw io_exception("file is not a PNG image");
@@ -176,6 +180,8 @@ image_rgb_8bit read_rgb_8bit_png(std::string const & filename)
 
     if (bit_depth != 8)
     {
+        png_destroy_info_struct(png, &info);
+
         fclose(fp);
 
         throw io_exception("invalid bit depth");
@@ -183,6 +189,8 @@ image_rgb_8bit read_rgb_8bit_png(std::string const & filename)
 
     if (color_type != PNG_COLOR_TYPE_RGB)
     {
+        png_destroy_info_struct(png, &info);
+
         fclose(fp);
 
         throw io_exception("invalid color type");
@@ -221,6 +229,8 @@ image_rgb_8bit read_rgb_8bit_png(std::string const & filename)
             img.data(2).get()[y * width * sizeof(std::uint8_t) + x] = row_pointers[y][x * 3 + 2];
         }
     }
+
+    png_destroy_info_struct(png, &info);
 
     free(row_pointers);
 
@@ -271,6 +281,8 @@ std::tuple<std::uint8_t, std::any> read_png(std::string const & filename)
 
     if (setjmp(png_jmpbuf(png)))
     {
+        png_destroy_info_struct(png, &info);
+
         fclose(fp);
 
         throw io_exception("file is not a PNG image");
@@ -289,6 +301,8 @@ std::tuple<std::uint8_t, std::any> read_png(std::string const & filename)
 
     if (bit_depth != 8)
     {
+        png_destroy_info_struct(png, &info);
+
         fclose(fp);
 
         throw io_exception("invalid bit depth");
@@ -306,6 +320,8 @@ std::tuple<std::uint8_t, std::any> read_png(std::string const & filename)
     }
     else
     {
+        png_destroy_info_struct(png, &info);
+
         fclose(fp);
 
         throw io_exception("invalid color type (only grayscale or RGB images are supported)");
@@ -365,6 +381,13 @@ std::tuple<std::uint8_t, std::any> read_png(std::string const & filename)
         image = std::any(std::move(img));
     }
 
+    for (int y = 0; y < height; ++y)
+    {
+        free(row_pointers[y]);
+    }
+
+    png_destroy_info_struct(png, &info);
+
     free(row_pointers);
 
     return { channels, std::move(image) };
@@ -412,7 +435,6 @@ void write_png(image_gray_8bit const & img, std::string const & filename)
 
     for (int y = 0; y < img.height(); ++y)
     {
-        row_pointers[y] = (png_byte*)malloc(/*png_get_rowbytes(png_ptr, info_ptr)*/img.width() * sizeof(png_byte));
         row_pointers[y] = img.data(0).get() + y * img.width();
     }
 
@@ -420,7 +442,10 @@ void write_png(image_gray_8bit const & img, std::string const & filename)
     png_set_rows(png_ptr, info_ptr, row_pointers);
     png_write_png(png_ptr, info_ptr, 1, NULL);
 
+    png_destroy_info_struct(png_ptr, &info_ptr);
+
     free(row_pointers);
+
     fclose(fp);
 }
 
@@ -480,7 +505,10 @@ void write_png(image_rgb_8bit const & img, std::string const & filename)
     png_set_rows(png_ptr, info_ptr, row_pointers);
     png_write_png(png_ptr, info_ptr, 1, NULL);
 
+    png_destroy_info_struct(png_ptr, &info_ptr);
+
     free(row_pointers);
+
     fclose(fp);
 }
 
