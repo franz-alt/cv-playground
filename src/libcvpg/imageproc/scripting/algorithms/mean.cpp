@@ -33,6 +33,7 @@ struct mean_task :  public boost::asynchronous::continuation_task<std::shared_pt
             auto id = std::any_cast<std::uint32_t>(m_item.arguments.at(0).value());
             auto width = std::any_cast<std::uint32_t>(m_item.arguments.at(1).value());
             auto height = std::any_cast<std::uint32_t>(m_item.arguments.at(2).value());
+            auto border_mode_str = std::any_cast<std::string>(m_item.arguments.at(3).value());
 
             auto input = m_image_processor->load(m_context_id, id);
             auto parameters = m_image_processor->parameters();
@@ -58,6 +59,8 @@ struct mean_task :  public boost::asynchronous::continuation_task<std::shared_pt
                 }
             }
 
+            auto border_mode = cvpg::imageproc::algorithms::to_border_mode(border_mode_str);
+
             if (input.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image)
             {
                 auto image = std::any_cast<cvpg::image_gray_8bit>(input.value());
@@ -74,6 +77,7 @@ struct mean_task :  public boost::asynchronous::continuation_task<std::shared_pt
                 tf.parameters.cutoff_y = cutoff_y;
                 tf.parameters.signed_integer_numbers.push_back(width); // filter width
                 tf.parameters.signed_integer_numbers.push_back(height); // filter height
+                tf.parameters.border_mode = border_mode;
 
                 tf.tile_algorithm_task = [](std::shared_ptr<cvpg::image_gray_8bit> src1, std::shared_ptr<cvpg::image_gray_8bit> /*src2*/, std::shared_ptr<cvpg::image_gray_8bit> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
                 {
@@ -115,6 +119,7 @@ struct mean_task :  public boost::asynchronous::continuation_task<std::shared_pt
                 tf.parameters.cutoff_y = cutoff_y;
                 tf.parameters.signed_integer_numbers.push_back(width); // filter width
                 tf.parameters.signed_integer_numbers.push_back(height); // filter height
+                tf.parameters.border_mode = border_mode;
 
                 tf.tile_algorithm_task = [](std::shared_ptr<cvpg::image_rgb_8bit> src1, std::shared_ptr<cvpg::image_rgb_8bit> /*src2*/, std::shared_ptr<cvpg::image_rgb_8bit> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
                 {
@@ -199,13 +204,35 @@ std::vector<std::vector<parameter> > mean::parameters() const
     {
         {
             parameter("image", "input image", "", parameter::item::item_type::grayscale_8_bit_image),
-            parameter("filter_width", "filter width", "pixels", parameter::item::item_type::unsigned_integer, in_range<std::uint16_t>(1, 65535)),
-            parameter("filter_height", "filter height", "pixels", parameter::item::item_type::unsigned_integer, in_range<std::uint16_t>(1, 65535))
+            parameter("filter_width", "filter width", "pixels", parameter::item::item_type::unsigned_integer, [min_value = 3, max_value = 65535](std::any element)
+                                                                                                              {
+                                                                                                                  std::int16_t value = std::any_cast<std::int16_t>(element);
+
+                                                                                                                  return (value >= min_value && value <= max_value) && (value % 2 == 1);
+                                                                                                              }),
+            parameter("filter_height", "filter height", "pixels", parameter::item::item_type::unsigned_integer, [min_value = 3, max_value = 65535](std::any element)
+                                                                                                                {
+                                                                                                                    std::int16_t value = std::any_cast<std::int16_t>(element);
+
+                                                                                                                    return (value >= min_value && value <= max_value) && (value % 2 == 1);
+                                                                                                                }),
+            parameter("border_mode", "border mode", "", parameter::item::item_type::characters)
         },
         {
             parameter("image", "input image", "", parameter::item::item_type::rgb_8_bit_image),
-            parameter("filter_width", "filter width", "pixels", parameter::item::item_type::unsigned_integer, in_range<std::uint16_t>(1, 65535)),
-            parameter("filter_height", "filter height", "pixels", parameter::item::item_type::unsigned_integer, in_range<std::uint16_t>(1, 65535))
+            parameter("filter_width", "filter width", "pixels", parameter::item::item_type::unsigned_integer, [min_value = 3, max_value = 65535](std::any element)
+                                                                                                              {
+                                                                                                                  std::int16_t value = std::any_cast<std::int16_t>(element);
+
+                                                                                                                  return (value >= min_value && value <= max_value) && (value % 2 == 1);
+                                                                                                              }),
+            parameter("filter_height", "filter height", "pixels", parameter::item::item_type::unsigned_integer, [min_value = 3, max_value = 65535](std::any element)
+                                                                                                                {
+                                                                                                                    std::int16_t value = std::any_cast<std::int16_t>(element);
+
+                                                                                                                    return (value >= min_value && value <= max_value) && (value % 2 == 1);
+                                                                                                                }),
+            parameter("border_mode", "border mode", "", parameter::item::item_type::characters)
         }
     });
 }
@@ -227,77 +254,160 @@ std::vector<std::string> mean::check_parameters(std::vector<std::any> parameters
 
 void mean::on_parse(std::shared_ptr<detail::parser> parser) const
 {
-    std::function<std::uint32_t(std::uint32_t, std::uint32_t, std::uint32_t)> fct =
-        [parser](std::uint32_t image_id, std::uint32_t width, std::uint32_t height)
-        {
-            std::uint32_t result_id = 0;
-
-            // find image
-            if (!!parser)
+    // all parameters
+    {
+        std::function<std::uint32_t(std::uint32_t, std::uint32_t, std::uint32_t, std::string)> fct =
+            [parser](std::uint32_t image_id, std::uint32_t width, std::uint32_t height, std::string border_mode)
             {
-                auto image = parser->find_item(image_id);
+                std::uint32_t result_id = 0;
 
-                if (image.arguments.size() != 0 && image.arguments.front().type() != scripting::item::types::invalid)
+                // find image
+                if (!!parser)
                 {
-                    switch (image.arguments.front().type())
+                    auto image = parser->find_item(image_id);
+
+                    if (image.arguments.size() != 0 && image.arguments.front().type() != scripting::item::types::invalid)
                     {
-                        case scripting::item::types::grayscale_8_bit_image:
+                        switch (image.arguments.front().type())
                         {
-                            detail::parser::item result_item
+                            case scripting::item::types::grayscale_8_bit_image:
                             {
-                                "mean",
+                                detail::parser::item result_item
                                 {
-                                    scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
-                                    scripting::item(scripting::item::types::unsigned_integer, width),
-                                    scripting::item(scripting::item::types::unsigned_integer, height)
-                                }
-                            };
+                                    "mean",
+                                    {
+                                        scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
+                                        scripting::item(scripting::item::types::unsigned_integer, width),
+                                        scripting::item(scripting::item::types::unsigned_integer, height),
+                                        scripting::item(scripting::item::types::characters, border_mode)
+                                    }
+                                };
 
-                            result_id = parser->register_item(std::move(result_item));
+                                result_id = parser->register_item(std::move(result_item));
 
-                            break;
+                                break;
+                            }
+
+                            case scripting::item::types::rgb_8_bit_image:
+                            {
+                                detail::parser::item result_item
+                                {
+                                    "mean",
+                                    {
+                                        scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
+                                        scripting::item(scripting::item::types::unsigned_integer, width),
+                                        scripting::item(scripting::item::types::unsigned_integer, height),
+                                        scripting::item(scripting::item::types::characters, border_mode)
+                                    }
+                                };
+
+                                result_id = parser->register_item(std::move(result_item));
+
+                                break;
+                            }
+
+                            default:
+                            {
+                                // TODO error handling
+
+                                break;
+                            }
                         }
 
-                        case scripting::item::types::rgb_8_bit_image:
+                        if (result_id != 0)
                         {
-                            detail::parser::item result_item
-                            {
-                                "mean",
-                                {
-                                    scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
-                                    scripting::item(scripting::item::types::unsigned_integer, width),
-                                    scripting::item(scripting::item::types::unsigned_integer, height)
-                                }
-                            };
-
-                            result_id = parser->register_item(std::move(result_item));
-
-                            break;
-                        }
-
-                        default:
-                        {
-                            // TODO error handling
-
-                            break;
+                            parser->register_link(image_id, result_id);
                         }
                     }
-
-                    if (result_id != 0)
+                    else
                     {
-                        parser->register_link(image_id, result_id);
+                        // TODO error handling
                     }
                 }
-                else
+
+                return result_id;
+            };
+
+        parser->register_specification(name(), std::move(fct));
+    }
+
+    // default for border mode
+    {
+        std::function<std::uint32_t(std::uint32_t, std::uint32_t, std::uint32_t)> fct =
+            [parser](std::uint32_t image_id, std::uint32_t width, std::uint32_t height)
+            {
+                std::uint32_t result_id = 0;
+                std::string border_mode = "constant";
+
+                // find image
+                if (!!parser)
                 {
-                    // TODO error handling
+                    auto image = parser->find_item(image_id);
+
+                    if (image.arguments.size() != 0 && image.arguments.front().type() != scripting::item::types::invalid)
+                    {
+                        switch (image.arguments.front().type())
+                        {
+                            case scripting::item::types::grayscale_8_bit_image:
+                            {
+                                detail::parser::item result_item
+                                {
+                                    "mean",
+                                    {
+                                        scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
+                                        scripting::item(scripting::item::types::unsigned_integer, width),
+                                        scripting::item(scripting::item::types::unsigned_integer, height),
+                                        scripting::item(scripting::item::types::characters, border_mode)
+                                    }
+                                };
+
+                                result_id = parser->register_item(std::move(result_item));
+
+                                break;
+                            }
+
+                            case scripting::item::types::rgb_8_bit_image:
+                            {
+                                detail::parser::item result_item
+                                {
+                                    "mean",
+                                    {
+                                        scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
+                                        scripting::item(scripting::item::types::unsigned_integer, width),
+                                        scripting::item(scripting::item::types::unsigned_integer, height),
+                                        scripting::item(scripting::item::types::characters, border_mode)
+                                    }
+                                };
+
+                                result_id = parser->register_item(std::move(result_item));
+
+                                break;
+                            }
+
+                            default:
+                            {
+                                // TODO error handling
+
+                                break;
+                            }
+                        }
+
+                        if (result_id != 0)
+                        {
+                            parser->register_link(image_id, result_id);
+                        }
+                    }
+                    else
+                    {
+                        // TODO error handling
+                    }
                 }
-            }
 
-            return result_id;
-        };
+                return result_id;
+            };
 
-    parser->register_specification(name(), std::move(fct));
+        parser->register_specification(name(), std::move(fct));
+    }
 }
 
 void mean::on_compile(std::uint32_t item_id, std::shared_ptr<detail::compiler> compiler) const
