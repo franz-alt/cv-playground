@@ -6,6 +6,17 @@
 
 namespace cvpg {
 
+class invalid_parameter_exception : public std::exception
+{
+public:
+    invalid_parameter_exception(std::string message);
+
+    virtual const char * what() const throw() override;
+
+private:
+    std::string m_message;
+};
+
 class io_exception : public std::exception
 {
 public:

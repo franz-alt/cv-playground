@@ -6,6 +6,7 @@ set(headers
     core/exception.hpp
     core/histogram.hpp
     core/image.hpp
+    imageproc/algorithms/border_mode.hpp
     imageproc/algorithms/convert_to_gray.hpp
     imageproc/algorithms/histogram_equalization.hpp
     imageproc/algorithms/tiling.hpp
@@ -15,6 +16,7 @@ set(headers
     imageproc/algorithms/tiling/mean.hpp
     imageproc/algorithms/tiling/multiply_add.hpp
     imageproc/algorithms/tiling/parameters.hpp
+    imageproc/algorithms/tiling/sobel.hpp
     imageproc/algorithms/tiling/functors/histogram.hpp
     imageproc/algorithms/tiling/functors/image.hpp
     imageproc/scripting/algorithm_set.hpp
@@ -28,6 +30,7 @@ set(headers
     imageproc/scripting/algorithms/mean.hpp
     imageproc/scripting/algorithms/multiply_add.hpp
     imageproc/scripting/algorithms/parameter.hpp
+    imageproc/scripting/algorithms/sobel.hpp
     imageproc/scripting/detail/compiler.hpp
     imageproc/scripting/detail/container_node.hpp
     imageproc/scripting/detail/graph.hpp
@@ -45,6 +48,7 @@ set(sources
     core/exception.cpp
     core/histogram.cpp
     core/image.cpp
+    imageproc/algorithms/border_mode.cpp
     imageproc/algorithms/convert_to_gray.cpp
     imageproc/algorithms/histogram_equalization.cpp
     imageproc/algorithms/tiling/convert_to_gray.cpp
@@ -52,6 +56,7 @@ set(sources
     imageproc/algorithms/tiling/histogram.cpp
     imageproc/algorithms/tiling/mean.cpp
     imageproc/algorithms/tiling/multiply_add.cpp
+    imageproc/algorithms/tiling/sobel.cpp
     imageproc/scripting/algorithm_set.cpp
     imageproc/scripting/image_processor.cpp
     imageproc/scripting/item.cpp
@@ -62,6 +67,7 @@ set(sources
     imageproc/scripting/algorithms/mean.cpp
     imageproc/scripting/algorithms/multiply_add.cpp
     imageproc/scripting/algorithms/parameter.cpp
+    imageproc/scripting/algorithms/sobel.cpp
     imageproc/scripting/detail/compiler.cpp
     imageproc/scripting/detail/container_node.cpp
     imageproc/scripting/detail/graph.cpp

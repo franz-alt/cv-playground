@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <vector>
 
+#include <libcvpg/imageproc/algorithms/border_mode.hpp>
+
 namespace cvpg { namespace imageproc { namespace algorithms {
 
 struct tiling_parameters
@@ -16,6 +18,8 @@ struct tiling_parameters
 
     std::vector<double> real_numbers;
     std::vector<std::int32_t> signed_integer_numbers;
+
+    cvpg::imageproc::algorithms::border_mode border_mode = cvpg::imageproc::algorithms::border_mode::ignore;
 };
 
 }}} // namespace cvpg::imageproc::algoritms
