@@ -2,7 +2,7 @@
 
 namespace {
 
-void sobel_gray_8bit_kernel_3x3_ignore_border(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, std::size_t image_width, cvpg::imageproc::algorithms::sobel_operation_mode mode)
+void sobel_gray_8bit_kernel_3x3_ignore_border(std::uint8_t * src, std::uint8_t * dst, std::int32_t from_x, std::int32_t to_x, std::int32_t from_y, std::int32_t to_y, std::int32_t image_width, cvpg::imageproc::algorithms::sobel_operation_mode mode)
 {
     std::uint8_t * src_line_m1 = nullptr;  // begin of previous line in source image
     std::uint8_t * src_line    = nullptr;  // begin of current line in source image
@@ -24,11 +24,11 @@ void sobel_gray_8bit_kernel_3x3_ignore_border(std::uint8_t * src, std::uint8_t *
         //      | s20 s21 s22 |
         //
 
-        for (std::size_t y = from_y; y < to_y; ++y)
+        for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::size_t offset_ym1 = image_width * (y - 1);   // offset previous line
-            const std::size_t offset_y0  = image_width * y;         // offset current line
-            const std::size_t offset_yp1 = image_width * (y + 1);   // offset next line
+            const std::int32_t offset_ym1 = image_width * (y - 1);   // offset previous line
+            const std::int32_t offset_y0  = image_width * y;         // offset current line
+            const std::int32_t offset_yp1 = image_width * (y + 1);   // offset next line
 
             src_line_m1 = src + offset_ym1;
             src_line    = src + offset_y0;
@@ -36,7 +36,7 @@ void sobel_gray_8bit_kernel_3x3_ignore_border(std::uint8_t * src, std::uint8_t *
 
             dst_line = dst + offset_y0;
 
-            for (std::size_t x = from_x; x < to_x; ++x)
+            for (std::int32_t x = from_x; x < to_x; ++x)
             {
                 const std::int16_t d00 = src_line_m1[x - 1];
                 const std::int16_t d02 = src_line_m1[x + 1];
@@ -76,11 +76,11 @@ void sobel_gray_8bit_kernel_3x3_ignore_border(std::uint8_t * src, std::uint8_t *
         //      | s20 s21 s22 |
         //
 
-        for (std::size_t y = from_y; y < to_y; ++y)
+        for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::size_t offset_ym1 = image_width * (y - 1);   // offset previous line
-            const std::size_t offset_y0  = image_width * y;         // offset current line
-            const std::size_t offset_yp1 = image_width * (y + 1);   // offset next line
+            const std::int32_t offset_ym1 = image_width * (y - 1);   // offset previous line
+            const std::int32_t offset_y0  = image_width * y;         // offset current line
+            const std::int32_t offset_yp1 = image_width * (y + 1);   // offset next line
 
             src_line_m1 = src + offset_ym1;
             src_line    = src + offset_y0;
@@ -88,7 +88,7 @@ void sobel_gray_8bit_kernel_3x3_ignore_border(std::uint8_t * src, std::uint8_t *
 
             dst_line = dst + offset_y0;
 
-            for (std::size_t x = from_x; x < to_x; ++x)
+            for (std::int32_t x = from_x; x < to_x; ++x)
             {
                 const std::int16_t d00 = src_line_m1[x - 1];
                 const std::int16_t d01 = src_line_m1[x] << 1; // 's01' * 2
@@ -116,7 +116,7 @@ void sobel_gray_8bit_kernel_3x3_ignore_border(std::uint8_t * src, std::uint8_t *
     }
 }
 
-void sobel_gray_8bit_kernel_3x3_constant_border(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, std::size_t image_width, std::size_t image_height, cvpg::imageproc::algorithms::sobel_operation_mode mode)
+void sobel_gray_8bit_kernel_3x3_constant_border(std::uint8_t * src, std::uint8_t * dst, std::int32_t from_x, std::int32_t to_x, std::int32_t from_y, std::int32_t to_y, std::int32_t image_width, std::int32_t image_height, cvpg::imageproc::algorithms::sobel_operation_mode mode)
 {
     std::uint8_t * src_line_m1 = nullptr;  // begin of previous line in source image
     std::uint8_t * src_line    = nullptr;  // begin of current line in source image
@@ -138,11 +138,11 @@ void sobel_gray_8bit_kernel_3x3_constant_border(std::uint8_t * src, std::uint8_t
         //      | s20 s21 s22 |
         //
 
-        for (std::size_t y = from_y; y < to_y; ++y)
+        for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::size_t offset_ym1 = image_width * (y - 1);   // offset previous line
-            const std::size_t offset_y0  = image_width * y;         // offset current line
-            const std::size_t offset_yp1 = image_width * (y + 1);   // offset next line
+            const std::int32_t offset_ym1 = image_width * (y - 1);   // offset previous line
+            const std::int32_t offset_y0  = image_width * y;         // offset current line
+            const std::int32_t offset_yp1 = image_width * (y + 1);   // offset next line
 
             src_line_m1 = y != 0 ? (src + offset_ym1) : nullptr;
             src_line    = src + offset_y0;
@@ -150,7 +150,7 @@ void sobel_gray_8bit_kernel_3x3_constant_border(std::uint8_t * src, std::uint8_t
 
             dst_line = dst + offset_y0;
 
-            for (std::size_t x = from_x; x < to_x; ++x)
+            for (std::int32_t x = from_x; x < to_x; ++x)
             {
                 const std::int16_t d00 = src_line_m1 != nullptr ? (x != 0 ? src_line_m1[x - 1] : 0) : 0;
                 const std::int16_t d02 = src_line_m1 != nullptr ? (x != (image_width - 1) ? src_line_m1[x + 1] : 0) : 0;
@@ -190,11 +190,11 @@ void sobel_gray_8bit_kernel_3x3_constant_border(std::uint8_t * src, std::uint8_t
         //      | s20 s21 s22 |
         //
 
-        for (std::size_t y = from_y; y < to_y; ++y)
+        for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::size_t offset_ym1 = image_width * (y - 1);   // offset previous line
-            const std::size_t offset_y0  = image_width * y;         // offset current line
-            const std::size_t offset_yp1 = image_width * (y + 1);   // offset next line
+            const std::int32_t offset_ym1 = image_width * (y - 1);   // offset previous line
+            const std::int32_t offset_y0  = image_width * y;         // offset current line
+            const std::int32_t offset_yp1 = image_width * (y + 1);   // offset next line
 
             src_line_m1 = y != 0 ? (src + offset_ym1) : nullptr;
             src_line    = src + offset_y0;
@@ -202,7 +202,7 @@ void sobel_gray_8bit_kernel_3x3_constant_border(std::uint8_t * src, std::uint8_t
 
             dst_line = dst + offset_y0;
 
-            for (std::size_t x = from_x; x < to_x; ++x)
+            for (std::int32_t x = from_x; x < to_x; ++x)
             {
                 const std::int16_t d00 = src_line_m1 != nullptr ? (x != 0 ? src_line_m1[x - 1] : 0) : 0;
                 const std::int16_t d01 = src_line_m1 != nullptr ? (src_line_m1[x] << 1) : 0; // 's01' * 2
@@ -230,7 +230,7 @@ void sobel_gray_8bit_kernel_3x3_constant_border(std::uint8_t * src, std::uint8_t
     }
 }
 
-void sobel_gray_8bit_kernel_3x3_mirror_border(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, std::size_t image_width, std::size_t image_height, cvpg::imageproc::algorithms::sobel_operation_mode mode)
+void sobel_gray_8bit_kernel_3x3_mirror_border(std::uint8_t * src, std::uint8_t * dst, std::int32_t from_x, std::int32_t to_x, std::int32_t from_y, std::int32_t to_y, std::int32_t image_width, std::int32_t image_height, cvpg::imageproc::algorithms::sobel_operation_mode mode)
 {
     std::uint8_t * src_line_m1 = nullptr;  // begin of previous line in source image
     std::uint8_t * src_line    = nullptr;  // begin of current line in source image
@@ -252,11 +252,11 @@ void sobel_gray_8bit_kernel_3x3_mirror_border(std::uint8_t * src, std::uint8_t *
         //      | s20 s21 s22 |
         //
 
-        for (std::size_t y = from_y; y < to_y; ++y)
+        for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::size_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));     // offset previous line
-            const std::size_t offset_y0  = image_width * y;                                                             // offset current line
-            const std::size_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                     // offset next line
+            const std::int32_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));     // offset previous line
+            const std::int32_t offset_y0  = image_width * y;                                                             // offset current line
+            const std::int32_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                     // offset next line
 
             src_line_m1 = src + offset_ym1;
             src_line    = src + offset_y0;
@@ -264,7 +264,7 @@ void sobel_gray_8bit_kernel_3x3_mirror_border(std::uint8_t * src, std::uint8_t *
 
             dst_line = dst + offset_y0;
 
-            for (std::size_t x = from_x; x < to_x; ++x)
+            for (std::int32_t x = from_x; x < to_x; ++x)
             {
                 const std::int16_t d00 = src_line_m1[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d02 = src_line_m1[x != (image_width - 1) ? (x + 1) : 0];
@@ -304,11 +304,11 @@ void sobel_gray_8bit_kernel_3x3_mirror_border(std::uint8_t * src, std::uint8_t *
         //      | s20 s21 s22 |
         //
 
-        for (std::size_t y = from_y; y < to_y; ++y)
+        for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::size_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));     // offset previous line
-            const std::size_t offset_y0  = image_width * y;                                                             // offset current line
-            const std::size_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                     // offset next line
+            const std::int32_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));     // offset previous line
+            const std::int32_t offset_y0  = image_width * y;                                                             // offset current line
+            const std::int32_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                     // offset next line
 
             src_line_m1 = src + offset_ym1;
             src_line    = src + offset_y0;
@@ -316,7 +316,7 @@ void sobel_gray_8bit_kernel_3x3_mirror_border(std::uint8_t * src, std::uint8_t *
 
             dst_line = dst + offset_y0;
 
-            for (std::size_t x = from_x; x < to_x; ++x)
+            for (std::int32_t x = from_x; x < to_x; ++x)
             {
                 const std::int16_t d00 = src_line_m1[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d01 = src_line_m1[x] << 1; // 's01' * 2
@@ -344,7 +344,7 @@ void sobel_gray_8bit_kernel_3x3_mirror_border(std::uint8_t * src, std::uint8_t *
     }
 }
 
-void sobel_gray_8bit_kernel_5x5_ignore_border(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, std::size_t image_width, cvpg::imageproc::algorithms::sobel_operation_mode mode)
+void sobel_gray_8bit_kernel_5x5_ignore_border(std::uint8_t * src, std::uint8_t * dst, std::int32_t from_x, std::int32_t to_x, std::int32_t from_y, std::int32_t to_y, std::int32_t image_width, cvpg::imageproc::algorithms::sobel_operation_mode mode)
 {
     std::uint8_t * src_line_m2 = nullptr;  // begin of previous previous line in source image
     std::uint8_t * src_line_m1 = nullptr;  // begin of previous line in source image
@@ -372,13 +372,13 @@ void sobel_gray_8bit_kernel_5x5_ignore_border(std::uint8_t * src, std::uint8_t *
         //      | s40 s41 s42 s43 s44 |
         //
 
-        for (std::size_t y = from_y; y < to_y; ++y)
+        for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::size_t offset_ym2 = image_width * (y - 2);   // offset previous previous line
-            const std::size_t offset_ym1 = image_width * (y - 1);   // offset previous line
-            const std::size_t offset_y0  = image_width * y;         // offset current line
-            const std::size_t offset_yp1 = image_width * (y + 1);   // offset next line
-            const std::size_t offset_yp2 = image_width * (y + 2);   // offset next next line
+            const std::int32_t offset_ym2 = image_width * (y - 2);   // offset previous previous line
+            const std::int32_t offset_ym1 = image_width * (y - 1);   // offset previous line
+            const std::int32_t offset_y0  = image_width * y;         // offset current line
+            const std::int32_t offset_yp1 = image_width * (y + 1);   // offset next line
+            const std::int32_t offset_yp2 = image_width * (y + 2);   // offset next next line
 
             src_line_m2 = src + offset_ym2;
             src_line_m1 = src + offset_ym1;
@@ -388,7 +388,7 @@ void sobel_gray_8bit_kernel_5x5_ignore_border(std::uint8_t * src, std::uint8_t *
 
             dst_line = dst + offset_y0;
 
-            for (std::size_t x = from_x; x < to_x; ++x)
+            for (std::int32_t x = from_x; x < to_x; ++x)
             {
                 const std::int16_t d00 = src_line_m2[x - 2] << 1; // 's00' * 2
                 const std::int16_t d01 = src_line_m2[x - 1];
@@ -454,13 +454,13 @@ void sobel_gray_8bit_kernel_5x5_ignore_border(std::uint8_t * src, std::uint8_t *
         //      | s40 s41 s42 s43 s44 |
         //
 
-        for (std::size_t y = from_y; y < to_y; ++y)
+        for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::size_t offset_ym2 = image_width * (y - 2);   // offset previous previous line
-            const std::size_t offset_ym1 = image_width * (y - 1);   // offset previous line
-            const std::size_t offset_y0  = image_width * y;         // offset current line
-            const std::size_t offset_yp1 = image_width * (y + 1);   // offset next line
-            const std::size_t offset_yp2 = image_width * (y + 2);   // offset next next line
+            const std::int32_t offset_ym2 = image_width * (y - 2);   // offset previous previous line
+            const std::int32_t offset_ym1 = image_width * (y - 1);   // offset previous line
+            const std::int32_t offset_y0  = image_width * y;         // offset current line
+            const std::int32_t offset_yp1 = image_width * (y + 1);   // offset next line
+            const std::int32_t offset_yp2 = image_width * (y + 2);   // offset next next line
 
             src_line_m2 = src + offset_ym2;
             src_line_m1 = src + offset_ym1;
@@ -470,7 +470,7 @@ void sobel_gray_8bit_kernel_5x5_ignore_border(std::uint8_t * src, std::uint8_t *
 
             dst_line = dst + offset_y0;
 
-            for (std::size_t x = from_x; x < to_x; ++x)
+            for (std::int32_t x = from_x; x < to_x; ++x)
             {
                 const std::int16_t d00 = src_line_m2[x - 2] << 1; // 's00' * 2
                 const std::int16_t d01 = src_line_m2[x - 1] << 1; // 's01' * 2
@@ -518,7 +518,7 @@ void sobel_gray_8bit_kernel_5x5_ignore_border(std::uint8_t * src, std::uint8_t *
     }
 }
 
-void sobel_gray_8bit_kernel_5x5_constant_border(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, std::size_t image_width, std::size_t image_height, cvpg::imageproc::algorithms::sobel_operation_mode mode)
+void sobel_gray_8bit_kernel_5x5_constant_border(std::uint8_t * src, std::uint8_t * dst, std::int32_t from_x, std::int32_t to_x, std::int32_t from_y, std::int32_t to_y, std::int32_t image_width, std::int32_t image_height, cvpg::imageproc::algorithms::sobel_operation_mode mode)
 {
     std::uint8_t * src_line_m2 = nullptr;  // begin of previous previous line in source image
     std::uint8_t * src_line_m1 = nullptr;  // begin of previous line in source image
@@ -546,13 +546,13 @@ void sobel_gray_8bit_kernel_5x5_constant_border(std::uint8_t * src, std::uint8_t
         //      | s40 s41 s42 s43 s44 |
         //
 
-        for (std::size_t y = from_y; y < to_y; ++y)
+        for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::size_t offset_ym2 = image_width * (y - 2);   // offset previous previous line
-            const std::size_t offset_ym1 = image_width * (y - 1);   // offset previous line
-            const std::size_t offset_y0  = image_width * y;         // offset current line
-            const std::size_t offset_yp1 = image_width * (y + 1);   // offset next line
-            const std::size_t offset_yp2 = image_width * (y + 2);   // offset next next line
+            const std::int32_t offset_ym2 = image_width * (y - 2);   // offset previous previous line
+            const std::int32_t offset_ym1 = image_width * (y - 1);   // offset previous line
+            const std::int32_t offset_y0  = image_width * y;         // offset current line
+            const std::int32_t offset_yp1 = image_width * (y + 1);   // offset next line
+            const std::int32_t offset_yp2 = image_width * (y + 2);   // offset next next line
 
             src_line_m2 = y > 1 ? (src + offset_ym2) : nullptr;
             src_line_m1 = y != 0 ? (src + offset_ym1) : nullptr;
@@ -562,7 +562,7 @@ void sobel_gray_8bit_kernel_5x5_constant_border(std::uint8_t * src, std::uint8_t
 
             dst_line = dst + offset_y0;
 
-            for (std::size_t x = from_x; x < to_x; ++x)
+            for (std::int32_t x = from_x; x < to_x; ++x)
             {
                 const std::int16_t d00 = src_line_m2 != nullptr ? (src_line_m2[x - 2] << 1) : 0; // 's00' * 2
                 const std::int16_t d01 = src_line_m2 != nullptr ? (src_line_m2[x - 1]) : 0;
@@ -628,13 +628,13 @@ void sobel_gray_8bit_kernel_5x5_constant_border(std::uint8_t * src, std::uint8_t
         //      | s40 s41 s42 s43 s44 |
         //
 
-        for (std::size_t y = from_y; y < to_y; ++y)
+        for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::size_t offset_ym2 = image_width * (y - 2);   // offset previous previous line
-            const std::size_t offset_ym1 = image_width * (y - 1);   // offset previous line
-            const std::size_t offset_y0  = image_width * y;         // offset current line
-            const std::size_t offset_yp1 = image_width * (y + 1);   // offset next line
-            const std::size_t offset_yp2 = image_width * (y + 2);   // offset next next line
+            const std::int32_t offset_ym2 = image_width * (y - 2);   // offset previous previous line
+            const std::int32_t offset_ym1 = image_width * (y - 1);   // offset previous line
+            const std::int32_t offset_y0  = image_width * y;         // offset current line
+            const std::int32_t offset_yp1 = image_width * (y + 1);   // offset next line
+            const std::int32_t offset_yp2 = image_width * (y + 2);   // offset next next line
 
             src_line_m2 = y > 1 ? (src + offset_ym2) : nullptr;
             src_line_m1 = y != 0 ? (src + offset_ym1) : nullptr;
@@ -644,7 +644,7 @@ void sobel_gray_8bit_kernel_5x5_constant_border(std::uint8_t * src, std::uint8_t
 
             dst_line = dst + offset_y0;
 
-            for (std::size_t x = from_x; x < to_x; ++x)
+            for (std::int32_t x = from_x; x < to_x; ++x)
             {
                 const std::int16_t d00 = src_line_m2 != nullptr ? (src_line_m2[x - 2] << 1) : 0; // 's00' * 2
                 const std::int16_t d01 = src_line_m2 != nullptr ? (src_line_m2[x - 1] << 1) : 0; // 's01' * 2
@@ -692,7 +692,7 @@ void sobel_gray_8bit_kernel_5x5_constant_border(std::uint8_t * src, std::uint8_t
     }
 }
 
-void sobel_gray_8bit_kernel_5x5_mirror_border(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, std::size_t image_width, std::size_t image_height, cvpg::imageproc::algorithms::sobel_operation_mode mode)
+void sobel_gray_8bit_kernel_5x5_mirror_border(std::uint8_t * src, std::uint8_t * dst, std::int32_t from_x, std::int32_t to_x, std::int32_t from_y, std::int32_t to_y, std::int32_t image_width, std::int32_t image_height, cvpg::imageproc::algorithms::sobel_operation_mode mode)
 {
     std::uint8_t * src_line_m2 = nullptr;  // begin of previous previous line in source image
     std::uint8_t * src_line_m1 = nullptr;  // begin of previous line in source image
@@ -720,13 +720,13 @@ void sobel_gray_8bit_kernel_5x5_mirror_border(std::uint8_t * src, std::uint8_t *
         //      | s40 s41 s42 s43 s44 |
         //
 
-        for (std::size_t y = from_y; y < to_y; ++y)
+        for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::size_t offset_ym2 = y > 1 ? (image_width * (y - 2)) : (image_width * (image_height - (2 - y)));  // offset previous previous line
-            const std::size_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));       // offset previous line
-            const std::size_t offset_y0  = image_width * y;                                                             // offset current line
-            const std::size_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                       // offset next line
-            const std::size_t offset_yp2 = y < (image_height - 2) ? (image_width * (y + 2)) : (2 - y);                  // offset next next line
+            const std::int32_t offset_ym2 = y > 1 ? (image_width * (y - 2)) : (image_width * (image_height - (2 - y)));  // offset previous previous line
+            const std::int32_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));       // offset previous line
+            const std::int32_t offset_y0  = image_width * y;                                                             // offset current line
+            const std::int32_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                       // offset next line
+            const std::int32_t offset_yp2 = y < (image_height - 2) ? (image_width * (y + 2)) : (2 - y);                  // offset next next line
 
             src_line_m2 = src + offset_ym2;
             src_line_m1 = src + offset_ym1;
@@ -736,7 +736,7 @@ void sobel_gray_8bit_kernel_5x5_mirror_border(std::uint8_t * src, std::uint8_t *
 
             dst_line = dst + offset_y0;
 
-            for (std::size_t x = from_x; x < to_x; ++x)
+            for (std::int32_t x = from_x; x < to_x; ++x)
             {
                 const std::int16_t d00 = src_line_m2[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's00' * 2
                 const std::int16_t d01 = src_line_m2[x != 0 ? (x - 1) : (image_width - 1)];
@@ -802,13 +802,13 @@ void sobel_gray_8bit_kernel_5x5_mirror_border(std::uint8_t * src, std::uint8_t *
         //      | s40 s41 s42 s43 s44 |
         //
 
-        for (std::size_t y = from_y; y < to_y; ++y)
+        for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::size_t offset_ym2 = y > 1 ? (image_width * (y - 2)) : (image_width * (image_height - (2 - y)));  // offset previous previous line
-            const std::size_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));       // offset previous line
-            const std::size_t offset_y0  = image_width * y;                                                             // offset current line
-            const std::size_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                       // offset next line
-            const std::size_t offset_yp2 = y < (image_height - 2) ? (image_width * (y + 2)) : (2 - y);                  // offset next next line
+            const std::int32_t offset_ym2 = y > 1 ? (image_width * (y - 2)) : (image_width * (image_height - (2 - y)));  // offset previous previous line
+            const std::int32_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));       // offset previous line
+            const std::int32_t offset_y0  = image_width * y;                                                             // offset current line
+            const std::int32_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                       // offset next line
+            const std::int32_t offset_yp2 = y < (image_height - 2) ? (image_width * (y + 2)) : (2 - y);                  // offset next next line
 
             src_line_m2 = src + offset_ym2;
             src_line_m1 = src + offset_ym1;
@@ -818,7 +818,7 @@ void sobel_gray_8bit_kernel_5x5_mirror_border(std::uint8_t * src, std::uint8_t *
 
             dst_line = dst + offset_y0;
 
-            for (std::size_t x = from_x; x < to_x; ++x)
+            for (std::int32_t x = from_x; x < to_x; ++x)
             {
                 const std::int16_t d00 = src_line_m2[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's00' * 2
                 const std::int16_t d01 = src_line_m2[x != 0 ? (x - 1) : (image_width - 1)] << 1; // 's01' * 2
@@ -872,78 +872,83 @@ namespace cvpg { namespace imageproc { namespace algorithms {
 
 void sobel_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters, sobel_operation_mode mode)
 {
-    const std::size_t image_width = parameters.image_width;
-    const std::size_t image_height = parameters.image_height;
+    std::int32_t from_x_ = static_cast<std::int32_t>(from_x);
+    std::int32_t to_x_ = static_cast<std::int32_t>(to_x);
+    std::int32_t from_y_ = static_cast<std::int32_t>(from_y);
+    std::int32_t to_y_ = static_cast<std::int32_t>(to_y);
+
+    const std::int32_t image_width = static_cast<std::int32_t>(parameters.image_width);
+    const std::int32_t image_height = static_cast<std::int32_t>(parameters.image_height);
 
     const std::int32_t size = parameters.signed_integer_numbers.at(0);
 
     // correct from/to values ; they have to overlap to make sobel work correctly
-    const std::size_t half_size = size >> 1;
+    const std::int32_t half_size = size >> 1;
 
-    if (from_x <= half_size)
+    if (from_x_ <= half_size)
     {
-        from_x = parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore ? half_size : 0;
+        from_x_ = parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore ? half_size : 0;
     }
     else
     {
-        from_x -= half_size;
+        from_x_ -= half_size;
     }
 
-    if (to_x >= (image_width - half_size))
+    if (to_x_ >= (image_width - half_size))
     {
-        to_x = image_width - (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore ? half_size : 0);
+        to_x_ = image_width - (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore ? half_size : 0);
     }
     else
     {
-        to_x += half_size;
+        to_x_ += half_size;
     }
 
-    if (from_y <= half_size)
+    if (from_y_ <= half_size)
     {
-        from_y = parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore ? half_size : 0;
+        from_y_ = parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore ? half_size : 0;
     }
     else
     {
-        from_y -= half_size;
+        from_y_ -= half_size;
     }
 
-    if (to_y >= (image_height - half_size))
+    if (to_y_ >= (image_height - half_size))
     {
-        to_y = image_height - (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore ? half_size : 0);
+        to_y_ = image_height - (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore ? half_size : 0);
     }
     else
     {
-        to_y += half_size;
+        to_y_ += half_size;
     }
 
     if (size == 3)
     {
         if (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore)
         {
-            sobel_gray_8bit_kernel_3x3_ignore_border(src, dst, from_x, to_x, from_y, to_y, image_width, mode);
+            sobel_gray_8bit_kernel_3x3_ignore_border(src, dst, from_x_, to_x_, from_y_, to_y_, image_width, mode);
         }
         else if (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::constant)
         {
-            sobel_gray_8bit_kernel_3x3_constant_border(src, dst, from_x, to_x, from_y, to_y, image_width, image_height, mode);
+            sobel_gray_8bit_kernel_3x3_constant_border(src, dst, from_x_, to_x_, from_y_, to_y_, image_width, image_height, mode);
         }
         else if (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::mirror)
         {
-            sobel_gray_8bit_kernel_3x3_mirror_border(src, dst, from_x, to_x, from_y, to_y, image_width, image_height, mode);
+            sobel_gray_8bit_kernel_3x3_mirror_border(src, dst, from_x_, to_x_, from_y_, to_y_, image_width, image_height, mode);
         }
     }
     else if (size == 5)
     {
         if (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore)
         {
-            sobel_gray_8bit_kernel_5x5_ignore_border(src, dst, from_x, to_x, from_y, to_y, image_width, mode);
+            sobel_gray_8bit_kernel_5x5_ignore_border(src, dst, from_x_, to_x_, from_y_, to_y_, image_width, mode);
         }
         else if (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::constant)
         {
-            sobel_gray_8bit_kernel_5x5_constant_border(src, dst, from_x, to_x, from_y, to_y, image_width, image_height, mode);
+            sobel_gray_8bit_kernel_5x5_constant_border(src, dst, from_x_, to_x_, from_y_, to_y_, image_width, image_height, mode);
         }
         else if (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::mirror)
         {
-            sobel_gray_8bit_kernel_5x5_mirror_border(src, dst, from_x, to_x, from_y, to_y, image_width, image_height, mode);
+            sobel_gray_8bit_kernel_5x5_mirror_border(src, dst, from_x_, to_x_, from_y_, to_y_, image_width, image_height, mode);
         }
     }
     else
