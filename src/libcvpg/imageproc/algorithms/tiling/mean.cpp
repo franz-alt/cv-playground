@@ -1,69 +1,35 @@
 #include <libcvpg/imageproc/algorithms/tiling/mean.hpp>
 
-#include <cstring>
 #include <deque>
 
-namespace cvpg { namespace imageproc { namespace algorithms {
+namespace {
 
-void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
+void mean_gray_8bit_kernel_ignore_border(std::uint8_t * src, std::uint8_t * dst, std::int32_t from_x, std::int32_t to_x, std::int32_t from_y, std::int32_t to_y, std::int32_t image_width, std::int32_t filter_width, std::int32_t filter_height)
 {
-    const std::size_t org_from_x = from_x;
-    const std::size_t org_to_x = to_x;
-
-    const std::size_t org_from_y = from_y;
-    const std::size_t org_to_y = to_y;
-
-    const std::size_t image_width = parameters.image_width;
-    const std::size_t image_height = parameters.image_height;
-
-    const std::uint32_t filter_width = parameters.signed_integer_numbers.at(0);
-    const std::uint32_t filter_height = parameters.signed_integer_numbers.at(1);
-
-    const std::uint32_t half_filter_width = filter_width / 2;
-    const std::uint32_t half_filter_height = filter_height / 2;
-
-    std::deque<std::int32_t> vert;
-
-    const double filter_size_ = 1.0 / (filter_width * filter_height);
-
     std::uint8_t * src_line = nullptr;
     std::uint8_t * dst_line = nullptr;
 
-    // fix from/to values only at image border
-    if (from_x == 0)
-    {
-        from_x += half_filter_width;
-    }
+    const double inv_filter_size = 1.0 / (filter_width * filter_height);
 
-    if (to_x == image_width - 1)
-    {
-        to_x -= half_filter_width;
-    }
+    const std::int32_t half_filter_width = filter_width >> 1;
+    const std::int32_t half_filter_height = filter_height >> 1;
 
-    if (from_y == 0)
-    {
-        from_y += half_filter_height;
-    }
+    std::deque<std::int32_t> vert;
 
-    if (to_y == image_height - 1)
+    for (std::int32_t y = from_y; y < to_y; ++y)
     {
-        to_y -= half_filter_height;
-    }
-
-    for (std::int32_t y = from_y; y <= to_y; ++y)
-    {
-        const std::size_t offset_y = image_width * y;
+        const std::int32_t offset_y = image_width * y;
 
         dst_line = dst + offset_y;
 
         vert.clear();
 
         // fill vector of vertical sums
-        for (std::size_t fx = from_x - half_filter_width; fx <= from_x + half_filter_width; ++fx)
+        for (std::int32_t fx = from_x - half_filter_width; fx <= from_x + half_filter_width; ++fx)
         {
             std::int32_t sum = 0;
 
-            for (std::size_t fy = y - half_filter_height; fy <= y + half_filter_height; ++fy)
+            for (std::int32_t fy = y - half_filter_height; fy <= y + half_filter_height; ++fy)
             {
                 sum += static_cast<std::int32_t>((src + image_width * fy)[fx]);
             }
@@ -78,11 +44,11 @@ void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, 
             hsum += vert[i];
         }
 
-        for (std::size_t x = from_x; x <= to_x; ++x)
+        for (std::int32_t x = from_x; x < to_x; ++x)
         {
             std::int32_t sum = 0;
 
-            for (std::size_t fy = y - half_filter_height; fy <= y + half_filter_height; ++fy)
+            for (std::int32_t fy = y - half_filter_height; fy <= y + half_filter_height; ++fy)
             {
                 sum += static_cast<std::int32_t>((src + image_width * fy)[x + half_filter_width]);
             }
@@ -93,40 +59,227 @@ void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, 
             vert.push_back(sum);
             vert.pop_front();
 
-            dst_line[x] = static_cast<std::uint8_t>(hsum * filter_size_);
+            dst_line[x] = static_cast<std::uint8_t>(hsum * inv_filter_size);
         }
     }
+}
 
-    if (org_from_x == 0)
+void mean_gray_8bit_kernel_constant_border(std::uint8_t * src, std::uint8_t * dst, std::int32_t from_x, std::int32_t to_x, std::int32_t from_y, std::int32_t to_y, std::int32_t image_width, std::int32_t image_height, std::int32_t filter_width, std::int32_t filter_height)
+{
+    std::uint8_t * src_line = nullptr;
+    std::uint8_t * dst_line = nullptr;
+
+    const double inv_filter_size = 1.0 / (filter_width * filter_height);
+
+    const std::int32_t half_filter_width = filter_width >> 1;
+    const std::int32_t half_filter_height = filter_height >> 1;
+
+    std::deque<std::int32_t> vert;
+
+    for (std::int32_t y = from_y; y <= to_y; ++y)
     {
-        for (std::size_t y = org_from_y; y <= org_to_y; ++y)
+        const std::int32_t offset_y = image_width * y;
+
+        dst_line = dst + offset_y;
+
+        vert.clear();
+
+        // fill vector of vertical sums
+        for (std::int32_t fx = from_x - half_filter_width; fx <= from_x + half_filter_width; ++fx)
         {
-            memcpy(dst + y * image_width, dst + y * image_width + half_filter_width + 1, half_filter_width);
+            std::int32_t sum = 0;
+
+            for (std::int32_t fy = y - half_filter_height; fy <= y + half_filter_height; ++fy)
+            {
+                sum += (fy >= 0 && fy < image_height && fx >= 0 && fx < image_width) ? static_cast<std::int32_t>((src + image_width * fy)[fx]) : 0;
+            }
+
+            vert.push_back(sum);
+        }
+
+        std::int32_t hsum = 0;
+
+        for (std::size_t i = 0; i < vert.size(); ++i)
+        {
+            hsum += vert[i];
+        }
+
+        for (std::int32_t x = from_x; x <= to_x; ++x)
+        {
+            std::int32_t sum = 0;
+            std::int32_t x_ = x + half_filter_width;
+
+            for (std::int32_t fy = y - half_filter_height; fy <= y + half_filter_height; ++fy)
+            {
+                sum += (fy >= 0 && fy < image_height && x_ >= 0 && x_ < image_width) ? static_cast<std::int32_t>((src + image_width * fy)[x_]) : 0;
+            }
+
+            hsum += sum;
+            hsum -= vert.front();
+
+            vert.push_back(sum);
+            vert.pop_front();
+
+            dst_line[x] = static_cast<std::uint8_t>(hsum * inv_filter_size);
         }
     }
+}
 
-    if (org_to_x == image_width - 1)
+void mean_gray_8bit_kernel_mirror_border(std::uint8_t * src, std::uint8_t * dst, std::int32_t from_x, std::int32_t to_x, std::int32_t from_y, std::int32_t to_y, std::int32_t image_width, std::int32_t image_height, std::int32_t filter_width, std::int32_t filter_height)
+{
+    std::uint8_t * src_line = nullptr;
+    std::uint8_t * dst_line = nullptr;
+
+    const double inv_filter_size = 1.0 / (filter_width * filter_height);
+
+    const std::int32_t half_filter_width = filter_width >> 1;
+    const std::int32_t half_filter_height = filter_height >> 1;
+
+    std::deque<std::int32_t> vert;
+
+    for (std::int32_t y = from_y; y < to_y; ++y)
     {
-        for (std::size_t y = org_from_y; y <= org_to_y; ++y)
+        const std::size_t offset_y = image_width * y;
+
+        dst_line = dst + offset_y;
+
+        vert.clear();
+
+        // fill vector of vertical sums
+        for (std::int32_t fx = from_x - half_filter_width; fx <= from_x + half_filter_width; ++fx)
         {
-            memcpy(dst + (y + 1) * image_width - half_filter_width, dst + (y + 1) * image_width - filter_width - 1, half_filter_width);
+            std::int32_t sum = 0;
+            std::int32_t fx_ = fx >= image_width ? (fx - image_width) : (fx >= 0 ? fx : (image_width + fx));
+            std::int32_t fy_ = 0;
+
+            for (std::int32_t fy = y - half_filter_height; fy <= y + half_filter_height; ++fy)
+            {
+                fy_ = fy >= image_height ? (fy - image_height) : (fy >= 0 ? fy : (image_height + fy));
+
+                sum += static_cast<std::int32_t>((src + image_width * fy_)[fx_]);
+            }
+
+            vert.push_back(sum);
+        }
+
+        std::int32_t hsum = 0;
+
+        for (std::size_t i = 0; i < vert.size(); ++i)
+        {
+            hsum += vert[i];
+        }
+
+        for (std::int32_t x = from_x; x < to_x; ++x)
+        {
+            std::int32_t sum = 0;
+            std::int32_t x_  = x + half_filter_width;
+            std::int32_t x__ = x_ >= image_width ? (x_ - image_width) : (x_ >= 0 ? x_ : (image_width + x_));
+            std::int32_t fy_ = 0;
+
+            for (std::int32_t fy = y - half_filter_height; fy <= y + half_filter_height; ++fy)
+            {
+                fy_ = fy >= image_height ? (fy - image_height) : (fy >= 0 ? fy : (image_height + fy));
+
+                sum += static_cast<std::int32_t>((src + image_width * fy_)[x__]);
+            }
+
+            hsum += sum;
+            hsum -= vert.front();
+
+            vert.push_back(sum);
+            vert.pop_front();
+
+            dst_line[x] = static_cast<std::uint8_t>(hsum * inv_filter_size);
         }
     }
+}
 
-    if (org_from_y == 0)
+}
+
+namespace cvpg { namespace imageproc { namespace algorithms {
+
+void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
+{
+    // const std::size_t org_from_x = from_x;
+    // const std::size_t org_to_x = to_x;
+
+    // const std::size_t org_from_y = from_y;
+    // const std::size_t org_to_y = to_y;
+
+    std::int32_t from_x_ = static_cast<std::int32_t>(from_x);
+    std::int32_t to_x_ = static_cast<std::int32_t>(to_x);
+    std::int32_t from_y_ = static_cast<std::int32_t>(from_y);
+    std::int32_t to_y_ = static_cast<std::int32_t>(to_y);
+
+    const std::int32_t image_width = static_cast<std::int32_t>(parameters.image_width);
+    const std::int32_t image_height = static_cast<std::int32_t>(parameters.image_height);
+
+    const std::int32_t filter_width = static_cast<std::int32_t>(parameters.signed_integer_numbers.at(0));
+    const std::int32_t filter_height = static_cast<std::int32_t>(parameters.signed_integer_numbers.at(1));
+
+    const std::int32_t half_filter_width = filter_width >> 1;
+    const std::int32_t half_filter_height = filter_height >> 1;
+
+    // std::deque<std::int32_t> vert;
+
+    // const double filter_size_ = 1.0 / (filter_width * filter_height);
+
+    // std::uint8_t * src_line = nullptr;
+    // std::uint8_t * dst_line = nullptr;
+
+
+
+
+
+
+
+    if (from_x_ <= half_filter_width)
     {
-        for (std::size_t y = 0; y < half_filter_height; ++y)
-        {
-            memcpy(dst + y * image_width, dst + half_filter_height * image_width, image_width);
-        }
+        from_x_ = parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore ? half_filter_width : 0;
+    }
+    else
+    {
+        from_x_ -= half_filter_width;
     }
 
-    if (org_to_y == image_height - 1)
+    if (to_x_ >= (image_width - half_filter_width))
     {
-        for (std::size_t y = image_height - half_filter_height; y < image_height; ++y)
-        {
-            memcpy(dst + y * image_width, dst + (image_height - half_filter_height - 1) * image_width, image_width);
-        }
+        to_x_ = image_width - (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore ? half_filter_width : 0);
+    }
+    else
+    {
+        to_x_ += half_filter_width;
+    }
+
+    if (from_y_ <= half_filter_height)
+    {
+        from_y_ = parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore ? half_filter_height : 0;
+    }
+    else
+    {
+        from_y_ -= half_filter_height;
+    }
+
+    if (to_y_ >= (image_height - half_filter_height))
+    {
+        to_y_ = image_height - (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore ? half_filter_height : 0);
+    }
+    else
+    {
+        to_y_ += half_filter_height;
+    }
+
+    if (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::ignore)
+    {
+        mean_gray_8bit_kernel_ignore_border(src, dst, from_x_, to_x_, from_y_, to_y_, image_width, filter_width, filter_height);
+    }
+    else if (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::constant)
+    {
+        mean_gray_8bit_kernel_constant_border(src, dst, from_x, to_x, from_y, to_y, image_width, image_height, filter_width, filter_height);
+    }
+    else if (parameters.border_mode == cvpg::imageproc::algorithms::border_mode::mirror)
+    {
+        mean_gray_8bit_kernel_mirror_border(src, dst, from_x_, to_x_, from_y_, to_y_, image_width, image_height, filter_width, filter_height);
     }
 }
 
