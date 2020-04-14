@@ -200,12 +200,6 @@ namespace cvpg { namespace imageproc { namespace algorithms {
 
 void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
 {
-    // const std::size_t org_from_x = from_x;
-    // const std::size_t org_to_x = to_x;
-
-    // const std::size_t org_from_y = from_y;
-    // const std::size_t org_to_y = to_y;
-
     std::int32_t from_x_ = static_cast<std::int32_t>(from_x);
     std::int32_t to_x_ = static_cast<std::int32_t>(to_x);
     std::int32_t from_y_ = static_cast<std::int32_t>(from_y);
@@ -219,19 +213,6 @@ void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, 
 
     const std::int32_t half_filter_width = filter_width >> 1;
     const std::int32_t half_filter_height = filter_height >> 1;
-
-    // std::deque<std::int32_t> vert;
-
-    // const double filter_size_ = 1.0 / (filter_width * filter_height);
-
-    // std::uint8_t * src_line = nullptr;
-    // std::uint8_t * dst_line = nullptr;
-
-
-
-
-
-
 
     if (from_x_ <= half_filter_width)
     {
