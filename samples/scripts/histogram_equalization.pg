@@ -1,0 +1,3 @@
+var input_rgb = input("rgb", 8)
+var input_gray = convert_to_gray(input_rgb, "calc_average")
+var equalized = histogram_equalization(input_gray)
