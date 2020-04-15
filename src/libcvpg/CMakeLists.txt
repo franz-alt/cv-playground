@@ -1,6 +1,6 @@
 set(target libcvpg)
 
-message(STATUS "library ${target}")
+message(STATUS "Library '${target}'")
 
 set(headers
     core/exception.hpp

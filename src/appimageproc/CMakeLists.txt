@@ -1,6 +1,6 @@
 set(target imageproc)
 
-message(STATUS "application ${target}")
+message(STATUS "Application '${target}'")
 
 set(sources
     main.cpp

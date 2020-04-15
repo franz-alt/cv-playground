@@ -1,6 +1,6 @@
 set(target tests)
 
-message(STATUS "${target}")
+message(STATUS "Test application '${target}'")
 
 set(sources
     main.cpp
