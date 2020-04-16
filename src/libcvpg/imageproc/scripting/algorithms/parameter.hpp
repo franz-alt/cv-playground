@@ -1,9 +1,11 @@
 #ifndef LIBCVPG_IMAGEPROC_SCRIPTING_ALGORITHMS_PARAMETER_HPP
 #define LIBCVPG_IMAGEPROC_SCRIPTING_ALGORITHMS_PARAMETER_HPP
 
+#include <algorithm>
 #include <any>
 #include <cstdint>
 #include <functional>
+#include <initializer_list>
 #include <ostream>
 #include <string>
 
@@ -70,6 +72,32 @@ std::function<bool(std::any)> in_range(T min_value, T max_value)
                T value = std::any_cast<T>(element);
 
                return value >= min_value && value <= max_value;
+           };
+}
+
+// unary predicate returns true if element is inside a specified set of values from the same type
+template<typename T>
+std::function<bool(std::any)> in_set(std::initializer_list<T> values)
+{
+    return [values = std::move(values)](std::any element)
+           {
+               T value = std::any_cast<T>(element);
+
+               return std::find_if(values.begin(),
+                                   values.end(),
+                                   [value](auto const & v){ return v == value; }) != values.end();
+           };
+}
+
+// unary predicate returns true if element is a specified constant
+template<typename T>
+std::function<bool(std::any)> constant(T constant_value)
+{
+    return [constant_value](std::any element)
+           {
+               T value = std::any_cast<T>(element);
+
+               return value == constant_value;
            };
 }
 
