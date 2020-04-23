@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include <libcvpg/imageproc/scripting/algorithms/parameter.hpp>
+#include <libcvpg/imageproc/scripting/algorithms/parameter_set.hpp>
 
 namespace cvpg { namespace imageproc { namespace scripting {
 
@@ -37,9 +37,7 @@ public:
 
     virtual std::vector<parameter::item::item_type> result() const = 0;
 
-    virtual std::vector<std::vector<parameter> > parameters() const = 0;
-
-    virtual std::vector<std::string> check_parameters(std::vector<std::any> parameters) const = 0;
+    virtual parameter_set parameters() const = 0;
 
     virtual void on_parse(std::shared_ptr<detail::parser> parser) const = 0;
 

@@ -6,6 +6,7 @@
 
 #include <boost/asynchronous/continuation_task.hpp>
 
+#include <libcvpg/core/exception.hpp>
 #include <libcvpg/core/image.hpp>
 #include <libcvpg/imageproc/algorithms/border_mode.hpp>
 #include <libcvpg/imageproc/algorithms/tiling.hpp>
@@ -213,38 +214,17 @@ std::vector<parameter::item::item_type> scharr::result() const
     };
 }
 
-std::vector<std::vector<parameter> > scharr::parameters() const
+parameter_set scharr::parameters() const
 {
-    return std::vector<std::vector<parameter> >(
-    {
-        {
-            parameter("image", "input image", "", parameter::item::item_type::grayscale_8_bit_image),
-            parameter("size", "size of filter mask", "", parameter::item::item_type::signed_integer, in_range<std::int16_t>(3, 3)),
-            parameter("mode", "operation mode", "", parameter::item::item_type::characters),
-            parameter("border_mode", "border mode", "", parameter::item::item_type::characters)
-        },
-        {
-            parameter("image", "input image", "", parameter::item::item_type::rgb_8_bit_image),
-            parameter("size", "size of filter mask", "", parameter::item::item_type::signed_integer, in_range<std::int16_t>(3, 3)),
-            parameter("mode", "operation mode", "", parameter::item::item_type::characters),
-            parameter("border_mode", "border mode", "", parameter::item::item_type::characters)
-        }
-    });
-}
+    using namespace std::string_literals;
 
-std::vector<std::string> scharr::check_parameters(std::vector<std::any> parameters) const
-{
-    std::vector<std::string> messages;
-
-    if (parameters.size() != this->parameters().size())
-    {
-        messages.emplace_back(std::string("Invalid amount of parameters. Expecting ").append(std::to_string(this->parameters().size())).append(" parameters."));
-        return messages;
-    }
-
-    // TODO check image parameter
-
-    return messages;
+    return parameter_set
+           ({
+               parameter("image", "input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image }),
+               parameter("size", "size of filter mask", "", parameter::item::item_type::signed_integer, static_cast<std::int32_t>(3)),
+               parameter("mode", "operation mode", "", parameter::item::item_type::characters, { "hor"s, "vert"s }),
+               parameter("border_mode", "border mode", "", parameter::item::item_type::characters, { "ignore"s, "constant"s, "mirror"s })
+           });
 }
 
 void scharr::on_parse(std::shared_ptr<detail::parser> parser) const
@@ -252,8 +232,29 @@ void scharr::on_parse(std::shared_ptr<detail::parser> parser) const
     // all parameters
     {
         std::function<std::uint32_t(std::uint32_t, std::int32_t, std::string, std::string)> fct =
-        [parser](std::uint32_t image_id, std::int32_t size, std::string mode, std::string border_mode)
+        [parser, parameters = this->parameters()](std::uint32_t image_id, std::int32_t size, std::string mode, std::string border_mode)
         {
+            // check parameters
+            // if (!parameters.is_valid("image", image_id)
+            // {
+            //     throw cvpg::invalid_parameter_exception("invalid input mode");
+            // }
+
+            if (!parameters.is_valid("size", size))
+            {
+                throw cvpg::invalid_parameter_exception("invalid size of filter mask");
+            }
+
+            if (!parameters.is_valid("mode", size))
+            {
+                throw cvpg::invalid_parameter_exception("invalid operation mode");
+            }
+
+            if (!parameters.is_valid("border_mode", border_mode))
+            {
+                throw cvpg::invalid_parameter_exception("invalid border mode");
+            }
+
             std::uint32_t result_id = 0;
 
             // find image
@@ -329,8 +330,24 @@ void scharr::on_parse(std::shared_ptr<detail::parser> parser) const
     // default for border mode
     {
         std::function<std::uint32_t(std::uint32_t, std::int32_t, std::string)> fct =
-            [parser](std::uint32_t image_id, std::int32_t size, std::string mode)
+            [parser, parameters = this->parameters()](std::uint32_t image_id, std::int32_t size, std::string mode)
             {
+                // check parameters
+                // if (!parameters.is_valid("image", image_id)
+                // {
+                //     throw cvpg::invalid_parameter_exception("invalid input mode");
+                // }
+
+                if (!parameters.is_valid("size", size))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid size of filter mask");
+                }
+
+                if (!parameters.is_valid("mode", size))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid operation mode");
+                }
+
                 std::uint32_t result_id = 0;
                 std::string border_mode = "constant";
 

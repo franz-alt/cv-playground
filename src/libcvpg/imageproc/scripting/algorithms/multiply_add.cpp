@@ -5,6 +5,7 @@
 
 #include <boost/asynchronous/continuation_task.hpp>
 
+#include <libcvpg/core/exception.hpp>
 #include <libcvpg/core/image.hpp>
 #include <libcvpg/imageproc/algorithms/tiling.hpp>
 #include <libcvpg/imageproc/algorithms/tiling/multiply_add.hpp>
@@ -193,43 +194,37 @@ std::vector<parameter::item::item_type> multiply_add::result() const
     };
 }
 
-std::vector<std::vector<parameter> > multiply_add::parameters() const
+parameter_set multiply_add::parameters() const
 {
-    return std::vector<std::vector<parameter> >(
-    {
-        {
-            parameter("image", "input image", "", parameter::item::item_type::grayscale_8_bit_image),
-            parameter("factor", "multiplication factor", "", parameter::item::item_type::real),
-            parameter("offset", "offset", "", parameter::item::item_type::signed_integer, in_range<std::int16_t>(-255, 255))
-        },
-        {
-            parameter("image", "input image", "", parameter::item::item_type::rgb_8_bit_image),
-            parameter("factor", "multiplication factor", "", parameter::item::item_type::real),
-            parameter("offset", "offset", "", parameter::item::item_type::signed_integer, in_range<std::int16_t>(-255, 255))
-        }
-    });
-}
-
-std::vector<std::string> multiply_add::check_parameters(std::vector<std::any> parameters) const
-{
-    std::vector<std::string> messages;
-
-    if (parameters.size() != this->parameters().size())
-    {
-        messages.emplace_back(std::string("Invalid amount of parameters. Expecting ").append(std::to_string(this->parameters().size())).append(" parameters."));
-        return messages;
-    }
-
-    // TODO check image parameter
-
-    return messages;
+    return parameter_set
+           ({
+               parameter("image", "input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image }),
+               parameter("factor", "multiplication factor", "", parameter::item::item_type::real),
+               parameter("offset", "offset", "", parameter::item::item_type::signed_integer, static_cast<std::int32_t>(-255), static_cast<std::int32_t>(255), static_cast<std::int32_t>(1))
+           });
 }
 
 void multiply_add::on_parse(std::shared_ptr<detail::parser> parser) const
 {
     std::function<std::uint32_t(std::uint32_t, double, std::int32_t)> fct =
-        [parser](std::uint32_t image_id, double factor, std::int32_t offset)
+        [parser, parameters = this->parameters()](std::uint32_t image_id, double factor, std::int32_t offset)
         {
+            // check parameters
+            // if (!parameters.is_valid("image", image_id)
+            // {
+            //     throw cvpg::invalid_parameter_exception("invalid input mode");
+            // }
+
+            if (!parameters.is_valid("factor", factor))
+            {
+                throw cvpg::invalid_parameter_exception("invalid multiplication factor");
+            }
+
+            if (!parameters.is_valid("offset", offset))
+            {
+                throw cvpg::invalid_parameter_exception("invalid offset");
+            }
+
             std::uint32_t result_id = 0;
 
             // find image
@@ -287,10 +282,6 @@ void multiply_add::on_parse(std::shared_ptr<detail::parser> parser) const
                     {
                         parser->register_link(image_id, result_id);
                     }
-                }
-                else
-                {
-                    // TODO error handling
                 }
             }
 

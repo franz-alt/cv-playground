@@ -2,9 +2,11 @@
 
 #include <chrono>
 #include <functional>
+#include <string>
 
 #include <boost/asynchronous/continuation_task.hpp>
 
+#include <libcvpg/core/exception.hpp>
 #include <libcvpg/core/image.hpp>
 #include <libcvpg/imageproc/algorithms/tiling.hpp>
 #include <libcvpg/imageproc/algorithms/tiling/mean.hpp>
@@ -198,58 +200,17 @@ std::vector<parameter::item::item_type> mean::result() const
     };
 }
 
-std::vector<std::vector<parameter> > mean::parameters() const
+parameter_set mean::parameters() const
 {
-    return std::vector<std::vector<parameter> >(
-    {
-        {
-            parameter("image", "input image", "", parameter::item::item_type::grayscale_8_bit_image),
-            parameter("filter_width", "filter width", "pixels", parameter::item::item_type::unsigned_integer, [min_value = 3, max_value = 65535](std::any element)
-                                                                                                              {
-                                                                                                                  std::int16_t value = std::any_cast<std::int16_t>(element);
+    using namespace std::string_literals;
 
-                                                                                                                  return (value >= min_value && value <= max_value) && (value % 2 == 1);
-                                                                                                              }),
-            parameter("filter_height", "filter height", "pixels", parameter::item::item_type::unsigned_integer, [min_value = 3, max_value = 65535](std::any element)
-                                                                                                                {
-                                                                                                                    std::int16_t value = std::any_cast<std::int16_t>(element);
-
-                                                                                                                    return (value >= min_value && value <= max_value) && (value % 2 == 1);
-                                                                                                                }),
-            parameter("border_mode", "border mode", "", parameter::item::item_type::characters)
-        },
-        {
-            parameter("image", "input image", "", parameter::item::item_type::rgb_8_bit_image),
-            parameter("filter_width", "filter width", "pixels", parameter::item::item_type::unsigned_integer, [min_value = 3, max_value = 65535](std::any element)
-                                                                                                              {
-                                                                                                                  std::int16_t value = std::any_cast<std::int16_t>(element);
-
-                                                                                                                  return (value >= min_value && value <= max_value) && (value % 2 == 1);
-                                                                                                              }),
-            parameter("filter_height", "filter height", "pixels", parameter::item::item_type::unsigned_integer, [min_value = 3, max_value = 65535](std::any element)
-                                                                                                                {
-                                                                                                                    std::int16_t value = std::any_cast<std::int16_t>(element);
-
-                                                                                                                    return (value >= min_value && value <= max_value) && (value % 2 == 1);
-                                                                                                                }),
-            parameter("border_mode", "border mode", "", parameter::item::item_type::characters)
-        }
-    });
-}
-
-std::vector<std::string> mean::check_parameters(std::vector<std::any> parameters) const
-{
-    std::vector<std::string> messages;
-
-    if (parameters.size() != this->parameters().size())
-    {
-        messages.emplace_back(std::string("Invalid amount of parameters. Expecting ").append(std::to_string(this->parameters().size())).append(" parameters."));
-        return messages;
-    }
-
-    // TODO check image parameter
-
-    return messages;
+    return parameter_set
+           ({
+               parameter("image", "input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image }),
+               parameter("filter_width", "filter width", "pixels", parameter::item::item_type::unsigned_integer, static_cast<std::uint32_t>(3), static_cast<std::uint32_t>(65535), static_cast<std::uint32_t>(2)),
+               parameter("filter_height", "filter height", "pixels", parameter::item::item_type::unsigned_integer, static_cast<std::uint32_t>(3), static_cast<std::uint32_t>(65535), static_cast<std::uint32_t>(2)),
+               parameter("border_mode", "border mode", "", parameter::item::item_type::characters, { "ignore"s, "constant"s, "mirror"s })
+           });
 }
 
 void mean::on_parse(std::shared_ptr<detail::parser> parser) const
@@ -257,8 +218,29 @@ void mean::on_parse(std::shared_ptr<detail::parser> parser) const
     // all parameters
     {
         std::function<std::uint32_t(std::uint32_t, std::uint32_t, std::uint32_t, std::string)> fct =
-            [parser](std::uint32_t image_id, std::uint32_t width, std::uint32_t height, std::string border_mode)
+            [parser, parameters = this->parameters()](std::uint32_t image_id, std::uint32_t width, std::uint32_t height, std::string border_mode)
             {
+                // check parameters
+                // if (!parameters.is_valid("image", image_id)
+                // {
+                //     throw cvpg::invalid_parameter_exception("invalid input mode");
+                // }
+
+                if (!parameters.is_valid("filter_width", width))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid filter width");
+                }
+
+                if (!parameters.is_valid("filter_height", height))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid filter height");
+                }
+
+                if (!parameters.is_valid("border_mode", border_mode))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid border mode");
+                }
+
                 std::uint32_t result_id = 0;
 
                 // find image
@@ -319,10 +301,6 @@ void mean::on_parse(std::shared_ptr<detail::parser> parser) const
                             parser->register_link(image_id, result_id);
                         }
                     }
-                    else
-                    {
-                        // TODO error handling
-                    }
                 }
 
                 return result_id;
@@ -334,8 +312,24 @@ void mean::on_parse(std::shared_ptr<detail::parser> parser) const
     // default for border mode
     {
         std::function<std::uint32_t(std::uint32_t, std::uint32_t, std::uint32_t)> fct =
-            [parser](std::uint32_t image_id, std::uint32_t width, std::uint32_t height)
+            [parser, parameters = this->parameters()](std::uint32_t image_id, std::uint32_t width, std::uint32_t height)
             {
+                // check parameters
+                // if (!parameters.is_valid("image", image_id)
+                // {
+                //     throw cvpg::invalid_parameter_exception("invalid input mode");
+                // }
+
+                if (!parameters.is_valid("filter_width", width))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid filter width");
+                }
+
+                if (!parameters.is_valid("filter_height", width))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid filter height");
+                }
+
                 std::uint32_t result_id = 0;
                 std::string border_mode = "constant";
 
@@ -396,10 +390,6 @@ void mean::on_parse(std::shared_ptr<detail::parser> parser) const
                         {
                             parser->register_link(image_id, result_id);
                         }
-                    }
-                    else
-                    {
-                        // TODO error handling
                     }
                 }
 

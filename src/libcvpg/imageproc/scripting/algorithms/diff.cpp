@@ -197,34 +197,13 @@ std::vector<parameter::item::item_type> diff::result() const
     };
 }
 
-std::vector<std::vector<parameter> > diff::parameters() const
+parameter_set diff::parameters() const
 {
-    return std::vector<std::vector<parameter> >(
-    {
-        {
-            parameter("image1", "input image", "", parameter::item::item_type::grayscale_8_bit_image),
-            parameter("image2", "input image", "", parameter::item::item_type::grayscale_8_bit_image)
-        },
-        {
-            parameter("image1", "input image", "", parameter::item::item_type::rgb_8_bit_image),
-            parameter("image2", "input image", "", parameter::item::item_type::rgb_8_bit_image)
-        }
-    });
-}
-
-std::vector<std::string> diff::check_parameters(std::vector<std::any> parameters) const
-{
-    std::vector<std::string> messages;
-
-    if (parameters.size() != this->parameters().size())
-    {
-        messages.emplace_back(std::string("Invalid amount of parameters. Expecting ").append(std::to_string(this->parameters().size())).append(" parameters."));
-        return messages;
-    }
-
-    // TODO check image parameter
-
-    return messages;
+    return parameter_set
+           ({
+               parameter("image1", "input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image }),
+               parameter("image2", "input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image })
+           });
 }
 
 void diff::on_parse(std::shared_ptr<detail::parser> parser) const

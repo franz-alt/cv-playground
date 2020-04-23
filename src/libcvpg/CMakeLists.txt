@@ -31,6 +31,7 @@ set(headers
     imageproc/scripting/algorithms/mean.hpp
     imageproc/scripting/algorithms/multiply_add.hpp
     imageproc/scripting/algorithms/parameter.hpp
+    imageproc/scripting/algorithms/parameter_set.hpp
     imageproc/scripting/algorithms/scharr.hpp
     imageproc/scripting/algorithms/sobel.hpp
     imageproc/scripting/detail/compiler.hpp
@@ -70,6 +71,7 @@ set(sources
     imageproc/scripting/algorithms/mean.cpp
     imageproc/scripting/algorithms/multiply_add.cpp
     imageproc/scripting/algorithms/parameter.cpp
+    imageproc/scripting/algorithms/parameter_set.cpp
     imageproc/scripting/algorithms/scharr.cpp
     imageproc/scripting/algorithms/sobel.cpp
     imageproc/scripting/detail/compiler.cpp

@@ -5,6 +5,7 @@
 
 #include <boost/asynchronous/continuation_task.hpp>
 
+#include <libcvpg/core/exception.hpp>
 #include <libcvpg/imageproc/algorithms/histogram_equalization.hpp>
 #include <libcvpg/imageproc/scripting/image_processor.hpp>
 #include <libcvpg/imageproc/scripting/item.hpp>
@@ -126,29 +127,12 @@ std::vector<parameter::item::item_type> histogram_equalization::result() const
     };
 }
 
-std::vector<std::vector<parameter> > histogram_equalization::parameters() const
+parameter_set histogram_equalization::parameters() const
 {
-    return std::vector<std::vector<parameter> >(
-    {
-        {
-            parameter("image", "input image", "", parameter::item::item_type::grayscale_8_bit_image)
-        }
-    });
-}
-
-std::vector<std::string> histogram_equalization::check_parameters(std::vector<std::any> parameters) const
-{
-    std::vector<std::string> messages;
-
-    if (parameters.size() != this->parameters().size())
-    {
-        messages.emplace_back(std::string("Invalid amount of parameters. Expecting ").append(std::to_string(this->parameters().size())).append(" parameters."));
-        return messages;
-    }
-
-    // TODO check image parameter
-
-    return messages;
+    return parameter_set
+           (
+               parameter("image", "input image", "", parameter::item::item_type::grayscale_8_bit_image)
+           );
 }
 
 void histogram_equalization::on_parse(std::shared_ptr<detail::parser> parser) const
