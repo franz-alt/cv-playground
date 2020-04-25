@@ -12,6 +12,44 @@
 #include <libcvpg/imageproc/scripting/image_processor.hpp>
 #include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
 
+TEST(test_scripting_algorithm_convert_to_gray, compile_valid_parameters)
+{
+    // create a thread pool for a single thread
+    auto pool = boost::asynchronous::make_shared_scheduler_proxy<
+                    boost::asynchronous::multiqueue_threadpool_scheduler<
+                        boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(1, std::string("threadpool"));
+
+    // create image processor
+    auto scheduler = boost::asynchronous::make_shared_scheduler_proxy<
+                        boost::asynchronous::single_thread_scheduler<
+                            boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("image_processor"));
+
+    cvpg::imageproc::scripting::image_processor_proxy image_processor(scheduler, pool);
+
+    // good case
+    {
+        auto promise_compile = std::make_shared<std::promise<std::size_t> >();
+        auto future_compile = promise_compile->get_future();
+
+        image_processor.compile(
+            R"(
+                var input_rgb = input("rgb", 8)
+                var input_gray = convert_to_gray(input_rgb, "use_red")
+            )",
+            [promise_compile](bool successful, std::size_t compile_id)
+            {
+                ASSERT_TRUE(successful);
+
+                promise_compile->set_value(compile_id);
+            }
+        );
+
+        auto status = future_compile.wait_for(std::chrono::seconds(3));
+
+        ASSERT_TRUE(status != std::future_status::deferred && status != std::future_status::timeout);
+    }
+}
+
 TEST(test_scripting_algorithm_convert_to_gray, compile_invalid_parameters)
 {
     // create a thread pool for a single thread
