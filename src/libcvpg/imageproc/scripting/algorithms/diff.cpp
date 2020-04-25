@@ -5,6 +5,7 @@
 
 #include <boost/asynchronous/continuation_task.hpp>
 
+#include <libcvpg/core/exception.hpp>
 #include <libcvpg/core/image.hpp>
 #include <libcvpg/imageproc/algorithms/tiling.hpp>
 #include <libcvpg/imageproc/algorithms/tiling/diff.hpp>
@@ -146,10 +147,6 @@ struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr
                     cvpg::imageproc::algorithms::tiling(std::move(tf))
                 );
             }
-            else
-            {
-                // TODO error handling
-            }
         }
         catch (...)
         {
@@ -201,51 +198,108 @@ parameter_set diff::parameters() const
 {
     return parameter_set
            ({
-               parameter("image1", "input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image }),
-               parameter("image2", "input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image })
+               parameter("image1", "first input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image }),
+               parameter("image2", "second input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image }),
+               parameter("offset", "offset", "", parameter::item::item_type::signed_integer, static_cast<std::int32_t>(-255), static_cast<std::int32_t>(255), static_cast<std::int32_t>(1))
            });
 }
 
 void diff::on_parse(std::shared_ptr<detail::parser> parser) const
 {
-    std::function<std::uint32_t(std::uint32_t, std::uint32_t, std::int32_t)> fct =
-        [parser](std::uint32_t image1_id, std::uint32_t image2_id, std::int32_t offset)
-        {
-            std::uint32_t result_id = 0;
-
-            // find images
-            if (!!parser)
+    // all parameters
+    {
+        std::function<std::uint32_t(std::uint32_t, std::uint32_t, std::int32_t)> fct =
+            [parser, parameters = this->parameters()](std::uint32_t image1_id, std::uint32_t image2_id, std::int32_t offset)
             {
-                auto image1 = parser->find_item(image1_id);
-                auto image2 = parser->find_item(image2_id);
+                // check parameters
+                // if (!parameters.is_valid("image", image_id)
+                // {
+                //     throw cvpg::invalid_parameter_exception("invalid input mode");
+                // }
 
-                if (image1.arguments.size() != 0 && image2.arguments.size() != 0 && image1.arguments.front().type() == image2.arguments.front().type())
+                if (!parameters.is_valid("offset", offset))
                 {
-                    detail::parser::item result_item
+                    throw cvpg::invalid_parameter_exception("invalid offset");
+                }
+
+                std::uint32_t result_id = 0;
+
+                // find images
+                if (!!parser)
+                {
+                    auto image1 = parser->find_item(image1_id);
+                    auto image2 = parser->find_item(image2_id);
+
+                    if (image1.arguments.size() != 0 && image2.arguments.size() != 0 && image1.arguments.front().type() == image2.arguments.front().type())
                     {
-                        "diff",
+                        detail::parser::item result_item
                         {
-                            scripting::item(image1.arguments.front().type(), image1_id),
-                            scripting::item(image2.arguments.front().type(), image2_id),
-                            scripting::item(scripting::item::types::signed_integer, offset)
-                        }
-                    };
+                            "diff",
+                            {
+                                scripting::item(image1.arguments.front().type(), image1_id),
+                                scripting::item(image2.arguments.front().type(), image2_id),
+                                scripting::item(scripting::item::types::signed_integer, offset)
+                            }
+                        };
 
-                    result_id = parser->register_item(std::move(result_item));
+                        result_id = parser->register_item(std::move(result_item));
 
-                    parser->register_link(image1_id, result_id);
-                    parser->register_link(image2_id, result_id);
+                        parser->register_link(image1_id, result_id);
+                        parser->register_link(image2_id, result_id);
+                    }
+                    else
+                    {
+                        throw cvpg::invalid_parameter_exception("different image types");
+                    }
                 }
-                else
+
+                return result_id;
+            };
+
+        parser->register_specification(name(), std::move(fct));
+    }
+
+    // default 0 for offset
+    {
+        std::function<std::uint32_t(std::uint32_t, std::uint32_t)> fct =
+            [parser](std::uint32_t image1_id, std::uint32_t image2_id)
+            {
+                std::uint32_t result_id = 0;
+
+                // find images
+                if (!!parser)
                 {
-                    // TODO error handling
+                    auto image1 = parser->find_item(image1_id);
+                    auto image2 = parser->find_item(image2_id);
+
+                    if (image1.arguments.size() != 0 && image2.arguments.size() != 0 && image1.arguments.front().type() == image2.arguments.front().type())
+                    {
+                        detail::parser::item result_item
+                        {
+                            "diff",
+                            {
+                                scripting::item(image1.arguments.front().type(), image1_id),
+                                scripting::item(image2.arguments.front().type(), image2_id),
+                                scripting::item(scripting::item::types::signed_integer, 0)
+                            }
+                        };
+
+                        result_id = parser->register_item(std::move(result_item));
+
+                        parser->register_link(image1_id, result_id);
+                        parser->register_link(image2_id, result_id);
+                    }
+                    else
+                    {
+                        throw cvpg::invalid_parameter_exception("different image types");
+                    }
                 }
-            }
 
-            return result_id;
-        };
+                return result_id;
+            };
 
-    parser->register_specification(name(), std::move(fct));
+        parser->register_specification(name(), std::move(fct));
+    }
 }
 
 void diff::on_compile(std::uint32_t item_id, std::shared_ptr<detail::compiler> compiler) const
