@@ -103,8 +103,8 @@ parameter_set input::parameters() const
     return parameter_set
            ({
                parameter("mode", "type of input image", "", parameter::item::item_type::characters, { "gray"s, "rgb"s }),
-               parameter("bits", "amount of bits", "", parameter::item::item_type::unsigned_integer, static_cast<std::uint32_t>(8)),
-               parameter("source", "ID of input source", "", parameter::item::item_type::unsigned_integer)
+               parameter("bits", "amount of bits", "", parameter::item::item_type::signed_integer, static_cast<std::int32_t>(8)),
+               parameter("source", "ID of input source", "", parameter::item::item_type::signed_integer)
            });
 }
 
@@ -119,7 +119,7 @@ void input::on_parse(std::shared_ptr<detail::parser> parser) const
                 throw cvpg::invalid_parameter_exception("invalid input mode");
             }
 
-            if (!parameters.is_valid("bits", static_cast<std::uint32_t>(bits)))
+            if (!parameters.is_valid("bits", static_cast<std::int32_t>(bits)))
             {
                 throw cvpg::invalid_parameter_exception("unsupported bits per pixel");
             }
@@ -135,7 +135,7 @@ void input::on_parse(std::shared_ptr<detail::parser> parser) const
                         "input",
                         {
                             scripting::item(scripting::item::types::grayscale_8_bit_image, static_cast<std::uint32_t>(0)), // TODO 0 is at moment the ID of the input image
-                            scripting::item(scripting::item::types::unsigned_integer, static_cast<std::uint32_t>(8))
+                            scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(8))
                         }
                     };
 
@@ -151,7 +151,7 @@ void input::on_parse(std::shared_ptr<detail::parser> parser) const
                         "input",
                         {
                             scripting::item(scripting::item::types::rgb_8_bit_image, static_cast<std::uint32_t>(0)), // TODO 0 is at moment the ID of the input image
-                            scripting::item(scripting::item::types::unsigned_integer, static_cast<std::uint32_t>(8))
+                            scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(8))
                         }
                     };
 
@@ -173,7 +173,7 @@ void input::on_parse(std::shared_ptr<detail::parser> parser) const
                 throw cvpg::invalid_parameter_exception("invalid input mode");
             }
 
-            if (!parameters.is_valid("bits", static_cast<std::uint32_t>(bits)))
+            if (!parameters.is_valid("bits", static_cast<std::int32_t>(bits)))
             {
                 throw cvpg::invalid_parameter_exception("unsupported bits per pixel");
             }
@@ -189,7 +189,7 @@ void input::on_parse(std::shared_ptr<detail::parser> parser) const
                         "input",
                         {
                             scripting::item(scripting::item::types::grayscale_8_bit_image, static_cast<std::uint32_t>(source) - 1),
-                            scripting::item(scripting::item::types::unsigned_integer, static_cast<std::uint32_t>(8))
+                            scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(8))
                         }
                     };
 
@@ -205,7 +205,7 @@ void input::on_parse(std::shared_ptr<detail::parser> parser) const
                         "input",
                         {
                             scripting::item(scripting::item::types::rgb_8_bit_image, static_cast<std::uint32_t>(source) - 1),
-                            scripting::item(scripting::item::types::unsigned_integer, static_cast<std::uint32_t>(8))
+                            scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(8))
                         }
                     };
 

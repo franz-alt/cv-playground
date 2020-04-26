@@ -207,8 +207,8 @@ parameter_set mean::parameters() const
     return parameter_set
            ({
                parameter("image", "input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image }),
-               parameter("filter_width", "filter width", "pixels", parameter::item::item_type::unsigned_integer, static_cast<std::uint32_t>(3), static_cast<std::uint32_t>(65535), static_cast<std::uint32_t>(2)),
-               parameter("filter_height", "filter height", "pixels", parameter::item::item_type::unsigned_integer, static_cast<std::uint32_t>(3), static_cast<std::uint32_t>(65535), static_cast<std::uint32_t>(2)),
+               parameter("filter_width", "filter width", "pixels", parameter::item::item_type::signed_integer, static_cast<std::int32_t>(3), static_cast<std::int32_t>(65535), static_cast<std::int32_t>(2)),
+               parameter("filter_height", "filter height", "pixels", parameter::item::item_type::signed_integer, static_cast<std::int32_t>(3), static_cast<std::int32_t>(65535), static_cast<std::int32_t>(2)),
                parameter("border_mode", "border mode", "", parameter::item::item_type::characters, { "ignore"s, "constant"s, "mirror"s })
            });
 }
@@ -226,12 +226,12 @@ void mean::on_parse(std::shared_ptr<detail::parser> parser) const
                 //     throw cvpg::invalid_parameter_exception("invalid input mode");
                 // }
 
-                if (!parameters.is_valid("filter_width", width))
+                if (!parameters.is_valid("filter_width", static_cast<std::int32_t>(width)))
                 {
                     throw cvpg::invalid_parameter_exception("invalid filter width");
                 }
 
-                if (!parameters.is_valid("filter_height", height))
+                if (!parameters.is_valid("filter_height", static_cast<std::int32_t>(height)))
                 {
                     throw cvpg::invalid_parameter_exception("invalid filter height");
                 }
@@ -259,8 +259,8 @@ void mean::on_parse(std::shared_ptr<detail::parser> parser) const
                                     "mean",
                                     {
                                         scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
-                                        scripting::item(scripting::item::types::unsigned_integer, width),
-                                        scripting::item(scripting::item::types::unsigned_integer, height),
+                                        scripting::item(scripting::item::types::signed_integer, width),
+                                        scripting::item(scripting::item::types::signed_integer, height),
                                         scripting::item(scripting::item::types::characters, border_mode)
                                     }
                                 };
@@ -277,8 +277,8 @@ void mean::on_parse(std::shared_ptr<detail::parser> parser) const
                                     "mean",
                                     {
                                         scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
-                                        scripting::item(scripting::item::types::unsigned_integer, width),
-                                        scripting::item(scripting::item::types::unsigned_integer, height),
+                                        scripting::item(scripting::item::types::signed_integer, width),
+                                        scripting::item(scripting::item::types::signed_integer, height),
                                         scripting::item(scripting::item::types::characters, border_mode)
                                     }
                                 };
@@ -320,12 +320,12 @@ void mean::on_parse(std::shared_ptr<detail::parser> parser) const
                 //     throw cvpg::invalid_parameter_exception("invalid input mode");
                 // }
 
-                if (!parameters.is_valid("filter_width", width))
+                if (!parameters.is_valid("filter_width", static_cast<std::int32_t>(width)))
                 {
                     throw cvpg::invalid_parameter_exception("invalid filter width");
                 }
 
-                if (!parameters.is_valid("filter_height", width))
+                if (!parameters.is_valid("filter_height", static_cast<std::int32_t>(height)))
                 {
                     throw cvpg::invalid_parameter_exception("invalid filter height");
                 }
@@ -349,8 +349,8 @@ void mean::on_parse(std::shared_ptr<detail::parser> parser) const
                                     "mean",
                                     {
                                         scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
-                                        scripting::item(scripting::item::types::unsigned_integer, width),
-                                        scripting::item(scripting::item::types::unsigned_integer, height),
+                                        scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(width)),
+                                        scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(height)),
                                         scripting::item(scripting::item::types::characters, border_mode)
                                     }
                                 };
@@ -367,8 +367,8 @@ void mean::on_parse(std::shared_ptr<detail::parser> parser) const
                                     "mean",
                                     {
                                         scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
-                                        scripting::item(scripting::item::types::unsigned_integer, width),
-                                        scripting::item(scripting::item::types::unsigned_integer, height),
+                                        scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(width)),
+                                        scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(height)),
                                         scripting::item(scripting::item::types::characters, border_mode)
                                     }
                                 };

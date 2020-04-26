@@ -22,7 +22,6 @@ public:
             invalid,
             grayscale_8_bit_image,
             rgb_8_bit_image,
-            unsigned_integer,
             signed_integer,
             real,
             boolean,
@@ -87,7 +86,6 @@ public:
 
     std::function<bool(std::any)> predicate() const;
 
-    bool is_valid(std::uint32_t value) const;
     bool is_valid(std::int32_t value) const;
     bool is_valid(double value) const;
     bool is_valid(bool value) const;

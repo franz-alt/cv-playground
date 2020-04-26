@@ -162,54 +162,6 @@ std::function<bool(std::any)> parameter::predicate() const
     return m_predicate;
 }
 
-bool parameter::is_valid(std::uint32_t value) const
-{
-    try
-    {
-        switch (range())
-        {
-            default:
-            case range_type::unknown:
-                // TODO error handling
-                break;
-
-            case range_type::set:
-            {
-                for (auto const & v : values())
-                {
-                    if (value == std::any_cast<std::uint32_t>(v))
-                    {
-                        return true;
-                    }
-                }
-
-                break;
-            }
-
-            case range_type::min_max:
-            {
-                auto val = std::any_cast<std::uint32_t>(value);
-                auto min = std::any_cast<std::uint32_t>(min_value());
-                auto max = std::any_cast<std::uint32_t>(max_value());
-                auto step = std::any_cast<std::uint32_t>(value_step_size());
-
-                if (val >= min && val <= max && ((val - min) % step) == 0 && predicate()(std::move(value)))
-                {
-                    return true;
-                }
-
-                break;
-            }
-        }
-    }
-    catch (...)
-    {
-        // ignore exceptions
-    }
-    
-    return false;
-}
-
 bool parameter::is_valid(std::int32_t value) const
 {
     try
@@ -356,10 +308,6 @@ std::string parameter::to_string(item::item_type type, std::any value)
             // no output in this case
             break;
 
-        case parameter::item::item_type::unsigned_integer:
-            ss << std::any_cast<std::uint32_t>(value);
-            break;
-        
         case parameter::item::item_type::signed_integer:
             ss << std::any_cast<std::int32_t>(value);
             break;
@@ -394,10 +342,6 @@ std::ostream & operator<<(std::ostream & out, parameter::item::item_type const &
 
         case parameter::item::item_type::rgb_8_bit_image:
             out << "RGB 8-bit image";
-            break;
-
-        case parameter::item::item_type::unsigned_integer:
-            out << "unsigned integer number";
             break;
 
         case parameter::item::item_type::signed_integer:
