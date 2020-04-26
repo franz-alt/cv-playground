@@ -42,7 +42,9 @@ parameter::parameter(std::string name,
     , m_types(std::move(types))
     , m_range()
     , m_predicate(std::move(predicate))
-{}
+{
+    m_range.range = range_type::all;
+}
 
 parameter::parameter(std::string name,
                      std::string description,
@@ -78,7 +80,11 @@ parameter::parameter(std::string name,
 {
     m_types.push_back(std::move(type));
 
-    if (value_set.size() != 0)
+    if (value_set.size() == 0)
+    {
+        m_range.range = range_type::all;
+    }
+    else
     {
         m_range.range = range_type::set;
 
@@ -200,6 +206,11 @@ bool parameter::is_valid(std::int32_t value) const
 
                 break;
             }
+
+            case range_type::all:
+            {
+                return predicate()(std::move(value));
+            }
         }
     }
     catch (...)
@@ -247,6 +258,11 @@ bool parameter::is_valid(double value) const
                 }
 
                 break;
+            }
+
+            case range_type::all:
+            {
+                return predicate()(std::move(value));
             }
         }
     }

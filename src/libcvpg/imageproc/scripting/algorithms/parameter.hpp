@@ -37,7 +37,8 @@ public:
     {
         unknown,
         set,
-        min_max
+        min_max,
+        all
     };
 
     parameter(std::string name,
