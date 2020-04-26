@@ -245,7 +245,7 @@ void scharr::on_parse(std::shared_ptr<detail::parser> parser) const
                 throw cvpg::invalid_parameter_exception("invalid size of filter mask");
             }
 
-            if (!parameters.is_valid("mode", size))
+            if (!parameters.is_valid("mode", mode))
             {
                 throw cvpg::invalid_parameter_exception("invalid operation mode");
             }
