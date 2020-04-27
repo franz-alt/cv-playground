@@ -33,8 +33,8 @@ struct mean_task :  public boost::asynchronous::continuation_task<std::shared_pt
         try
         {
             auto id = std::any_cast<std::uint32_t>(m_item.arguments.at(0).value());
-            auto width = std::any_cast<std::uint32_t>(m_item.arguments.at(1).value());
-            auto height = std::any_cast<std::uint32_t>(m_item.arguments.at(2).value());
+            auto width = std::any_cast<std::int32_t>(m_item.arguments.at(1).value());
+            auto height = std::any_cast<std::int32_t>(m_item.arguments.at(2).value());
             auto border_mode_str = std::any_cast<std::string>(m_item.arguments.at(3).value());
 
             auto input = m_image_processor->load(m_context_id, id);
