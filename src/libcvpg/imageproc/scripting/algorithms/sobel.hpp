@@ -14,7 +14,7 @@ public:
 
     virtual std::string category() const override;
 
-    virtual std::vector<parameter::item::item_type> result() const override;
+    virtual std::vector<scripting::item::types> result() const override;
 
     virtual parameter_set parameters() const override;
 

@@ -24,12 +24,8 @@ public:
     {
         invalid,
         grayscale_8_bit_image,
-        grayscale_8_bit_id,
         rgb_8_bit_image,
-        rgb_8_bit_id,
         binary_mask,
-        binary_mask_id,
-        unsigned_integer,
         signed_integer,
         real,
         boolean,

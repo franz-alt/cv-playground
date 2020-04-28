@@ -205,12 +205,12 @@ std::string scharr::category() const
     return "filters/edge";
 }
 
-std::vector<parameter::item::item_type> scharr::result() const
+std::vector<scripting::item::types> scharr::result() const
 {
     return
     {
-        parameter::item::item_type::grayscale_8_bit_image,
-        parameter::item::item_type::rgb_8_bit_image
+        scripting::item::types::grayscale_8_bit_image,
+        scripting::item::types::rgb_8_bit_image
     };
 }
 
@@ -220,10 +220,10 @@ parameter_set scharr::parameters() const
 
     return parameter_set
            ({
-               parameter("image", "input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image }),
-               parameter("size", "size of filter mask", "", parameter::item::item_type::signed_integer, static_cast<std::int32_t>(3)),
-               parameter("mode", "operation mode", "", parameter::item::item_type::characters, { "hor"s, "vert"s }),
-               parameter("border_mode", "border mode", "", parameter::item::item_type::characters, { "ignore"s, "constant"s, "mirror"s })
+               parameter("image", "input image", "", { scripting::item::types::grayscale_8_bit_image, scripting::item::types::rgb_8_bit_image }),
+               parameter("size", "size of filter mask", "", scripting::item::types::signed_integer, static_cast<std::int32_t>(3)),
+               parameter("mode", "operation mode", "", scripting::item::types::characters, { "hor"s, "vert"s }),
+               parameter("border_mode", "border mode", "", scripting::item::types::characters, { "ignore"s, "constant"s, "mirror"s })
            });
 }
 

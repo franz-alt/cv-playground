@@ -119,11 +119,11 @@ std::string histogram_equalization::category() const
     return "filters/enhancement";
 }
 
-std::vector<parameter::item::item_type> histogram_equalization::result() const
+std::vector<scripting::item::types> histogram_equalization::result() const
 {
     return
     {
-        parameter::item::item_type::grayscale_8_bit_image
+        scripting::item::types::grayscale_8_bit_image
     };
 }
 
@@ -131,7 +131,7 @@ parameter_set histogram_equalization::parameters() const
 {
     return parameter_set
            (
-               parameter("image", "input image", "", parameter::item::item_type::grayscale_8_bit_image)
+               parameter("image", "input image", "", scripting::item::types::grayscale_8_bit_image)
            );
 }
 

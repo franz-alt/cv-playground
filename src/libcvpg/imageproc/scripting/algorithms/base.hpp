@@ -35,7 +35,7 @@ public:
 
     virtual std::string category() const = 0;
 
-    virtual std::vector<parameter::item::item_type> result() const = 0;
+    virtual std::vector<scripting::item::types> result() const = 0;
 
     virtual parameter_set parameters() const = 0;
 

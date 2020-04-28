@@ -185,12 +185,12 @@ std::string multiply_add::category() const
     return "filters/arithmetic";
 }
 
-std::vector<parameter::item::item_type> multiply_add::result() const
+std::vector<scripting::item::types> multiply_add::result() const
 {
     return
     {
-        parameter::item::item_type::grayscale_8_bit_image,
-        parameter::item::item_type::rgb_8_bit_image
+        scripting::item::types::grayscale_8_bit_image,
+        scripting::item::types::rgb_8_bit_image
     };
 }
 
@@ -198,9 +198,9 @@ parameter_set multiply_add::parameters() const
 {
     return parameter_set
            ({
-               parameter("image", "input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image }),
-               parameter("factor", "multiplication factor", "", parameter::item::item_type::real),
-               parameter("offset", "offset", "", parameter::item::item_type::signed_integer, static_cast<std::int32_t>(-255), static_cast<std::int32_t>(255), static_cast<std::int32_t>(1))
+               parameter("image", "input image", "", { scripting::item::types::grayscale_8_bit_image, scripting::item::types::rgb_8_bit_image }),
+               parameter("factor", "multiplication factor", "", scripting::item::types::real),
+               parameter("offset", "offset", "", scripting::item::types::signed_integer, static_cast<std::int32_t>(-255), static_cast<std::int32_t>(255), static_cast<std::int32_t>(1))
            });
 }
 

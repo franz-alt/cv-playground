@@ -34,7 +34,7 @@ namespace cvpg { namespace imageproc { namespace scripting { namespace algorithm
 parameter::parameter(std::string name,
                      std::string description,
                      std::string unit,
-                     std::initializer_list<item::item_type> types,
+                     std::initializer_list<scripting::item::types> types,
                      std::function<bool(std::any)> predicate)
     : m_name(std::move(name))
     , m_description(std::move(description))
@@ -49,7 +49,7 @@ parameter::parameter(std::string name,
 parameter::parameter(std::string name,
                      std::string description,
                      std::string unit,
-                     item::item_type type,
+                     scripting::item::types type,
                      std::any constant_value,
                      std::function<bool(std::any)> predicate)
     : m_name(std::move(name))
@@ -68,7 +68,7 @@ parameter::parameter(std::string name,
 parameter::parameter(std::string name,
                      std::string description,
                      std::string unit,
-                     item::item_type type,
+                     scripting::item::types type,
                      std::initializer_list<std::any> value_set,
                      std::function<bool(std::any)> predicate)
     : m_name(std::move(name))
@@ -98,7 +98,7 @@ parameter::parameter(std::string name,
 parameter::parameter(std::string name,
                      std::string description,
                      std::string unit,
-                     item::item_type type,
+                     scripting::item::types type,
                      std::any min_value,
                      std::any max_value,
                      std::any value_step_size,
@@ -133,7 +133,7 @@ std::string parameter::unit() const
     return m_unit;
 }
 
-std::vector<parameter::item::item_type> parameter::types() const
+std::vector<scripting::item::types> parameter::types() const
 {
     return m_types;
 }
@@ -314,7 +314,7 @@ bool parameter::is_valid(std::string value) const
     return false;
 }
 
-std::string parameter::to_string(item::item_type type, std::any value)
+std::string parameter::to_string(scripting::item::types type, std::any value)
 {
     std::stringstream ss;
 
@@ -324,60 +324,24 @@ std::string parameter::to_string(item::item_type type, std::any value)
             // no output in this case
             break;
 
-        case parameter::item::item_type::signed_integer:
+        case scripting::item::types::signed_integer:
             ss << std::any_cast<std::int32_t>(value);
             break;
 
-        case parameter::item::item_type::real:
+        case scripting::item::types::real:
             ss << std::any_cast<double>(value);
             break;
 
-        case parameter::item::item_type::boolean:
+        case scripting::item::types::boolean:
             ss << std::any_cast<bool>(value);
             break;
 
-        case parameter::item::item_type::characters:
+        case scripting::item::types::characters:
             ss << "\"" << std::any_cast<std::string>(value) << "\"";
             break;
     }
 
     return ss.str();
-}
-
-std::ostream & operator<<(std::ostream & out, parameter::item::item_type const & t)
-{
-    switch (t)
-    {
-        case parameter::item::item_type::invalid:
-            out << "invalid";
-            break;
-
-        case parameter::item::item_type::grayscale_8_bit_image:
-            out << "grayscale 8-bit image";
-            break;
-
-        case parameter::item::item_type::rgb_8_bit_image:
-            out << "RGB 8-bit image";
-            break;
-
-        case parameter::item::item_type::signed_integer:
-            out << "signed integer number";
-            break;
-
-        case parameter::item::item_type::real:
-            out << "floating point number";
-            break;
-
-        case parameter::item::item_type::boolean:
-            out << "boolean";
-            break;
-
-        case parameter::item::item_type::characters:
-            out << "characters";
-            break;
-    }
-
-    return out;
 }
 
 std::ostream & operator<<(std::ostream & out, parameter const & p)

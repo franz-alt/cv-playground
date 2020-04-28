@@ -126,11 +126,11 @@ std::string convert_to_gray::category() const
     return "conversion";
 }
 
-std::vector<parameter::item::item_type> convert_to_gray::result() const
+std::vector<scripting::item::types> convert_to_gray::result() const
 {
     return
     {
-        parameter::item::item_type::grayscale_8_bit_image
+        scripting::item::types::grayscale_8_bit_image
     };
 }
 
@@ -140,8 +140,8 @@ parameter_set convert_to_gray::parameters() const
 
     return parameter_set
            ({
-               parameter("image", "input image", "", parameter::item::item_type::rgb_8_bit_image),
-               parameter("mode", "conversion mode", "", parameter::item::item_type::characters, { "use_red"s, "use_green"s, "use_blue"s, "calc_average"s })
+               parameter("image", "input image", "", scripting::item::types::rgb_8_bit_image),
+               parameter("mode", "conversion mode", "", scripting::item::types::characters, { "use_red"s, "use_green"s, "use_blue"s, "calc_average"s })
            });
 }
 

@@ -185,12 +185,12 @@ std::string diff::category() const
     return "filters/arithmetic";
 }
 
-std::vector<parameter::item::item_type> diff::result() const
+std::vector<scripting::item::types> diff::result() const
 {
     return
     {
-        parameter::item::item_type::grayscale_8_bit_image,
-        parameter::item::item_type::rgb_8_bit_image
+        scripting::item::types::grayscale_8_bit_image,
+        scripting::item::types::rgb_8_bit_image
     };
 }
 
@@ -198,9 +198,9 @@ parameter_set diff::parameters() const
 {
     return parameter_set
            ({
-               parameter("image1", "first input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image }),
-               parameter("image2", "second input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image }),
-               parameter("offset", "offset", "", parameter::item::item_type::signed_integer, static_cast<std::int32_t>(-255), static_cast<std::int32_t>(255), static_cast<std::int32_t>(1))
+               parameter("image1", "first input image", "", { scripting::item::types::grayscale_8_bit_image, scripting::item::types::rgb_8_bit_image }),
+               parameter("image2", "second input image", "", { scripting::item::types::grayscale_8_bit_image, scripting::item::types::rgb_8_bit_image }),
+               parameter("offset", "offset", "", scripting::item::types::signed_integer, static_cast<std::int32_t>(-255), static_cast<std::int32_t>(255), static_cast<std::int32_t>(1))
            });
 }
 

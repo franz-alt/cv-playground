@@ -30,29 +30,13 @@ std::ostream & operator<<(std::ostream & out, item::types const & type)
         case item::types::grayscale_8_bit_image:
             out << "grayscale 8-bit image";
             break;
-        
-        case item::types::grayscale_8_bit_id:
-            out << "grayscale 8-bit image ID";
-            break;
 
         case item::types::rgb_8_bit_image:
             out << "RGB 8-bit image";
             break;
 
-        case item::types::rgb_8_bit_id:
-            out << "RGB 8-bit image ID";
-            break;
-
         case item::types::binary_mask:
             out << "binary mask";
-            break;
-
-        case item::types::binary_mask_id:
-            out << "binary mask ID";
-            break;
-
-        case item::types::unsigned_integer:
-            out << "unsigned integer";
             break;
 
         case item::types::signed_integer:
@@ -107,20 +91,6 @@ std::ostream & operator<<(std::ostream & out, item const & i)
             {
                 // TODO implement me
                 out << "???";
-                break;
-            }
-
-            case item::types::grayscale_8_bit_id:
-            case item::types::rgb_8_bit_id:
-            case item::types::binary_mask_id:
-            {
-                out << "(ID=" << std::any_cast<std::uint32_t>(i.value()) << ")";
-                break;
-            }
-
-            case item::types::unsigned_integer:
-            {
-                out << std::any_cast<std::uint32_t>(i.value());
                 break;
             }
 

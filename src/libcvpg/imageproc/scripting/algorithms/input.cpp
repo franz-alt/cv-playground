@@ -87,12 +87,12 @@ std::string input::category() const
     return "input";
 }
 
-std::vector<parameter::item::item_type> input::result() const
+std::vector<scripting::item::types> input::result() const
 {
     return
     {
-        parameter::item::item_type::grayscale_8_bit_image,
-        parameter::item::item_type::rgb_8_bit_image
+        scripting::item::types::grayscale_8_bit_image,
+        scripting::item::types::rgb_8_bit_image
     };
 }
 
@@ -102,9 +102,9 @@ parameter_set input::parameters() const
 
     return parameter_set
            ({
-               parameter("mode", "type of input image", "", parameter::item::item_type::characters, { "gray"s, "rgb"s }),
-               parameter("bits", "amount of bits", "", parameter::item::item_type::signed_integer, static_cast<std::int32_t>(8)),
-               parameter("source", "ID of input source", "", parameter::item::item_type::signed_integer)
+               parameter("mode", "type of input image", "", scripting::item::types::characters, { "gray"s, "rgb"s }),
+               parameter("bits", "amount of bits", "", scripting::item::types::signed_integer, static_cast<std::int32_t>(8)),
+               parameter("source", "ID of input source", "", scripting::item::types::signed_integer)
            });
 }
 

@@ -10,29 +10,13 @@
 #include <string>
 #include <vector>
 
+#include <libcvpg/imageproc/scripting/item.hpp>
+
 namespace cvpg { namespace imageproc { namespace scripting { namespace algorithms {
 
 class parameter
 {
 public:
-    struct item
-    {
-        enum class item_type : std::uint8_t
-        {
-            invalid,
-            grayscale_8_bit_image,
-            rgb_8_bit_image,
-            signed_integer,
-            real,
-            boolean,
-            characters
-        };
-
-        item_type type = item_type::invalid;
-
-        std::any value = std::any();
-    };
-
     enum class range_type
     {
         unknown,
@@ -44,27 +28,27 @@ public:
     parameter(std::string name,
               std::string description,
               std::string unit,
-              std::initializer_list<item::item_type> types,
+              std::initializer_list<scripting::item::types> types,
               std::function<bool(std::any)> predicate = std::function<bool(std::any)>([](std::any){ return true; }));
 
     parameter(std::string name,
               std::string description,
               std::string unit,
-              item::item_type type,
+              scripting::item::types type,
               std::any constant_value,
               std::function<bool(std::any)> predicate = std::function<bool(std::any)>([](std::any){ return true; }));
 
-    parameter(std::string name = "",
-              std::string description = "",
-              std::string unit = "",
-              item::item_type type = item::item_type::invalid,
+    parameter(std::string name,
+              std::string description,
+              std::string unit,
+              scripting::item::types type,
               std::initializer_list<std::any> value_set = {},
               std::function<bool(std::any)> predicate = std::function<bool(std::any)>([](std::any){ return true; }));
 
     parameter(std::string name,
               std::string description,
               std::string unit,
-              item::item_type type,
+              scripting::item::types type,
               std::any min_value,
               std::any max_value,
               std::any value_step_size,
@@ -75,7 +59,7 @@ public:
 
     std::string unit() const;
 
-    std::vector<item::item_type> types() const;
+    std::vector<scripting::item::types> types() const;
 
     range_type range() const;
 
@@ -92,7 +76,7 @@ public:
     bool is_valid(bool value) const;
     bool is_valid(std::string value) const;
 
-    static std::string to_string(item::item_type type, std::any value);
+    static std::string to_string(scripting::item::types type, std::any value);
 
 private:
     std::string m_name;
@@ -100,7 +84,7 @@ private:
 
     std::string m_unit;
 
-    std::vector<item::item_type> m_types;
+    std::vector<scripting::item::types> m_types;
 
     struct range_of_values
     {
@@ -118,7 +102,7 @@ private:
     std::function<bool(std::any)> m_predicate;
 };
 
-std::ostream & operator<<(std::ostream & out, parameter::item::item_type const & p);
+// std::ostream & operator<<(std::ostream & out, scripting::item::types const & p);
 
 std::ostream & operator<<(std::ostream & out, parameter const & p);
 

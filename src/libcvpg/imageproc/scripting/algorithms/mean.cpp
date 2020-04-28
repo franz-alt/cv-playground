@@ -191,12 +191,12 @@ std::string mean::category() const
     return "filters/smoothing";
 }
 
-std::vector<parameter::item::item_type> mean::result() const
+std::vector<scripting::item::types> mean::result() const
 {
     return
     {
-        parameter::item::item_type::grayscale_8_bit_image,
-        parameter::item::item_type::rgb_8_bit_image,
+        scripting::item::types::grayscale_8_bit_image,
+        scripting::item::types::rgb_8_bit_image,
     };
 }
 
@@ -206,10 +206,10 @@ parameter_set mean::parameters() const
 
     return parameter_set
            ({
-               parameter("image", "input image", "", { parameter::item::item_type::grayscale_8_bit_image, parameter::item::item_type::rgb_8_bit_image }),
-               parameter("filter_width", "filter width", "pixels", parameter::item::item_type::signed_integer, static_cast<std::int32_t>(3), static_cast<std::int32_t>(65535), static_cast<std::int32_t>(2)),
-               parameter("filter_height", "filter height", "pixels", parameter::item::item_type::signed_integer, static_cast<std::int32_t>(3), static_cast<std::int32_t>(65535), static_cast<std::int32_t>(2)),
-               parameter("border_mode", "border mode", "", parameter::item::item_type::characters, { "ignore"s, "constant"s, "mirror"s })
+               parameter("image", "input image", "", { scripting::item::types::grayscale_8_bit_image, scripting::item::types::rgb_8_bit_image }),
+               parameter("filter_width", "filter width", "pixels", scripting::item::types::signed_integer, static_cast<std::int32_t>(3), static_cast<std::int32_t>(65535), static_cast<std::int32_t>(2)),
+               parameter("filter_height", "filter height", "pixels", scripting::item::types::signed_integer, static_cast<std::int32_t>(3), static_cast<std::int32_t>(65535), static_cast<std::int32_t>(2)),
+               parameter("border_mode", "border mode", "", scripting::item::types::characters, { "ignore"s, "constant"s, "mirror"s })
            });
 }
 
