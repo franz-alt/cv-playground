@@ -220,11 +220,28 @@ void mean::on_parse(std::shared_ptr<detail::parser> parser) const
         std::function<std::uint32_t(std::uint32_t, std::uint32_t, std::uint32_t, std::string)> fct =
             [parser, parameters = this->parameters()](std::uint32_t image_id, std::uint32_t width, std::uint32_t height, std::string border_mode)
             {
+                std::uint32_t result_id = 0;
+
+                // find image
+                if (!parser)
+                {
+                    throw cvpg::invalid_parameter_exception("invalid parser");
+                }
+
+                auto image = parser->find_item(image_id);
+
+                if (image.arguments.empty())
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input ID");
+                }
+
+                auto input_type = image.arguments.front().type();
+
                 // check parameters
-                // if (!parameters.is_valid("image", image_id)
-                // {
-                //     throw cvpg::invalid_parameter_exception("invalid input mode");
-                // }
+                if (!(input_type == scripting::item::types::grayscale_8_bit_image || input_type == scripting::item::types::rgb_8_bit_image))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input type");
+                }
 
                 if (!parameters.is_valid("filter_width", static_cast<std::int32_t>(width)))
                 {
@@ -241,66 +258,54 @@ void mean::on_parse(std::shared_ptr<detail::parser> parser) const
                     throw cvpg::invalid_parameter_exception("invalid border mode");
                 }
 
-                std::uint32_t result_id = 0;
-
-                // find image
-                if (!!parser)
+                switch (input_type)
                 {
-                    auto image = parser->find_item(image_id);
-
-                    if (image.arguments.size() != 0 && image.arguments.front().type() != scripting::item::types::invalid)
+                    case scripting::item::types::grayscale_8_bit_image:
                     {
-                        switch (image.arguments.front().type())
+                        detail::parser::item result_item
                         {
-                            case scripting::item::types::grayscale_8_bit_image:
+                            "mean",
                             {
-                                detail::parser::item result_item
-                                {
-                                    "mean",
-                                    {
-                                        scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
-                                        scripting::item(scripting::item::types::signed_integer, width),
-                                        scripting::item(scripting::item::types::signed_integer, height),
-                                        scripting::item(scripting::item::types::characters, border_mode)
-                                    }
-                                };
-
-                                result_id = parser->register_item(std::move(result_item));
-
-                                break;
+                                scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(width)),
+                                scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(height)),
+                                scripting::item(scripting::item::types::characters, border_mode)
                             }
+                        };
 
-                            case scripting::item::types::rgb_8_bit_image:
-                            {
-                                detail::parser::item result_item
-                                {
-                                    "mean",
-                                    {
-                                        scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
-                                        scripting::item(scripting::item::types::signed_integer, width),
-                                        scripting::item(scripting::item::types::signed_integer, height),
-                                        scripting::item(scripting::item::types::characters, border_mode)
-                                    }
-                                };
+                        result_id = parser->register_item(std::move(result_item));
 
-                                result_id = parser->register_item(std::move(result_item));
-
-                                break;
-                            }
-
-                            default:
-                            {
-                                // TODO error handling
-
-                                break;
-                            }
-                        }
-
-                        if (result_id != 0)
-                        {
-                            parser->register_link(image_id, result_id);
-                        }
+                        break;
                     }
+
+                    case scripting::item::types::rgb_8_bit_image:
+                    {
+                        detail::parser::item result_item
+                        {
+                            "mean",
+                            {
+                                scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(width)),
+                                scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(height)),
+                                scripting::item(scripting::item::types::characters, border_mode)
+                            }
+                        };
+
+                        result_id = parser->register_item(std::move(result_item));
+
+                        break;
+                    }
+
+                    default:
+                    {
+                        // to make the compiler happy ; other input types are not allowed and should be handled above
+                        break;
+                    }
+                }
+
+                if (result_id != 0)
+                {
+                    parser->register_link(image_id, result_id);
                 }
 
                 return result_id;
@@ -314,11 +319,26 @@ void mean::on_parse(std::shared_ptr<detail::parser> parser) const
         std::function<std::uint32_t(std::uint32_t, std::uint32_t, std::uint32_t)> fct =
             [parser, parameters = this->parameters()](std::uint32_t image_id, std::uint32_t width, std::uint32_t height)
             {
+                // find image
+                if (!parser)
+                {
+                    throw cvpg::invalid_parameter_exception("invalid parser");
+                }
+
+                auto image = parser->find_item(image_id);
+
+                if (image.arguments.empty())
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input ID");
+                }
+
+                auto input_type = image.arguments.front().type();
+
                 // check parameters
-                // if (!parameters.is_valid("image", image_id)
-                // {
-                //     throw cvpg::invalid_parameter_exception("invalid input mode");
-                // }
+                if (!(input_type == scripting::item::types::grayscale_8_bit_image || input_type == scripting::item::types::rgb_8_bit_image))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input type");
+                }
 
                 if (!parameters.is_valid("filter_width", static_cast<std::int32_t>(width)))
                 {
@@ -331,66 +351,57 @@ void mean::on_parse(std::shared_ptr<detail::parser> parser) const
                 }
 
                 std::uint32_t result_id = 0;
+
                 std::string border_mode = "constant";
 
-                // find image
-                if (!!parser)
+                switch (input_type)
                 {
-                    auto image = parser->find_item(image_id);
-
-                    if (image.arguments.size() != 0 && image.arguments.front().type() != scripting::item::types::invalid)
+                    case scripting::item::types::grayscale_8_bit_image:
                     {
-                        switch (image.arguments.front().type())
+                        detail::parser::item result_item
                         {
-                            case scripting::item::types::grayscale_8_bit_image:
+                            "mean",
                             {
-                                detail::parser::item result_item
-                                {
-                                    "mean",
-                                    {
-                                        scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
-                                        scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(width)),
-                                        scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(height)),
-                                        scripting::item(scripting::item::types::characters, border_mode)
-                                    }
-                                };
-
-                                result_id = parser->register_item(std::move(result_item));
-
-                                break;
+                                scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(width)),
+                                scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(height)),
+                                scripting::item(scripting::item::types::characters, border_mode)
                             }
+                        };
 
-                            case scripting::item::types::rgb_8_bit_image:
-                            {
-                                detail::parser::item result_item
-                                {
-                                    "mean",
-                                    {
-                                        scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
-                                        scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(width)),
-                                        scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(height)),
-                                        scripting::item(scripting::item::types::characters, border_mode)
-                                    }
-                                };
+                        result_id = parser->register_item(std::move(result_item));
 
-                                result_id = parser->register_item(std::move(result_item));
-
-                                break;
-                            }
-
-                            default:
-                            {
-                                // TODO error handling
-
-                                break;
-                            }
-                        }
-
-                        if (result_id != 0)
-                        {
-                            parser->register_link(image_id, result_id);
-                        }
+                        break;
                     }
+
+                    case scripting::item::types::rgb_8_bit_image:
+                    {
+                        detail::parser::item result_item
+                        {
+                            "mean",
+                            {
+                                scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(width)),
+                                scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(height)),
+                                scripting::item(scripting::item::types::characters, border_mode)
+                            }
+                        };
+
+                        result_id = parser->register_item(std::move(result_item));
+
+                        break;
+                    }
+
+                    default:
+                    {
+                        // to make the compiler happy ; other input types are not allowed and should be handled above
+                        break;
+                    }
+                }
+
+                if (result_id != 0)
+                {
+                    parser->register_link(image_id, result_id);
                 }
 
                 return result_id;

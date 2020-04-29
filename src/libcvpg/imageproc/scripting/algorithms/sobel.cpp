@@ -232,96 +232,97 @@ void sobel::on_parse(std::shared_ptr<detail::parser> parser) const
     // all parameters
     {
         std::function<std::uint32_t(std::uint32_t, std::int32_t, std::string, std::string)> fct =
-        [parser, parameters = this->parameters()](std::uint32_t image_id, std::int32_t size, std::string mode, std::string border_mode)
-        {
-            // check parameters
-            // if (!parameters.is_valid("image", image_id)
-            // {
-            //     throw cvpg::invalid_parameter_exception("invalid input mode");
-            // }
-
-            if (!parameters.is_valid("size", size))
+            [parser, parameters = this->parameters()](std::uint32_t image_id, std::int32_t size, std::string mode, std::string border_mode)
             {
-                throw cvpg::invalid_parameter_exception("invalid size of filter mask");
-            }
+                // find image
+                if (!parser)
+                {
+                    throw cvpg::invalid_parameter_exception("invalid parser");
+                }
 
-            if (!parameters.is_valid("mode", mode))
-            {
-                throw cvpg::invalid_parameter_exception("invalid operation mode");
-            }
-
-            if (!parameters.is_valid("border_mode", border_mode))
-            {
-                throw cvpg::invalid_parameter_exception("invalid border mode");
-            }
-
-            std::uint32_t result_id = 0;
-
-            // find image
-            if (!!parser)
-            {
                 auto image = parser->find_item(image_id);
 
-                if (image.arguments.size() != 0 && image.arguments.front().type() != scripting::item::types::invalid)
+                if (image.arguments.empty())
                 {
-                    switch (image.arguments.front().type())
+                    throw cvpg::invalid_parameter_exception("invalid input ID");
+                }
+
+                auto input_type = image.arguments.front().type();
+
+                // check parameters
+                if (!(input_type == scripting::item::types::grayscale_8_bit_image || input_type == scripting::item::types::rgb_8_bit_image))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input type");
+                }
+
+                if (!parameters.is_valid("size", size))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid size of filter mask");
+                }
+
+                if (!parameters.is_valid("mode", mode))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid operation mode");
+                }
+
+                if (!parameters.is_valid("border_mode", border_mode))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid border mode");
+                }
+
+                std::uint32_t result_id = 0;
+
+                switch (input_type)
+                {
+                    case scripting::item::types::grayscale_8_bit_image:
                     {
-                        case scripting::item::types::grayscale_8_bit_image:
+                        detail::parser::item result_item
                         {
-                            detail::parser::item result_item
+                            "sobel",
                             {
-                                "sobel",
-                                {
-                                    scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
-                                    scripting::item(scripting::item::types::signed_integer, size),
-                                    scripting::item(scripting::item::types::characters, mode),
-                                    scripting::item(scripting::item::types::characters, border_mode)
-                                }
-                            };
+                                scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::signed_integer, size),
+                                scripting::item(scripting::item::types::characters, mode),
+                                scripting::item(scripting::item::types::characters, border_mode)
+                            }
+                        };
 
-                            result_id = parser->register_item(std::move(result_item));
+                        result_id = parser->register_item(std::move(result_item));
 
-                            break;
-                        }
-
-                        case scripting::item::types::rgb_8_bit_image:
-                        {
-                            detail::parser::item result_item
-                            {
-                                "sobel",
-                                {
-                                    scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
-                                    scripting::item(scripting::item::types::signed_integer, size),
-                                    scripting::item(scripting::item::types::characters, mode),
-                                    scripting::item(scripting::item::types::characters, border_mode)
-                                }
-                            };
-
-                            result_id = parser->register_item(std::move(result_item));
-
-                            break;
-                        }
-
-                        default:
-                        {
-                            // TODO error handling
-
-                            break;
-                        }
+                        break;
                     }
 
-                    if (result_id != 0)
+                    case scripting::item::types::rgb_8_bit_image:
                     {
-                        parser->register_link(image_id, result_id);
+                        detail::parser::item result_item
+                        {
+                            "sobel",
+                            {
+                                scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::signed_integer, size),
+                                scripting::item(scripting::item::types::characters, mode),
+                                scripting::item(scripting::item::types::characters, border_mode)
+                            }
+                        };
+
+                        result_id = parser->register_item(std::move(result_item));
+
+                        break;
+                    }
+
+                    default:
+                    {
+                        // to make the compiler happy ; other input types are not allowed and should be handled above
+                        break;
                     }
                 }
-                else
-                {
-                    // TODO error handling
-                }
-            }
 
-            return result_id;
+                if (result_id != 0)
+                {
+                    parser->register_link(image_id, result_id);
+                }
+
+                return result_id;
         };
 
         parser->register_specification(name(), std::move(fct));
@@ -332,87 +333,89 @@ void sobel::on_parse(std::shared_ptr<detail::parser> parser) const
         std::function<std::uint32_t(std::uint32_t, std::int32_t, std::string)> fct =
             [parser, parameters = this->parameters()](std::uint32_t image_id, std::int32_t size, std::string mode)
             {
+                // find image
+                if (!parser)
+                {
+                    throw cvpg::invalid_parameter_exception("invalid parser");
+                }
+
+                auto image = parser->find_item(image_id);
+
+                if (image.arguments.empty())
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input ID");
+                }
+
+                auto input_type = image.arguments.front().type();
+
                 // check parameters
-                // if (!parameters.is_valid("image", image_id)
-                // {
-                //     throw cvpg::invalid_parameter_exception("invalid input mode");
-                // }
+                if (!(input_type == scripting::item::types::grayscale_8_bit_image || input_type == scripting::item::types::rgb_8_bit_image))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input type");
+                }
 
                 if (!parameters.is_valid("size", size))
                 {
                     throw cvpg::invalid_parameter_exception("invalid size of filter mask");
                 }
 
-                if (!parameters.is_valid("mode", size))
+                if (!parameters.is_valid("mode", mode))
                 {
                     throw cvpg::invalid_parameter_exception("invalid operation mode");
                 }
 
                 std::uint32_t result_id = 0;
+
                 std::string border_mode = "constant";
 
-                // find image
-                if (!!parser)
+                switch (input_type)
                 {
-                    auto image = parser->find_item(image_id);
-
-                    if (image.arguments.size() != 0 && image.arguments.front().type() != scripting::item::types::invalid)
+                    case scripting::item::types::grayscale_8_bit_image:
                     {
-                        switch (image.arguments.front().type())
+                        detail::parser::item result_item
                         {
-                            case scripting::item::types::grayscale_8_bit_image:
+                            "sobel",
                             {
-                                detail::parser::item result_item
-                                {
-                                    "sobel",
-                                    {
-                                        scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
-                                        scripting::item(scripting::item::types::signed_integer, size),
-                                        scripting::item(scripting::item::types::characters, mode),
-                                        scripting::item(scripting::item::types::characters, border_mode)
-                                    }
-                                };
-
-                                result_id = parser->register_item(std::move(result_item));
-
-                                break;
+                                scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::signed_integer, size),
+                                scripting::item(scripting::item::types::characters, mode),
+                                scripting::item(scripting::item::types::characters, border_mode)
                             }
+                        };
 
-                            case scripting::item::types::rgb_8_bit_image:
-                            {
-                                detail::parser::item result_item
-                                {
-                                    "sobel",
-                                    {
-                                        scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
-                                        scripting::item(scripting::item::types::signed_integer, size),
-                                        scripting::item(scripting::item::types::characters, mode),
-                                        scripting::item(scripting::item::types::characters, border_mode)
-                                    }
-                                };
+                        result_id = parser->register_item(std::move(result_item));
 
-                                result_id = parser->register_item(std::move(result_item));
-
-                                break;
-                            }
-
-                            default:
-                            {
-                                // TODO error handling
-
-                                break;
-                            }
-                        }
-
-                        if (result_id != 0)
-                        {
-                            parser->register_link(image_id, result_id);
-                        }
+                        break;
                     }
-                    else
+
+                    case scripting::item::types::rgb_8_bit_image:
                     {
-                        // TODO error handling
+                        detail::parser::item result_item
+                        {
+                            "sobel",
+                            {
+                                scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::signed_integer, size),
+                                scripting::item(scripting::item::types::characters, mode),
+                                scripting::item(scripting::item::types::characters, border_mode)
+                            }
+                        };
+
+                        result_id = parser->register_item(std::move(result_item));
+
+                        break;
                     }
+
+                    default:
+                    {
+                        // to make the compiler happy ; other input types are not allowed and should be handled above
+                        break;
+                    }
+                }
+
+                if (result_id != 0)
+                {
+                    parser->register_link(image_id, result_id);
                 }
 
                 return result_id;

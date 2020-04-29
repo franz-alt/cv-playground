@@ -140,49 +140,42 @@ void histogram_equalization::on_parse(std::shared_ptr<detail::parser> parser) co
     std::function<std::uint32_t(std::uint32_t)> fct =
         [parser](std::uint32_t image_id)
         {
+            // find image
+            if (!parser)
+            {
+                throw cvpg::invalid_parameter_exception("invalid parser");
+            }
+
+            auto image = parser->find_item(image_id);
+
+            if (image.arguments.empty())
+            {
+                throw cvpg::invalid_parameter_exception("invalid input ID");
+            }
+
+            auto input_type = image.arguments.front().type();
+
+            // check parameters
+            if (input_type != scripting::item::types::grayscale_8_bit_image)
+            {
+                throw cvpg::invalid_parameter_exception("invalid input type");
+            }
+
             std::uint32_t result_id = 0;
 
-            // find image
-            if (!!parser)
+            detail::parser::item result_item
             {
-                auto image = parser->find_item(image_id);
-
-                if (image.arguments.size() != 0 && image.arguments.front().type() != scripting::item::types::invalid)
+                "histogram_equalization",
                 {
-                    switch (image.arguments.front().type())
-                    {
-                        case scripting::item::types::grayscale_8_bit_image:
-                        {
-                            detail::parser::item result_item
-                            {
-                                "histogram_equalization",
-                                {
-                                    scripting::item(scripting::item::types::grayscale_8_bit_image, image_id)
-                                }
-                            };
-
-                            result_id = parser->register_item(std::move(result_item));
-
-                            break;
-                        }
-
-                        default:
-                        {
-                            // TODO error handling
-
-                            break;
-                        }
-                    }
-
-                    if (result_id != 0)
-                    {
-                        parser->register_link(image_id, result_id);
-                    }
+                    scripting::item(scripting::item::types::grayscale_8_bit_image, image_id)
                 }
-                else
-                {
-                    // TODO error handling
-                }
+            };
+
+            result_id = parser->register_item(std::move(result_item));
+
+            if (result_id != 0)
+            {
+                parser->register_link(image_id, result_id);
             }
 
             return result_id;

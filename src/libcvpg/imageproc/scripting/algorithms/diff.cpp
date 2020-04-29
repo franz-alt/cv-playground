@@ -211,11 +211,29 @@ void diff::on_parse(std::shared_ptr<detail::parser> parser) const
         std::function<std::uint32_t(std::uint32_t, std::uint32_t, std::int32_t)> fct =
             [parser, parameters = this->parameters()](std::uint32_t image1_id, std::uint32_t image2_id, std::int32_t offset)
             {
+                // find image
+                if (!parser)
+                {
+                    throw cvpg::invalid_parameter_exception("invalid parser");
+                }
+
+                auto image1 = parser->find_item(image1_id);
+                auto image2 = parser->find_item(image2_id);
+
+                if (image1.arguments.empty() || image2.arguments.empty())
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input ID");
+                }
+
+                auto input1_type = image1.arguments.front().type();
+                auto input2_type = image2.arguments.front().type();
+
                 // check parameters
-                // if (!parameters.is_valid("image", image_id)
-                // {
-                //     throw cvpg::invalid_parameter_exception("invalid input mode");
-                // }
+                if (!(input1_type == scripting::item::types::grayscale_8_bit_image && input2_type == scripting::item::types::grayscale_8_bit_image) ||
+                     (input1_type == scripting::item::types::rgb_8_bit_image && input2_type == scripting::item::types::rgb_8_bit_image))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input type");
+                }
 
                 if (!parameters.is_valid("offset", offset))
                 {
@@ -224,34 +242,20 @@ void diff::on_parse(std::shared_ptr<detail::parser> parser) const
 
                 std::uint32_t result_id = 0;
 
-                // find images
-                if (!!parser)
+                detail::parser::item result_item
                 {
-                    auto image1 = parser->find_item(image1_id);
-                    auto image2 = parser->find_item(image2_id);
-
-                    if (image1.arguments.size() != 0 && image2.arguments.size() != 0 && image1.arguments.front().type() == image2.arguments.front().type())
+                    "diff",
                     {
-                        detail::parser::item result_item
-                        {
-                            "diff",
-                            {
-                                scripting::item(image1.arguments.front().type(), image1_id),
-                                scripting::item(image2.arguments.front().type(), image2_id),
-                                scripting::item(scripting::item::types::signed_integer, offset)
-                            }
-                        };
-
-                        result_id = parser->register_item(std::move(result_item));
-
-                        parser->register_link(image1_id, result_id);
-                        parser->register_link(image2_id, result_id);
+                        scripting::item(image1.arguments.front().type(), image1_id),
+                        scripting::item(image2.arguments.front().type(), image2_id),
+                        scripting::item(scripting::item::types::signed_integer, offset)
                     }
-                    else
-                    {
-                        throw cvpg::invalid_parameter_exception("different image types");
-                    }
-                }
+                };
+
+                result_id = parser->register_item(std::move(result_item));
+
+                parser->register_link(image1_id, result_id);
+                parser->register_link(image2_id, result_id);
 
                 return result_id;
             };
