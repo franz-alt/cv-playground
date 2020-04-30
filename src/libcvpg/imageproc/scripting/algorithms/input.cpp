@@ -2,9 +2,11 @@
 
 #include <chrono>
 #include <functional>
+#include <string>
 
 #include <boost/asynchronous/continuation_task.hpp>
 
+#include <libcvpg/core/exception.hpp>
 #include <libcvpg/core/image.hpp>
 #include <libcvpg/imageproc/algorithms/tiling.hpp>
 #include <libcvpg/imageproc/scripting/image_processor.hpp>
@@ -85,36 +87,43 @@ std::string input::category() const
     return "input";
 }
 
-std::vector<parameter::item::item_type> input::result() const
+std::vector<scripting::item::types> input::result() const
 {
     return
     {
-        parameter::item::item_type::grayscale_8_bit_image,
-        parameter::item::item_type::rgb_8_bit_image
+        scripting::item::types::grayscale_8_bit_image,
+        scripting::item::types::rgb_8_bit_image
     };
 }
 
-std::vector<std::vector<parameter> > input::parameters() const
+parameter_set input::parameters() const
 {
-    return std::vector<std::vector<parameter> >(
-    {
-        {
-            parameter("mode", "type of input image", "", parameter::item::item_type::characters),
-            parameter("bits", "amount of bits", "", parameter::item::item_type::unsigned_integer)
-        }
-    });
-}
+    using namespace std::string_literals;
 
-std::vector<std::string> input::check_parameters(std::vector<std::any> parameters) const
-{
-    return std::vector<std::string>();
+    return parameter_set
+           ({
+               parameter("mode", "type of input image", "", scripting::item::types::characters, { "gray"s, "rgb"s }),
+               parameter("bits", "amount of bits", "", scripting::item::types::signed_integer, static_cast<std::int32_t>(8)),
+               parameter("source", "ID of input source", "", scripting::item::types::signed_integer)
+           });
 }
 
 void input::on_parse(std::shared_ptr<detail::parser> parser) const
 {
     std::function<std::uint32_t(std::string, std::uint8_t)> fct1 =
-        [parser](std::string mode, std::uint8_t bits)
+        [parser, parameters = this->parameters()](std::string mode, std::uint8_t bits)
         {
+            // check parameters
+            if (!parameters.is_valid("mode", mode))
+            {
+                throw cvpg::invalid_parameter_exception("invalid input mode");
+            }
+
+            if (!parameters.is_valid("bits", static_cast<std::int32_t>(bits)))
+            {
+                throw cvpg::invalid_parameter_exception("unsupported bits per pixel");
+            }
+
             std::uint32_t result_id = 0;
 
             if (mode == "gray")
@@ -126,15 +135,11 @@ void input::on_parse(std::shared_ptr<detail::parser> parser) const
                         "input",
                         {
                             scripting::item(scripting::item::types::grayscale_8_bit_image, static_cast<std::uint32_t>(0)), // TODO 0 is at moment the ID of the input image
-                            scripting::item(scripting::item::types::unsigned_integer, static_cast<std::uint32_t>(8))
+                            scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(8))
                         }
                     };
 
                     result_id = parser->register_item(std::move(result_item));
-                }
-                else
-                {
-                    // TODO error handling
                 }
             }
             else if (mode == "rgb")
@@ -146,20 +151,12 @@ void input::on_parse(std::shared_ptr<detail::parser> parser) const
                         "input",
                         {
                             scripting::item(scripting::item::types::rgb_8_bit_image, static_cast<std::uint32_t>(0)), // TODO 0 is at moment the ID of the input image
-                            scripting::item(scripting::item::types::unsigned_integer, static_cast<std::uint32_t>(8))
+                            scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(8))
                         }
                     };
 
                     result_id = parser->register_item(std::move(result_item));
                 }
-                else
-                {
-                    // TODO error handling
-                }
-            }
-            else
-            {
-                // TODO error handling
             }
 
             return result_id;
@@ -168,8 +165,19 @@ void input::on_parse(std::shared_ptr<detail::parser> parser) const
     parser->register_specification(name(), std::move(fct1));
 
     std::function<std::uint32_t(std::string, std::uint8_t, std::uint8_t)> fct2 =
-        [parser](std::string mode, std::uint8_t bits, std::uint8_t source)
+        [parser, parameters = this->parameters()](std::string mode, std::uint8_t bits, std::uint8_t source)
         {
+            // check parameters
+            if (!parameters.is_valid("mode", mode))
+            {
+                throw cvpg::invalid_parameter_exception("invalid input mode");
+            }
+
+            if (!parameters.is_valid("bits", static_cast<std::int32_t>(bits)))
+            {
+                throw cvpg::invalid_parameter_exception("unsupported bits per pixel");
+            }
+
             std::uint32_t result_id = 0;
 
             if (mode == "gray")
@@ -181,15 +189,11 @@ void input::on_parse(std::shared_ptr<detail::parser> parser) const
                         "input",
                         {
                             scripting::item(scripting::item::types::grayscale_8_bit_image, static_cast<std::uint32_t>(source) - 1),
-                            scripting::item(scripting::item::types::unsigned_integer, static_cast<std::uint32_t>(8))
+                            scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(8))
                         }
                     };
 
                     result_id = parser->register_item(std::move(result_item));
-                }
-                else
-                {
-                    // TODO error handling
                 }
             }
             else if (mode == "rgb")
@@ -201,20 +205,12 @@ void input::on_parse(std::shared_ptr<detail::parser> parser) const
                         "input",
                         {
                             scripting::item(scripting::item::types::rgb_8_bit_image, static_cast<std::uint32_t>(source) - 1),
-                            scripting::item(scripting::item::types::unsigned_integer, static_cast<std::uint32_t>(8))
+                            scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(8))
                         }
                     };
 
                     result_id = parser->register_item(std::move(result_item));
                 }
-                else
-                {
-                    // TODO error handling
-                }
-            }
-            else
-            {
-                // TODO error handling
             }
 
             return result_id;

@@ -2,9 +2,11 @@
 
 #include <chrono>
 #include <functional>
+#include <string>
 
 #include <boost/asynchronous/continuation_task.hpp>
 
+#include <libcvpg/core/exception.hpp>
 #include <libcvpg/core/image.hpp>
 #include <libcvpg/imageproc/algorithms/convert_to_gray.hpp>
 #include <libcvpg/imageproc/scripting/image_processor.hpp>
@@ -124,110 +126,72 @@ std::string convert_to_gray::category() const
     return "conversion";
 }
 
-std::vector<parameter::item::item_type> convert_to_gray::result() const
+std::vector<scripting::item::types> convert_to_gray::result() const
 {
     return
     {
-        parameter::item::item_type::grayscale_8_bit_image
+        scripting::item::types::grayscale_8_bit_image
     };
 }
 
-std::vector<std::vector<parameter> > convert_to_gray::parameters() const
+parameter_set convert_to_gray::parameters() const
 {
-    return std::vector<std::vector<parameter> >(
-    {
-        {
-            parameter("image", "input image", "", parameter::item::item_type::rgb_8_bit_image),
-            parameter("mode", "conversion mode", "", parameter::item::item_type::characters)
-        }
-    });
-}
+    using namespace std::string_literals;
 
-std::vector<std::string> convert_to_gray::check_parameters(std::vector<std::any> parameters) const
-{
-    std::vector<std::string> messages;
-
-    if (parameters.size() != this->parameters().size())
-    {
-        messages.emplace_back(std::string("Invalid amount of parameters. Expecting ").append(std::to_string(this->parameters().size())).append(" parameters."));
-        return messages;
-    }
-
-    // TODO check image parameter
-
-    return messages;
+    return parameter_set
+           ({
+               parameter("image", "input image", "", scripting::item::types::rgb_8_bit_image),
+               parameter("mode", "conversion mode", "", scripting::item::types::characters, { "use_red"s, "use_green"s, "use_blue"s, "calc_average"s })
+           });
 }
 
 void convert_to_gray::on_parse(std::shared_ptr<detail::parser> parser) const
 {
     std::function<std::uint32_t(std::uint32_t, std::string)> fct =
-        [parser](std::uint32_t image_id, std::string mode)
+        [parser, parameters = this->parameters()](std::uint32_t image_id, std::string mode)
         {
-            if (mode != "use_red" || mode != "use_green" || mode != "use_blue" || mode != "calc_average")
+            // find image
+            if (!parser)
             {
-                // TODO error handling
+                throw cvpg::invalid_parameter_exception("invalid parser");
+            }
+
+            auto image = parser->find_item(image_id);
+
+            if (image.arguments.empty())
+            {
+                throw cvpg::invalid_parameter_exception("invalid input ID");
+            }
+
+            auto input_type = image.arguments.front().type();
+
+            // check parameters
+            if (input_type != scripting::item::types::rgb_8_bit_image)
+            {
+                throw cvpg::invalid_parameter_exception("invalid input type");
+            }
+
+            if (!parameters.is_valid("mode", mode))
+            {
+                throw cvpg::invalid_parameter_exception("invalid conversion mode");
             }
 
             std::uint32_t result_id = 0;
 
-            // find image
-            if (!!parser)
+            detail::parser::item result_item
             {
-                auto image = parser->find_item(image_id);
-
-                if (image.arguments.size() != 0 && image.arguments.front().type() != scripting::item::types::invalid)
+                "convert_to_gray",
                 {
-                    switch (image.arguments.front().type())
-                    {
-                        case scripting::item::types::grayscale_8_bit_image:
-                        {
-                            detail::parser::item result_item
-                            {
-                                "convert_to_gray",
-                                {
-                                    scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
-                                    scripting::item(scripting::item::types::characters, mode)
-                                }
-                            };
-
-                            result_id = parser->register_item(std::move(result_item));
-
-                            break;
-                        }
-
-                        case scripting::item::types::rgb_8_bit_image:
-                        {
-                           detail::parser::item result_item
-                            {
-                                "convert_to_gray",
-                                {
-                                    scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
-                                    scripting::item(scripting::item::types::characters, mode)
-                                }
-                            };
-
-                            result_id = parser->register_item(std::move(result_item));
-
-                            break;
-                        }
-
-                        default:
-                        {
-                            // TODO error handling
-
-                            break;
-                        }
-                    }
-
-                    if (result_id != 0)
-                    {
-                        parser->register_link(image_id, result_id);
-                    }
+                    scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
+                    scripting::item(scripting::item::types::characters, mode)
                 }
-                else
-                {
-                    // TODO error handling
-                }
+            };
+
+            result_id = parser->register_item(std::move(result_item));
+
+            if (result_id != 0)
+            {
+                parser->register_link(image_id, result_id);
             }
 
             return result_id;

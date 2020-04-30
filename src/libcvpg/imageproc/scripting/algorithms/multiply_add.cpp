@@ -5,6 +5,7 @@
 
 #include <boost/asynchronous/continuation_task.hpp>
 
+#include <libcvpg/core/exception.hpp>
 #include <libcvpg/core/image.hpp>
 #include <libcvpg/imageproc/algorithms/tiling.hpp>
 #include <libcvpg/imageproc/algorithms/tiling/multiply_add.hpp>
@@ -184,117 +185,112 @@ std::string multiply_add::category() const
     return "filters/arithmetic";
 }
 
-std::vector<parameter::item::item_type> multiply_add::result() const
+std::vector<scripting::item::types> multiply_add::result() const
 {
     return
     {
-        parameter::item::item_type::grayscale_8_bit_image,
-        parameter::item::item_type::rgb_8_bit_image
+        scripting::item::types::grayscale_8_bit_image,
+        scripting::item::types::rgb_8_bit_image
     };
 }
 
-std::vector<std::vector<parameter> > multiply_add::parameters() const
+parameter_set multiply_add::parameters() const
 {
-    return std::vector<std::vector<parameter> >(
-    {
-        {
-            parameter("image", "input image", "", parameter::item::item_type::grayscale_8_bit_image),
-            parameter("factor", "multiplication factor", "", parameter::item::item_type::real),
-            parameter("offset", "offset", "", parameter::item::item_type::signed_integer, in_range<std::int16_t>(-255, 255))
-        },
-        {
-            parameter("image", "input image", "", parameter::item::item_type::rgb_8_bit_image),
-            parameter("factor", "multiplication factor", "", parameter::item::item_type::real),
-            parameter("offset", "offset", "", parameter::item::item_type::signed_integer, in_range<std::int16_t>(-255, 255))
-        }
-    });
-}
-
-std::vector<std::string> multiply_add::check_parameters(std::vector<std::any> parameters) const
-{
-    std::vector<std::string> messages;
-
-    if (parameters.size() != this->parameters().size())
-    {
-        messages.emplace_back(std::string("Invalid amount of parameters. Expecting ").append(std::to_string(this->parameters().size())).append(" parameters."));
-        return messages;
-    }
-
-    // TODO check image parameter
-
-    return messages;
+    return parameter_set
+           ({
+               parameter("image", "input image", "", { scripting::item::types::grayscale_8_bit_image, scripting::item::types::rgb_8_bit_image }),
+               parameter("factor", "multiplication factor", "", scripting::item::types::real),
+               parameter("offset", "offset", "", scripting::item::types::signed_integer, static_cast<std::int32_t>(-255), static_cast<std::int32_t>(255), static_cast<std::int32_t>(1))
+           });
 }
 
 void multiply_add::on_parse(std::shared_ptr<detail::parser> parser) const
 {
     std::function<std::uint32_t(std::uint32_t, double, std::int32_t)> fct =
-        [parser](std::uint32_t image_id, double factor, std::int32_t offset)
+        [parser, parameters = this->parameters()](std::uint32_t image_id, double factor, std::int32_t offset)
         {
-            std::uint32_t result_id = 0;
+                // find image
+                if (!parser)
+                {
+                    throw cvpg::invalid_parameter_exception("invalid parser");
+                }
 
-            // find image
-            if (!!parser)
-            {
                 auto image = parser->find_item(image_id);
 
-                if (image.arguments.size() != 0 && image.arguments.front().type() != scripting::item::types::invalid)
+                if (image.arguments.empty())
                 {
-                    switch (image.arguments.front().type())
+                    throw cvpg::invalid_parameter_exception("invalid input ID");
+                }
+
+                auto input_type = image.arguments.front().type();
+
+                // check parameters
+                if (!(input_type == scripting::item::types::grayscale_8_bit_image || input_type == scripting::item::types::rgb_8_bit_image))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input");
+                }
+
+                if (!parameters.is_valid("factor", factor))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid multiplication factor");
+                }
+
+                if (!parameters.is_valid("offset", offset))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid offset");
+                }
+
+                std::uint32_t result_id = 0;
+
+                switch (input_type)
+                {
+                    case scripting::item::types::grayscale_8_bit_image:
                     {
-                        case scripting::item::types::grayscale_8_bit_image:
+                        detail::parser::item result_item
                         {
-                            detail::parser::item result_item
+                            "multiply_add",
                             {
-                                "multiply_add",
-                                {
-                                    scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
-                                    scripting::item(scripting::item::types::real, factor),
-                                    scripting::item(scripting::item::types::signed_integer, offset)
-                                }
-                            };
+                                scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::real, factor),
+                                scripting::item(scripting::item::types::signed_integer, offset)
+                            }
+                        };
 
-                            result_id = parser->register_item(std::move(result_item));
+                        result_id = parser->register_item(std::move(result_item));
 
-                            break;
-                        }
-
-                        case scripting::item::types::rgb_8_bit_image:
-                        {
-                            detail::parser::item result_item
-                            {
-                                "multiply_add",
-                                {
-                                    scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
-                                    scripting::item(scripting::item::types::real, factor),
-                                    scripting::item(scripting::item::types::signed_integer, offset)
-                                }
-                            };
-
-                            result_id = parser->register_item(std::move(result_item));
-
-                            break;
-                        }
-
-                        default:
-                        {
-                            // TODO error handling
-
-                            break;
-                        }
+                        break;
                     }
 
-                    if (result_id != 0)
+                    case scripting::item::types::rgb_8_bit_image:
                     {
-                        parser->register_link(image_id, result_id);
+                        detail::parser::item result_item
+                        {
+                            "multiply_add",
+                            {
+                                scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::real, factor),
+                                scripting::item(scripting::item::types::signed_integer, offset)
+                            }
+                        };
+
+                        result_id = parser->register_item(std::move(result_item));
+
+                        break;
+                    }
+
+                    default:
+                    {
+                        // to make the compiler happy ; other input types are not allowed and should be handled above
+                        break;
                     }
                 }
-                else
-                {
-                    // TODO error handling
-                }
-            }
 
-            return result_id;
+                if (result_id != 0)
+                {
+                    parser->register_link(image_id, result_id);
+                }
+
+                return result_id;
         };
 
     parser->register_specification(name(), std::move(fct));

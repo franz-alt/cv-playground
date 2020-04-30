@@ -6,7 +6,14 @@ set(sources
     main.cpp
     core/image.cpp
     imageproc/algorithms/histogram_equalization.cpp
+    imageproc/scripting/convert_to_gray.cpp
+    imageproc/scripting/diff.cpp
     imageproc/scripting/image_processor.cpp
+    imageproc/scripting/input.cpp
+    imageproc/scripting/mean.cpp
+    imageproc/scripting/multiply_add.cpp
+    imageproc/scripting/scharr.cpp
+    imageproc/scripting/sobel.cpp
 )
 
 add_executable(${target} ${sources})

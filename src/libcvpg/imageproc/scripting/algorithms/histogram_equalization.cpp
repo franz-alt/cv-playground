@@ -5,6 +5,7 @@
 
 #include <boost/asynchronous/continuation_task.hpp>
 
+#include <libcvpg/core/exception.hpp>
 #include <libcvpg/imageproc/algorithms/histogram_equalization.hpp>
 #include <libcvpg/imageproc/scripting/image_processor.hpp>
 #include <libcvpg/imageproc/scripting/item.hpp>
@@ -118,37 +119,20 @@ std::string histogram_equalization::category() const
     return "filters/enhancement";
 }
 
-std::vector<parameter::item::item_type> histogram_equalization::result() const
+std::vector<scripting::item::types> histogram_equalization::result() const
 {
     return
     {
-        parameter::item::item_type::grayscale_8_bit_image
+        scripting::item::types::grayscale_8_bit_image
     };
 }
 
-std::vector<std::vector<parameter> > histogram_equalization::parameters() const
+parameter_set histogram_equalization::parameters() const
 {
-    return std::vector<std::vector<parameter> >(
-    {
-        {
-            parameter("image", "input image", "", parameter::item::item_type::grayscale_8_bit_image)
-        }
-    });
-}
-
-std::vector<std::string> histogram_equalization::check_parameters(std::vector<std::any> parameters) const
-{
-    std::vector<std::string> messages;
-
-    if (parameters.size() != this->parameters().size())
-    {
-        messages.emplace_back(std::string("Invalid amount of parameters. Expecting ").append(std::to_string(this->parameters().size())).append(" parameters."));
-        return messages;
-    }
-
-    // TODO check image parameter
-
-    return messages;
+    return parameter_set
+           (
+               parameter("image", "input image", "", scripting::item::types::grayscale_8_bit_image)
+           );
 }
 
 void histogram_equalization::on_parse(std::shared_ptr<detail::parser> parser) const
@@ -156,49 +140,42 @@ void histogram_equalization::on_parse(std::shared_ptr<detail::parser> parser) co
     std::function<std::uint32_t(std::uint32_t)> fct =
         [parser](std::uint32_t image_id)
         {
+            // find image
+            if (!parser)
+            {
+                throw cvpg::invalid_parameter_exception("invalid parser");
+            }
+
+            auto image = parser->find_item(image_id);
+
+            if (image.arguments.empty())
+            {
+                throw cvpg::invalid_parameter_exception("invalid input ID");
+            }
+
+            auto input_type = image.arguments.front().type();
+
+            // check parameters
+            if (input_type != scripting::item::types::grayscale_8_bit_image)
+            {
+                throw cvpg::invalid_parameter_exception("invalid input type");
+            }
+
             std::uint32_t result_id = 0;
 
-            // find image
-            if (!!parser)
+            detail::parser::item result_item
             {
-                auto image = parser->find_item(image_id);
-
-                if (image.arguments.size() != 0 && image.arguments.front().type() != scripting::item::types::invalid)
+                "histogram_equalization",
                 {
-                    switch (image.arguments.front().type())
-                    {
-                        case scripting::item::types::grayscale_8_bit_image:
-                        {
-                            detail::parser::item result_item
-                            {
-                                "histogram_equalization",
-                                {
-                                    scripting::item(scripting::item::types::grayscale_8_bit_image, image_id)
-                                }
-                            };
-
-                            result_id = parser->register_item(std::move(result_item));
-
-                            break;
-                        }
-
-                        default:
-                        {
-                            // TODO error handling
-
-                            break;
-                        }
-                    }
-
-                    if (result_id != 0)
-                    {
-                        parser->register_link(image_id, result_id);
-                    }
+                    scripting::item(scripting::item::types::grayscale_8_bit_image, image_id)
                 }
-                else
-                {
-                    // TODO error handling
-                }
+            };
+
+            result_id = parser->register_item(std::move(result_item));
+
+            if (result_id != 0)
+            {
+                parser->register_link(image_id, result_id);
             }
 
             return result_id;

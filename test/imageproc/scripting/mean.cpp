@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <string>
 #include <thread>
 
@@ -11,7 +12,7 @@
 #include <libcvpg/imageproc/scripting/image_processor.hpp>
 #include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
 
-TEST(test_scripting, compile_invalid_script)
+TEST(test_scripting_algorithm_mean, compile_valid_parameters)
 {
     // create a thread pool for a single thread
     auto pool = boost::asynchronous::make_shared_scheduler_proxy<
@@ -25,13 +26,57 @@ TEST(test_scripting, compile_invalid_script)
 
     cvpg::imageproc::scripting::image_processor_proxy image_processor(scheduler, pool);
 
-    // case: 'val' instead of 'var'
+    // good case
     {
         auto promise_compile = std::make_shared<std::promise<std::size_t> >();
         auto future_compile = promise_compile->get_future();
 
         image_processor.compile(
-            R"(val input_rgb = input("rgb", 8))",
+            R"(
+                var input_rgb = input("rgb", 8)
+                var smoothed = mean(input_rgb, 3, 3, "ignore")
+            )",
+            [promise_compile](std::size_t compile_id)
+            {
+                promise_compile->set_value(compile_id);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
+                ASSERT_TRUE(false);
+            }
+        );
+
+        auto status = future_compile.wait_for(std::chrono::seconds(3));
+
+        ASSERT_TRUE(status != std::future_status::deferred && status != std::future_status::timeout);
+    }
+}
+
+TEST(test_scripting_algorithm_mean, compile_invalid_parameters)
+{
+    // create a thread pool for a single thread
+    auto pool = boost::asynchronous::make_shared_scheduler_proxy<
+                    boost::asynchronous::multiqueue_threadpool_scheduler<
+                        boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(1, std::string("threadpool"));
+
+    // create image processor
+    auto scheduler = boost::asynchronous::make_shared_scheduler_proxy<
+                        boost::asynchronous::single_thread_scheduler<
+                            boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("image_processor"));
+
+    cvpg::imageproc::scripting::image_processor_proxy image_processor(scheduler, pool);
+
+    // case: invalid filter width (even width)
+    {
+        auto promise_compile = std::make_shared<std::promise<std::size_t> >();
+        auto future_compile = promise_compile->get_future();
+
+        image_processor.compile(
+            R"(
+                var input_rgb = input("rgb", 8)
+                var smoothed = mean(input_rgb, 4, 3, "ignore")
+            )",
             [promise_compile](std::size_t compile_id)
             {
                 ASSERT_TRUE(false);
@@ -49,13 +94,16 @@ TEST(test_scripting, compile_invalid_script)
         ASSERT_TRUE(status != std::future_status::deferred && status != std::future_status::timeout);
     }
 
-    // case: unknown algoritm
+    // case: invalid filter height (even height)
     {
         auto promise_compile = std::make_shared<std::promise<std::size_t> >();
         auto future_compile = promise_compile->get_future();
 
         image_processor.compile(
-            R"(var input_rgb = input_("rgb", 8))",
+            R"(
+                var input_rgb = input("rgb", 8)
+                var smoothed = mean(input_rgb, 3, 4, "ignore")
+            )",
             [promise_compile](std::size_t compile_id)
             {
                 ASSERT_TRUE(false);
@@ -72,23 +120,8 @@ TEST(test_scripting, compile_invalid_script)
 
         ASSERT_TRUE(status != std::future_status::deferred && status != std::future_status::timeout);
     }
-}
 
-TEST(test_scripting, compile_simple_script)
-{
-    // create a thread pool for a single thread
-    auto pool = boost::asynchronous::make_shared_scheduler_proxy<
-                    boost::asynchronous::multiqueue_threadpool_scheduler<
-                        boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(1, std::string("threadpool"));
-
-    // create image processor
-    auto scheduler = boost::asynchronous::make_shared_scheduler_proxy<
-                        boost::asynchronous::single_thread_scheduler<
-                            boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("image_processor"));
-
-    cvpg::imageproc::scripting::image_processor_proxy image_processor(scheduler, pool);
-
-    // first compile
+    // case: invalid filter width (out of range)
     {
         auto promise_compile = std::make_shared<std::promise<std::size_t> >();
         auto future_compile = promise_compile->get_future();
@@ -96,15 +129,17 @@ TEST(test_scripting, compile_simple_script)
         image_processor.compile(
             R"(
                 var input_rgb = input("rgb", 8)
-                var input_gray = convert_to_gray(input_rgb, "use_red")
+                var smoothed = mean(input_rgb, 1, 3, "ignore")
             )",
             [promise_compile](std::size_t compile_id)
             {
-                promise_compile->set_value(compile_id);
+                ASSERT_TRUE(false);
             },
             [promise_compile](std::size_t compile_id, std::string error)
             {
-                ASSERT_TRUE(false);
+                ASSERT_TRUE(!error.empty());
+
+                promise_compile->set_value(compile_id);
             }
         );
 
@@ -113,130 +148,30 @@ TEST(test_scripting, compile_simple_script)
         ASSERT_TRUE(status != std::future_status::deferred && status != std::future_status::timeout);
     }
 
-    // second compile
+    // case: invalid border mode
     {
         auto promise_compile = std::make_shared<std::promise<std::size_t> >();
         auto future_compile = promise_compile->get_future();
 
         image_processor.compile(
             R"(
-                var input_rgb = input("rgb", 8)
-                var input_gray = convert_to_gray(input_rgb, "use_red")
+                var input_rgb = input("rgp", 8)
+                var smoothed = mean(input_rgb, 3, 3, "foo")
             )",
             [promise_compile](std::size_t compile_id)
             {
-                promise_compile->set_value(compile_id);
+                ASSERT_TRUE(false);
             },
             [promise_compile](std::size_t compile_id, std::string error)
             {
-                ASSERT_TRUE(false);
+                ASSERT_TRUE(!error.empty());
+
+                promise_compile->set_value(compile_id);
             }
         );
 
         auto status = future_compile.wait_for(std::chrono::seconds(3));
 
         ASSERT_TRUE(status != std::future_status::deferred && status != std::future_status::timeout);
-    }
-}
-
-TEST(test_scripting, evaluate_simple_script)
-{
-    // create a thread pool for a single thread
-    auto pool = boost::asynchronous::make_shared_scheduler_proxy<
-                    boost::asynchronous::multiqueue_threadpool_scheduler<
-                        boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(1, std::string("threadpool"));
-
-    // create image processor
-    auto scheduler = boost::asynchronous::make_shared_scheduler_proxy<
-                        boost::asynchronous::single_thread_scheduler<
-                            boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("scope"));
-
-    cvpg::imageproc::scripting::image_processor_proxy image_processor(scheduler, pool);
-
-    std::size_t compile_id = 0;
-
-    // compile expression
-    {
-        auto promise_compile = std::make_shared<std::promise<std::size_t> >();
-        auto future_compile = promise_compile->get_future();
-
-        image_processor.compile(
-            R"(
-                var input_rgb = input("rgb", 8)
-                var input_gray = convert_to_gray(input_rgb, "use_red")
-            )",
-            [promise_compile](std::size_t compile_id)
-            {
-                promise_compile->set_value(compile_id);
-            },
-            [promise_compile](std::size_t compile_id, std::string error)
-            {
-                ASSERT_TRUE(false);
-            }
-        );
-
-        auto status = future_compile.wait_for(std::chrono::seconds(3));
-
-        ASSERT_TRUE(status != std::future_status::deferred && status != std::future_status::timeout);
-
-        compile_id = future_compile.get();
-    }
-
-    // evaluate image
-    {
-        cvpg::image_rgb_8bit image(1920, 1080);
-
-        auto promise_evaluate = std::make_shared<std::promise<cvpg::image_gray_8bit> >();
-        auto future_evaluate = promise_evaluate->get_future();
-
-        image_processor.evaluate(
-            compile_id,
-            std::move(image),
-            [promise_evaluate](cvpg::imageproc::scripting::item item)
-            {
-                ASSERT_TRUE(item.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image);
-
-                auto image = std::any_cast<cvpg::image_gray_8bit>(item.value());
-
-                promise_evaluate->set_value(std::move(image));
-            }
-        );
-
-        auto status = future_evaluate.wait_for(std::chrono::seconds(3));
-
-        ASSERT_TRUE(status != std::future_status::deferred && status != std::future_status::timeout);
-
-        auto converted_image = future_evaluate.get();
-
-        ASSERT_TRUE(converted_image.width() == 1920 && converted_image.height() == 1080);
-    }
-
-    // evaluate another image
-    {
-        cvpg::image_rgb_8bit image(1024, 768);
-
-        auto promise_evaluate = std::make_shared<std::promise<cvpg::image_gray_8bit> >();
-        auto future_evaluate = promise_evaluate->get_future();
-
-        image_processor.evaluate(
-            compile_id,
-            std::move(image),
-            [promise_evaluate](cvpg::imageproc::scripting::item item)
-            {
-                ASSERT_TRUE(item.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image);
-
-                auto image = std::any_cast<cvpg::image_gray_8bit>(item.value());
-
-                promise_evaluate->set_value(std::move(image));
-            }
-        );
-
-        auto status = future_evaluate.wait_for(std::chrono::seconds(3));
-
-        ASSERT_TRUE(status != std::future_status::deferred && status != std::future_status::timeout);
-
-        auto converted_image = future_evaluate.get();
-
-        ASSERT_TRUE(converted_image.width() == 1024 && converted_image.height() == 768);
     }
 }

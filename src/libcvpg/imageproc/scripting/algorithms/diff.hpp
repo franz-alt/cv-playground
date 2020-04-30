@@ -14,11 +14,9 @@ public:
 
     virtual std::string category() const override;
 
-    virtual std::vector<parameter::item::item_type> result() const override;
+    virtual std::vector<scripting::item::types> result() const override;
 
-    virtual std::vector<std::vector<parameter> > parameters() const override;
-
-    virtual std::vector<std::string> check_parameters(std::vector<std::any> parameters) const override;
+    virtual parameter_set parameters() const override;
 
     virtual void on_parse(std::shared_ptr<detail::parser> parser) const override;
 

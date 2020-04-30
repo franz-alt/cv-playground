@@ -7,6 +7,7 @@
 #include <functional>
 #include <future>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <thread>
 
@@ -112,32 +113,27 @@ int main(int argc, char * argv[])
 
             for (auto const & s : algs)
             {
-                if (s->parameters().empty())
+                std::cout << "- " << s->name() << "(";
+
+                if (!s->parameters().empty())
                 {
-                    std::cout << "- " << s->name() << "()" << std::endl;
-                }
-                else
-                {
-                    for (auto const & v : s->parameters())
+                    decltype(s->parameters()) const & params = s->parameters();
+
+                    std::stringstream ss;
+                    ss << *(params.begin());
+
+                    for (auto it = ++(params.begin()); it != params.end(); ++it)
                     {
-                        std::cout << "- " << s->name() << "(";
-
-                        if (!v.empty())
-                        {
-                            std::cout << v.front();
-
-                            for (auto it = std::begin(v) + 1; it != std::end(v); ++it)
-                            {
-                                std::cout << ", " << *it;
-                            }
-                        }
-
-                        std::cout << ")" << std::endl;
+                        ss << ", " << *it;
                     }
+
+                    std::cout << ss.str();
                 }
 
-                std::cout << std::endl;
+                std::cout << ")" << std::endl;
             }
+
+            std::cout << std::endl;
         }
 
         std::cout << "example script" << std::endl
@@ -242,15 +238,23 @@ int main(int argc, char * argv[])
                                                                                boost::asynchronous::make_scheduler_interfaces(scheduler, pool, formatter_scheduler));
 
     // compiling script
-    auto promise_compile = std::make_shared<std::promise<std::size_t> >();
+    struct compile_result
+    {
+        std::size_t id = 0;
+        std::string error;
+    };
+
+    auto promise_compile = std::make_shared<std::promise<compile_result> >();
     auto future_compile = promise_compile->get_future();
 
-    std::size_t compile_id = 0;
-
     processor.compile(script,
-                      [promise_compile](bool /*successful*/, std::size_t compile_id)
+                      [promise_compile](std::size_t compile_id)
                       {
-                          promise_compile->set_value(compile_id);
+                          promise_compile->set_value({ compile_id });
+                      },
+                      [promise_compile](std::size_t compile_id, std::string error)
+                      {
+                          promise_compile->set_value({ compile_id, std::move(error) });
                       });
 
     auto status = future_compile.wait_for(std::chrono::seconds(3));
@@ -266,12 +270,19 @@ int main(int argc, char * argv[])
         return 1;
     }
 
+    auto compile_result = future_compile.get();
+
+    // check if script compiled successfully
+    if (!compile_result.error.empty())
+    {
+        std::cerr << "Script compiled with error '" << compile_result.error << "'. Abort" << std::endl;
+        return 1;
+    }
+
     if (!quiet)
     {
         std::cout << "Script compiled" << std::endl;
     }
-
-    compile_id = future_compile.get();
 
     // create a shared promise used by the callback inside the image processor to finish the processing
     auto promise_evaluate = std::make_shared<std::promise<cvpg::imageproc::scripting::item> >();
@@ -290,7 +301,7 @@ int main(int argc, char * argv[])
                 std::cout << "Loaded grayscale image with " << image.width() << "x" << image.height() << " pixels" << std::endl;
             }
 
-            processor.evaluate(compile_id,
+            processor.evaluate(compile_result.id,
                                std::move(image),
                                [promise_evaluate](cvpg::imageproc::scripting::item result)
                                {
@@ -306,7 +317,7 @@ int main(int argc, char * argv[])
                 std::cout << "Loaded RGB image with " << image.width() << "x" << image.height() << " pixels" << std::endl;
             }
 
-            processor.evaluate(compile_id,
+            processor.evaluate(compile_result.id,
                                std::move(image),
                                [promise_evaluate](cvpg::imageproc::scripting::item result)
                                {
