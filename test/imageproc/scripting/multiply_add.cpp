@@ -36,11 +36,14 @@ TEST(test_scripting_algorithm_multiply_add, compile_valid_parameters)
                 var input_rgb = input("rgb", 8)
                 var brighten = multiply_add(input_rgb, 3.1415, 128)
             )",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(successful);
-
                 promise_compile->set_value(compile_id);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
+                ASSERT_TRUE(false);
             }
         );
 
@@ -74,9 +77,13 @@ TEST(test_scripting_algorithm_multiply_add, compile_invalid_parameters)
                 var input_rgb = input("rgb", 8)
                 var brighten = multiply_add(input_rgb, 3.1415, -666)
             )",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(!successful);
+                ASSERT_TRUE(false);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
 
                 promise_compile->set_value(compile_id);
             }
@@ -97,9 +104,13 @@ TEST(test_scripting_algorithm_multiply_add, compile_invalid_parameters)
                 var input_rgb = input("rgb", 8)
                 var brighten = multiply_add(input_rgb, 3.1415, 256)
             )",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(!successful);
+                ASSERT_TRUE(false);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
 
                 promise_compile->set_value(compile_id);
             }

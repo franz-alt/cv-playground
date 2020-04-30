@@ -36,11 +36,14 @@ TEST(test_scripting_algorithm_convert_to_gray, compile_valid_parameters)
                 var input_rgb = input("rgb", 8)
                 var input_gray = convert_to_gray(input_rgb, "use_red")
             )",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(successful);
-
                 promise_compile->set_value(compile_id);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
+                ASSERT_TRUE(false);
             }
         );
 
@@ -74,9 +77,13 @@ TEST(test_scripting_algorithm_convert_to_gray, compile_invalid_parameters)
                 var input_rgb = input("rgb", 8)
                 var input_gray = convert_to_gray(input_rgb, "i dont know")
             )",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(!successful);
+                ASSERT_TRUE(false);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
 
                 promise_compile->set_value(compile_id);
             }
@@ -98,9 +105,13 @@ TEST(test_scripting_algorithm_convert_to_gray, compile_invalid_parameters)
                 var input_gray = convert_to_gray(input_rgb, "use_red")
                 var input_gray2 = convert_to_gray(input_gray, "use_red")
             )",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(!successful);
+                ASSERT_TRUE(false);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
 
                 promise_compile->set_value(compile_id);
             }

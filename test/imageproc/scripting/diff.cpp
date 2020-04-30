@@ -37,11 +37,14 @@ TEST(test_scripting_algorithm_diff, compile_valid_parameters)
                 var smoothed = mean(input_rgb, 3, 3, "ignore")
                 var difference = diff(input_rgb, smoothed)
             )",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(successful);
-
                 promise_compile->set_value(compile_id);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
+                ASSERT_TRUE(false);
             }
         );
 
@@ -76,9 +79,13 @@ TEST(test_scripting_algorithm_diff, compile_invalid_parameters)
                 var input_gray = convert_to_gray(input_rgb, "use_red")
                 var difference = diff(input_rgb, input_gray)
             )",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(!successful);
+                ASSERT_TRUE(false);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
 
                 promise_compile->set_value(compile_id);
             }
@@ -100,9 +107,13 @@ TEST(test_scripting_algorithm_diff, compile_invalid_parameters)
                 var smoothed = mean(input_rgb, 3, 3, "ignore")
                 var difference = diff(input_rgb, smoothed, 256)
             )",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(!successful);
+                ASSERT_TRUE(false);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
 
                 promise_compile->set_value(compile_id);
             }

@@ -176,7 +176,7 @@ image_processor::image_processor(boost::asynchronous::any_weak_scheduler<diagnos
     , m_params()
 {}
 
-void image_processor::compile(std::string expression, std::function<void(bool, std::size_t)> callback)
+void image_processor::compile(std::string expression, std::function<void(std::size_t)> successful_callback, std::function<void(std::size_t, std::string)> failed_callback)
 {
     auto hash = std::hash<std::string>()(expression);
 
@@ -197,18 +197,16 @@ void image_processor::compile(std::string expression, std::function<void(bool, s
             m_compiled.insert({ compile_id, std::move(compiler->operator()()) });
             m_compiled_hashes.insert({ hash, compile_id });
 
-            callback(true, compile_id);
+            successful_callback(compile_id);
         }
         else
         {
-            callback(true, it->second);
+            successful_callback(it->second);
         }
     }
     catch (std::exception const & e)
     {
-        // TODO error reporting!?
-
-        callback(false, 0);
+        failed_callback(0, e.what());
     }
 }
 

@@ -32,9 +32,13 @@ TEST(test_scripting, compile_invalid_script)
 
         image_processor.compile(
             R"(val input_rgb = input("rgb", 8))",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(!successful);
+                ASSERT_TRUE(false);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
 
                 promise_compile->set_value(compile_id);
             }
@@ -52,9 +56,13 @@ TEST(test_scripting, compile_invalid_script)
 
         image_processor.compile(
             R"(var input_rgb = input_("rgb", 8))",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(!successful);
+                ASSERT_TRUE(false);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
 
                 promise_compile->set_value(compile_id);
             }
@@ -90,11 +98,13 @@ TEST(test_scripting, compile_simple_script)
                 var input_rgb = input("rgb", 8)
                 var input_gray = convert_to_gray(input_rgb, "use_red")
             )",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(successful);
-
                 promise_compile->set_value(compile_id);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(false);
             }
         );
 
@@ -113,11 +123,13 @@ TEST(test_scripting, compile_simple_script)
                 var input_rgb = input("rgb", 8)
                 var input_gray = convert_to_gray(input_rgb, "use_red")
             )",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(successful);
-
                 promise_compile->set_value(compile_id);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(false);
             }
         );
 
@@ -153,11 +165,13 @@ TEST(test_scripting, evaluate_simple_script)
                 var input_rgb = input("rgb", 8)
                 var input_gray = convert_to_gray(input_rgb, "use_red")
             )",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(successful);
-
                 promise_compile->set_value(compile_id);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(false);
             }
         );
 

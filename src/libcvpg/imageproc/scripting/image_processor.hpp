@@ -37,7 +37,7 @@ public:
     image_processor & operator=(image_processor &&) = default;
 
     // compile an expression and return if compile was successfull and the compile ID
-    void compile(std::string expression, std::function<void(bool, std::size_t)> callback);
+    void compile(std::string expression, std::function<void(std::size_t)> successful_callback, std::function<void(std::size_t, std::string)> failed_callback);
 
     // evaluate an input image
     void evaluate(std::size_t compile_id, cvpg::image_gray_8bit image, std::function<void(item)> callback);

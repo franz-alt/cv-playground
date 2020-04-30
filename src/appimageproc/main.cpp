@@ -240,17 +240,21 @@ int main(int argc, char * argv[])
     // compiling script
     struct compile_result
     {
-        bool successful = false;
         std::size_t id = 0;
+        std::string error;
     };
 
     auto promise_compile = std::make_shared<std::promise<compile_result> >();
     auto future_compile = promise_compile->get_future();
 
     processor.compile(script,
-                      [promise_compile](bool successful, std::size_t compile_id)
+                      [promise_compile](std::size_t compile_id)
                       {
-                          promise_compile->set_value({ successful, compile_id });
+                          promise_compile->set_value({ compile_id });
+                      },
+                      [promise_compile](std::size_t compile_id, std::string error)
+                      {
+                          promise_compile->set_value({ compile_id, std::move(error) });
                       });
 
     auto status = future_compile.wait_for(std::chrono::seconds(3));
@@ -269,9 +273,9 @@ int main(int argc, char * argv[])
     auto compile_result = future_compile.get();
 
     // check if script compiled successfully
-    if (!compile_result.successful)
+    if (!compile_result.error.empty())
     {
-        std::cerr << "Script compiled with errors. Abort" << std::endl;
+        std::cerr << "Script compiled with error '" << compile_result.error << "'. Abort" << std::endl;
         return 1;
     }
 

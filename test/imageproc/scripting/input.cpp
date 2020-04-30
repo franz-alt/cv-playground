@@ -33,11 +33,14 @@ TEST(test_scripting_algorithm_input, compile_valid_parameters)
 
         image_processor.compile(
             R"(var input_rgb = input("rgb", 8))",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(successful);
-
                 promise_compile->set_value(compile_id);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
+                ASSERT_TRUE(false);
             }
         );
 
@@ -68,9 +71,13 @@ TEST(test_scripting_algorithm_input, compile_invalid_parameters)
 
         image_processor.compile(
             R"(var input_rgb = input("rgp", 8))",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(!successful);
+                ASSERT_TRUE(false);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
 
                 promise_compile->set_value(compile_id);
             }
@@ -88,9 +95,13 @@ TEST(test_scripting_algorithm_input, compile_invalid_parameters)
 
         image_processor.compile(
             R"(var input_rgb = input("rgb", 9))",
-            [promise_compile](bool successful, std::size_t compile_id)
+            [promise_compile](std::size_t compile_id)
             {
-                ASSERT_TRUE(!successful);
+                ASSERT_TRUE(false);
+            },
+            [promise_compile](std::size_t compile_id, std::string error)
+            {
+                ASSERT_TRUE(!error.empty());
 
                 promise_compile->set_value(compile_id);
             }
