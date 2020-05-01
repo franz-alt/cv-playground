@@ -1,3 +1,5 @@
+include(${CMAKE_SOURCE_DIR}/cmake/instruction_set.cmake)
+
 set(target tests)
 
 message(STATUS "Test application '${target}'")
@@ -17,6 +19,7 @@ set(sources
 )
 
 add_executable(${target} ${sources})
+cvpg_target_instruction_set_compile_options(${target})
 
 target_link_libraries(${target}
     PRIVATE

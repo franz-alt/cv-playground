@@ -1,3 +1,5 @@
+include(${CMAKE_SOURCE_DIR}/cmake/instruction_set.cmake)
+
 set(target imageproc)
 
 message(STATUS "Application '${target}'")
@@ -7,6 +9,7 @@ set(sources
 )
 
 add_executable(${target} ${sources} ${headers})
+cvpg_target_instruction_set_compile_options(${target})
 
 target_link_libraries(${target}
     PRIVATE

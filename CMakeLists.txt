@@ -30,6 +30,23 @@ option(BUILD_APPS "Build applications." ON)
 option(BUILD_SHARED_LIBS "Build shared instead of static libraries." ON)
 option(BUILD_TESTS "Build module tests." ON)
 
+# vectorization options
+if(NOT USE_INSTRUCTION_SET)
+    if(USE_AVX2)
+        set(USE_INSTRUCTION_SET "AVX2" CACHE STRING "Use AVX2 instruction set.")
+    else()
+        set(USE_INSTRUCTION_SET "NO" CACHE STRING "")
+    endif()
+else()
+    set(USE_INSTRUCTION_SET "NO" CACHE STRING "")
+endif()
+
+set_property(CACHE USE_INSTRUCTION_SET PROPERTY STRINGS NO AVX2)
+
+if(NOT ${USE_INSTRUCTION_SET} MATCHES "NO")
+    message(STATUS "Using ${USE_INSTRUCTION_SET} instruction set for optimizations")
+endif()
+
 # sanitizer handling
 include(cmake/sanitizers.cmake)
 

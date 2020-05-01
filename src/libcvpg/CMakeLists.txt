@@ -1,3 +1,5 @@
+include(${CMAKE_SOURCE_DIR}/cmake/instruction_set.cmake)
+
 set(target libcvpg)
 
 message(STATUS "Library '${target}'")
@@ -85,6 +87,7 @@ set(sources
 )
 
 add_library(${target} ${sources} ${headers})
+cvpg_target_instruction_set_compile_options(${target})
 
 target_include_directories(${target}
     PUBLIC
