@@ -46,7 +46,7 @@ An application used to apply multiple filters stored at a script file to an imag
 * C++ 17 compiler
 * CMake 3.12 or later
 
-### Building Options
+### Options
 
 The following options could be used to build the library, sample applications and/or unit tests.
 
@@ -60,7 +60,9 @@ Advanced debugging could be achived with so called [sanitizers](https://hpc-wiki
     option(BUILD_WITH_SANITIZER_MEMORY "Build all libraries and applications with memory sanitizer." OFF)
     option(BUILD_WITH_SANITIZER_UNDEFINED_BEHAVIOUR "Build all libraries and applications with undefined behaviour sanitizer." OFF)
 
-### Build Example
+### Example
+
+To build the library on Unix/Linux try:
 
     mkdir build
     cd build
@@ -69,6 +71,6 @@ Advanced debugging could be achived with so called [sanitizers](https://hpc-wiki
 
 ## License
 
-Copyright 2020 Franz Alt
+Copyright (c) 2020 Franz Alt
 
-This project is distributed under the [MIT License](https://opensource.org/licenses/MIT), see [LICENSE.md](./LICENSE.md) for more information.
+This project is distributed under the [MIT License](https://opensource.org/licenses/MIT), see [LICENSE](./LICENSE) for more information.
