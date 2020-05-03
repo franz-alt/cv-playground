@@ -237,6 +237,10 @@ int main(int argc, char * argv[])
                                                                                pool,
                                                                                boost::asynchronous::make_scheduler_interfaces(scheduler, pool, formatter_scheduler));
 
+    // set cutoff parameters
+    processor.add_param("cutoff_x", xcutoff);
+    processor.add_param("cutoff_y", ycutoff);
+
     // compiling script
     struct compile_result
     {
