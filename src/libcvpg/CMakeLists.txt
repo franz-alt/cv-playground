@@ -114,3 +114,12 @@ set_target_properties(${target}
         VERSION ${CVPG_VERSION}
         SOVERSION ${CVPG_VERSION_MAJOR}
 )
+
+# install library
+install(TARGETS ${target} DESTINATION lib)
+
+# install headers
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
+        DESTINATION "${INSTALL_INCLUDE_DIR}/${target}"
+        FILES_MATCHING
+        PATTERN "*.hpp")

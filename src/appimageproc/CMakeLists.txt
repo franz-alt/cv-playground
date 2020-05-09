@@ -33,3 +33,6 @@ set_target_properties(${target}
         PREFIX "cvpg-"
         ${BUILDTYPE}_POSTFIX "${TARGET_PREFIX}"
 )
+
+# install application
+install(TARGETS ${target} DESTINATION bin)
