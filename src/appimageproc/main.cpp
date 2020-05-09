@@ -1,6 +1,8 @@
 #include <sys/ioctl.h>
 
 #include <any>
+#include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <exception>
 #include <fstream>
@@ -10,6 +12,7 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include <boost/program_options.hpp>
 
@@ -48,6 +51,9 @@ int main(int argc, char * argv[])
     std::uint32_t ycutoff = 512;
     std::uint32_t threads = 0;
 
+    // miscellaneous options
+    std::size_t iterations = 1;
+
     // determine width of console
     struct winsize window;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &window);
@@ -75,10 +81,16 @@ int main(int argc, char * argv[])
         ("threads", po::value<std::uint32_t>(&threads)->default_value(0), "amount of threads at threadpool (0 = all available)")
         ;
 
+    po::options_description misc_options("miscellaneous options", window.ws_col, window.ws_col / 2);
+    misc_options.add_options()
+        ("iterations", po::value<std::size_t>(&iterations)->default_value(1), "amount of times the image filtering will performed successively")
+        ;
+
     po::options_description cmdline_options("usage: imageproc [options]", window.ws_col, window.ws_col / 2);
     cmdline_options.add(general_options)
                    .add(image_processing_options)
-                   .add(performance_options);
+                   .add(performance_options)
+                   .add(misc_options);
 
     po::variables_map variables;
     po::store(po::parse_command_line(argc, argv, cmdline_options), variables);
@@ -188,6 +200,13 @@ int main(int argc, char * argv[])
         threads = std::thread::hardware_concurrency();
     }
 
+    if (variables.count("iterations"))
+    {
+        iterations = variables["iterations"].as<std::size_t>();
+    }
+
+    iterations = std::max<std::size_t>(1, iterations);
+
     // create a threadpool
     auto pool = boost::asynchronous::make_shared_scheduler_proxy<
                     boost::asynchronous::multiqueue_threadpool_scheduler<
@@ -237,6 +256,10 @@ int main(int argc, char * argv[])
                                                                                pool,
                                                                                boost::asynchronous::make_scheduler_interfaces(scheduler, pool, formatter_scheduler));
 
+    // set cutoff parameters
+    processor.add_param("cutoff_x", xcutoff);
+    processor.add_param("cutoff_y", ycutoff);
+
     // compiling script
     struct compile_result
     {
@@ -284,51 +307,16 @@ int main(int argc, char * argv[])
         std::cout << "Script compiled" << std::endl;
     }
 
-    // create a shared promise used by the callback inside the image processor to finish the processing
-    auto promise_evaluate = std::make_shared<std::promise<cvpg::imageproc::scripting::item> >();
-    auto future_evaluate = promise_evaluate->get_future();
+    // read input image
+    std::uint8_t channels = 0;
+    std::any png;
 
     try
     {
-        auto [ channels, png ] = cvpg::read_png(input_filename);
+        auto [ c, p ] = cvpg::read_png(input_filename);
 
-        if (channels == 1)
-        {
-            auto image = std::any_cast<cvpg::image_gray_8bit>(png);
-
-            if (!quiet)
-            {
-                std::cout << "Loaded grayscale image with " << image.width() << "x" << image.height() << " pixels" << std::endl;
-            }
-
-            processor.evaluate(compile_result.id,
-                               std::move(image),
-                               [promise_evaluate](cvpg::imageproc::scripting::item result)
-                               {
-                                   promise_evaluate->set_value(std::move(result));
-                               });
-        }
-        else if (channels == 3)
-        {
-            auto image = std::any_cast<cvpg::image_rgb_8bit>(png);
-
-            if (!quiet)
-            {
-                std::cout << "Loaded RGB image with " << image.width() << "x" << image.height() << " pixels" << std::endl;
-            }
-
-            processor.evaluate(compile_result.id,
-                               std::move(image),
-                               [promise_evaluate](cvpg::imageproc::scripting::item result)
-                               {
-                                   promise_evaluate->set_value(std::move(result));
-                               });
-        }
-        else
-        {
-            std::cerr << "Only grayscale or RGB images are supported. Abort" << std::endl;
-            return 1;
-        }
+        channels = c;
+        png = std::move(p);
     }
     catch (std::exception const & e)
     {
@@ -336,25 +324,103 @@ int main(int argc, char * argv[])
         return 1;
     }
 
-    status = future_evaluate.wait_for(std::chrono::seconds(timeout));
+    // evaluate image (with multiple iterations)
+    std::vector<std::chrono::milliseconds> durations;
+    durations.reserve(iterations);
 
-    if (status == std::future_status::deferred)
+    cvpg::imageproc::scripting::item result;
+
+    for (std::size_t i = 0; i < iterations; ++i)
     {
-        std::cerr << "Image processing ended in deferred state. Abort" << std::endl;
-        return 1;
-    }
-    else if (status == std::future_status::timeout)
-    {
-        std::cerr << "Image processing timed out. Abort" << std::endl;
-        return 1;
+        // create a shared promise used by the callback inside the image processor to finish the processing
+        auto promise_evaluate = std::make_shared<std::promise<cvpg::imageproc::scripting::item> >();
+        auto future_evaluate = promise_evaluate->get_future();
+
+        // start measure time
+        auto start = std::chrono::steady_clock::now();
+
+        try
+        {
+            if (channels == 1)
+            {
+                auto image = std::any_cast<cvpg::image_gray_8bit>(png);
+
+                if (!quiet && i == 0)
+                {
+                    std::cout << "Loaded grayscale image with " << image.width() << "x" << image.height() << " pixels" << std::endl;
+                }
+
+                processor.evaluate(compile_result.id,
+                                std::move(image),
+                                [promise_evaluate](cvpg::imageproc::scripting::item result)
+                                {
+                                    promise_evaluate->set_value(std::move(result));
+                                });
+            }
+            else if (channels == 3)
+            {
+                auto image = std::any_cast<cvpg::image_rgb_8bit>(png);
+
+                if (!quiet && i == 0)
+                {
+                    std::cout << "Loaded RGB image with " << image.width() << "x" << image.height() << " pixels" << std::endl;
+                }
+
+                processor.evaluate(compile_result.id,
+                                std::move(image),
+                                [promise_evaluate](cvpg::imageproc::scripting::item result)
+                                {
+                                    promise_evaluate->set_value(std::move(result));
+                                });
+            }
+            else
+            {
+                std::cerr << "Only grayscale or RGB images are supported. Abort" << std::endl;
+                return 1;
+            }
+        }
+        catch (std::exception const & e)
+        {
+            std::cerr << "Error while processing PNG image. Error: '" << e.what() << "'" << std::endl;
+            return 1;
+        }
+
+        status = future_evaluate.wait_for(std::chrono::seconds(timeout));
+
+        // stop time measurement
+        auto stop = std::chrono::steady_clock::now();
+
+        if (status == std::future_status::deferred)
+        {
+            std::cerr << "Image processing ended in deferred state. Abort" << std::endl;
+            return 1;
+        }
+        else if (status == std::future_status::timeout)
+        {
+            std::cerr << "Image processing timed out. Abort" << std::endl;
+            return 1;
+        }
+
+        durations.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(stop - start));
+
+        if (i == (iterations - 1))
+        {
+            result = future_evaluate.get();
+        }
     }
 
     if (!quiet)
     {
-        std::cout << "Image processing done" << std::endl;
-    }
+        auto sum = std::accumulate(durations.begin(),
+                                   durations.end(),
+                                   static_cast<std::size_t>(0),
+                                   [](std::size_t sum, auto duration)
+                                   {
+                                       return sum + duration.count();
+                                   });
 
-    auto result = future_evaluate.get();
+        std::cout << "Image processing done in " << (sum / static_cast<double>(iterations)) << " ms" << std::endl;
+    }
 
     if (result.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image)
     {
