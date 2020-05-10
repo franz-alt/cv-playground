@@ -13,8 +13,8 @@ target_link_libraries(${target}
         ${DEFAULT_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT}
         ${Boost_LIBRARIES}
-        png
         libcvpg
+        png
         dl
 )
 

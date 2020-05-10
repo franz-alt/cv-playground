@@ -24,8 +24,8 @@ target_link_libraries(${target}
         ${CMAKE_THREAD_LIBS_INIT}
         ${Boost_LIBRARIES}
         gtest_main
-        png
         libcvpg
+        png
         dl
 )
 
