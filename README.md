@@ -62,12 +62,18 @@ Advanced debugging could be achived with so called [sanitizers](https://hpc-wiki
 
 ### Example
 
+#### Build At Console
+
 To build the library on Unix/Linux try:
 
     mkdir build
     cd build
     cmake ..
     make -j`nproc`
+
+#### Build With Docker
+
+At the [docker](docker) subdirectory several Dockerfiles are available to build the library based on different Linux distributions.
 
 ## License
 

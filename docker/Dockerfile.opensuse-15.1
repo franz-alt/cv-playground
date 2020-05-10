@@ -1,0 +1,78 @@
+FROM opensuse/leap:15.1
+
+# define version of CMake
+ENV CMAKE_MAJOR_VERSION=3
+ENV CMAKE_MINOR_VERSION=12
+ENV CMAKE_PATCH_VERSION=0
+
+# define version of Boost libraries
+ENV BOOST_MAJOR_VERSION=1
+ENV BOOST_MINOR_VERSION=66
+ENV BOOST_PATCH_VERSION=0
+
+ENV CMAKE_SHORT_VERSION=${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}
+ENV CMAKE_FULL_VERSION=${CMAKE_SHORT_VERSION}.${CMAKE_PATCH_VERSION}
+
+ENV BOOST_FULL_VERSION=${BOOST_MAJOR_VERSION}_${BOOST_MINOR_VERSION}_${BOOST_PATCH_VERSION}
+
+# install dependencies
+RUN zypper --non-interactive install --no-recommends \
+  gcc-c++ \
+  make \
+  git \
+  wget \
+  tar \
+  gzip \
+  zlib \
+  zlib-devel \
+  libpng \
+  libpng-devel \
+  libboost_headers${BOOST_FULL_VERSION}-devel \
+  libboost_program_options${BOOST_FULL_VERSION} \
+  libboost_program_options${BOOST_FULL_VERSION}-devel \
+  libboost_system${BOOST_FULL_VERSION} \
+  libboost_system${BOOST_FULL_VERSION}-devel \
+  libboost_thread${BOOST_FULL_VERSION} \
+  libboost_thread${BOOST_FULL_VERSION}-devel
+
+# Hint #1:
+# openSUSE Leap 15.1 is shipped with CMake 3.10, so we have to get a newer version
+
+# Hint #2:
+# At the time of writing this Dockerfile a newer version of CMake should be available at the devel:tools:building repository. When getting
+# this newer package, an error during installation due to 'this-is-only-for-build-envs' occurs. For this reason we have to get the official
+# sources and build the newer CMake version from scratch.
+
+# get the official .tar.gz of newer CMake
+WORKDIR /tmp
+RUN wget --max-redirect 3 --progress=bar:force https://cmake.org/files/v${CMAKE_SHORT_VERSION}/cmake-${CMAKE_FULL_VERSION}.tar.gz
+RUN tar -xzvf cmake-${CMAKE_FULL_VERSION}.tar.gz
+
+# build CMake
+WORKDIR /tmp/cmake-${CMAKE_FULL_VERSION}
+RUN ./configure
+RUN make -j`nproc`
+RUN make install
+
+# prepare source and build directory
+RUN mkdir -p /source
+RUN mkdir -p /build
+
+# get library from GitHub and clone only the 'develop' branch
+WORKDIR /source
+RUN git clone --depth=1 -b develop https://github.com/franz-alt/cv-playground.git
+
+# build the library
+WORKDIR /build
+RUN cmake /source/cv-playground
+RUN make -j`nproc`
+
+# execute unit tests
+RUN ./tests
+
+# install library and sample applications
+RUN make install
+
+# Hint #3:
+# Extend 'LD_LIBRARY_PATH' variable to make library usable by other applications.
+ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
