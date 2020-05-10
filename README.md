@@ -75,6 +75,16 @@ To build the library on Unix/Linux try:
 
 At the [docker](docker) subdirectory several Dockerfiles are available to build the library based on different Linux distributions.
 
+To build a Docker image based on Debian Buster type:
+
+    docker build -f Dockerfile.debian-buster --force-rm -t libcvpg:0.1 .
+
+inside the [docker](docker) subdirectory.
+
+To create a Docker container and execute a bash script inside the container type:
+
+    docker run -it libcvpg:0.1 /bin/bash
+
 ## License
 
 Copyright (c) 2020 Franz Alt
