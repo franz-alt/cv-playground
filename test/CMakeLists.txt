@@ -14,6 +14,7 @@ set(sources
     imageproc/scripting/multiply_add.cpp
     imageproc/scripting/scharr.cpp
     imageproc/scripting/sobel.cpp
+    videoproc/packet.cpp
 )
 
 add_executable(${target} ${sources})

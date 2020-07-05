@@ -45,6 +45,8 @@ set(headers
     imageproc/scripting/detail/single_node.hpp
     imageproc/scripting/diagnostics/markdown_formatter.hpp
     imageproc/scripting/diagnostics/typedefs.hpp
+    videoproc/frame.hpp
+    videoproc/packet.hpp
 )
 
 set(sources
@@ -82,6 +84,8 @@ set(sources
     imageproc/scripting/detail/parser.cpp
     imageproc/scripting/detail/sequence_node.cpp
     imageproc/scripting/detail/single_node.cpp
+    videoproc/frame.cpp
+    videoproc/packet.cpp
 )
 
 add_library(${target} ${sources} ${headers})
