@@ -80,7 +80,7 @@ struct image_processor_proxy : public boost::asynchronous::servant_proxy<image_p
 {
    template<typename... Args>
    image_processor_proxy(Args... args)
-       : boost::asynchronous::servant_proxy<image_processor_proxy, image_processor, diagnostics::servant_job>(args...)
+       : boost::asynchronous::servant_proxy<image_processor_proxy, image_processor, diagnostics::servant_job>(std::forward<Args>(args)...)
    {}
 
    BOOST_ASYNC_POST_MEMBER_LOG(compile, "compile", 1)
