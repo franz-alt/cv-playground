@@ -25,10 +25,13 @@ public:
     // move an existing frame to the packet
     void add_frame(Frame && frame);
 
-    // create a new frame inside the packet
+    // create a new frame in-place the packet
     template<typename... Args>
-    void add_frame(Args && ... args);
-
+    void add_frame(Args && ... args)
+    {
+        m_frames.emplace_back(std::forward<Args>(args)...);
+    }
+    
     // get a reference to the frames inside the packet
     std::vector<Frame> const & frames() const;
 

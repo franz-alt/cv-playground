@@ -19,11 +19,6 @@ template<typename Frame> void packet<Frame>::add_frame(Frame && frame)
     m_frames.push_back(std::forward<Frame>(frame));
 }
 
-template<typename Frame> template<typename... Args> void packet<Frame>::add_frame(Args && ... args)
-{
-    m_frames.emplace_back(std::forward<Args>(args)...);
-}
-
 template<typename Frame> std::vector<Frame> const & packet<Frame>::frames() const
 {
     return m_frames;
