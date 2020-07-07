@@ -16,6 +16,8 @@ template<typename Frame>
 class packet
 {
 public:
+    using frame_type = Frame;
+
     // create a packet with a specified number
     packet(std::size_t number = 0);
 
