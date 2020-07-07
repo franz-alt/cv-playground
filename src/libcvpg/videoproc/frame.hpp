@@ -17,6 +17,8 @@ template<typename Image>
 class frame
 {
 public:
+    using image_type = Image;
+
     // create an invalid frame with an empty image and frame number 0
     frame() = default;
 
