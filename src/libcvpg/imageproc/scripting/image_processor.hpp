@@ -45,6 +45,7 @@ public:
 
     // evaluate two input images
     void evaluate(std::size_t compile_id, cvpg::image_gray_8bit image1, cvpg::image_gray_8bit image2, std::function<void(item)> callback);
+    void evaluate(std::size_t compile_id, cvpg::image_rgb_8bit image1, cvpg::image_rgb_8bit image2, std::function<void(item)> callback);
 
     // store an image
     void store(std::size_t context_id, std::uint32_t image_id, cvpg::image_gray_8bit image, std::chrono::microseconds duration = std::chrono::microseconds());

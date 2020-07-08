@@ -337,6 +337,49 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit ima
     }
 }
 
+void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit image1, cvpg::image_rgb_8bit image2, std::function<void(item)> callback)
+{
+    auto it = m_compiled.find(compile_id);
+
+    if (it != m_compiled.end())
+    {
+        auto compiled = it->second;
+
+        std::size_t context_id = m_context_counter++;
+
+        m_context.insert({ context_id, std::make_shared<evaluation_context>() });
+
+        store(context_id, 0, std::move(image1));
+        store(context_id, 2, std::move(image2));
+
+        post_callback(
+            [compiled = std::move(compiled)
+            ,scope = shared_from_this()
+            ,context_id]() mutable
+            {
+                return executor(std::move(compiled), scope, context_id);
+            },
+            [this, context_id, callback](auto cont_res) mutable
+            {
+                auto item = cont_res.get();
+
+                this->m_context.erase(context_id);
+
+                callback(std::move(item));
+            },
+            "image_processor::evaluate::image_rgb_8bit_2x",
+            1,
+            1
+        );
+    }
+    else
+    {
+        // TODO error reporting!?
+
+        callback(item());
+    }
+}
+
 void image_processor::store(std::size_t context_id, std::uint32_t image_id, cvpg::image_gray_8bit image, std::chrono::microseconds duration)
 {
     m_context[context_id]->items[image_id] = item(item::types::grayscale_8_bit_image, std::move(image));
