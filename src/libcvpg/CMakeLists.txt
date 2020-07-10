@@ -8,6 +8,7 @@ set(headers
     core/image.hpp
     imageproc/algorithms/border_mode.hpp
     imageproc/algorithms/convert_to_gray.hpp
+    imageproc/algorithms/convert_to_rgb.hpp
     imageproc/algorithms/histogram_equalization.hpp
     imageproc/algorithms/tiling.hpp
     imageproc/algorithms/tiling/convert_to_gray.hpp
@@ -25,6 +26,7 @@ set(headers
     imageproc/scripting/item.hpp
     imageproc/scripting/algorithms/base.hpp
     imageproc/scripting/algorithms/convert_to_gray.hpp
+    imageproc/scripting/algorithms/convert_to_rgb.hpp
     imageproc/scripting/algorithms/diff.hpp
     imageproc/scripting/algorithms/histogram_equalization.hpp
     imageproc/scripting/algorithms/input.hpp
@@ -55,6 +57,7 @@ set(sources
     core/image.cpp
     imageproc/algorithms/border_mode.cpp
     imageproc/algorithms/convert_to_gray.cpp
+    imageproc/algorithms/convert_to_rgb.cpp
     imageproc/algorithms/histogram_equalization.cpp
     imageproc/algorithms/tiling/convert_to_gray.cpp
     imageproc/algorithms/tiling/diff.cpp
@@ -67,6 +70,7 @@ set(sources
     imageproc/scripting/image_processor.cpp
     imageproc/scripting/item.cpp
     imageproc/scripting/algorithms/convert_to_gray.cpp
+    imageproc/scripting/algorithms/convert_to_rgb.cpp
     imageproc/scripting/algorithms/diff.cpp
     imageproc/scripting/algorithms/histogram_equalization.cpp
     imageproc/scripting/algorithms/input.cpp
