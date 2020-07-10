@@ -5,6 +5,8 @@
 
 #include <boost/asynchronous/continuation_task.hpp>
 
+#include <libcvpg/imageproc/algorithms/convert_to_gray.hpp>
+#include <libcvpg/imageproc/algorithms/convert_to_rgb.hpp>
 #include <libcvpg/imageproc/scripting/detail/handler.hpp>
 #include <libcvpg/imageproc/scripting/detail/parallel_node.hpp>
 #include <libcvpg/imageproc/scripting/detail/parser.hpp>
@@ -233,7 +235,7 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit ima
             },
             [this, context_id, callback](auto cont_res) mutable
             {
-                auto frame = cont_res.get();
+                auto frame = std::move(cont_res.get());
 
                 this->m_context.erase(context_id);
 
@@ -275,7 +277,7 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit imag
             },
             [this, context_id, callback](auto cont_res) mutable
             {
-                auto item = cont_res.get();
+                auto item = std::move(cont_res.get());
 
                 this->m_context.erase(context_id);
 
@@ -292,6 +294,76 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit imag
 
         callback(item());
     }
+}
+
+void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_gray_8bit image, std::function<void(cvpg::image_gray_8bit)> callback)
+{
+    evaluate(
+        compile_id,
+        std::move(image),
+        [this, callback = std::move(callback)](auto item) mutable
+        {
+            if (item.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image)
+            {
+                callback(std::move(std::any_cast<cvpg::image_gray_8bit>(std::move(item.value()))));
+            }
+            else if (item.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image)
+            {
+                this->post_callback(
+                    [image = std::move(std::any_cast<cvpg::image_rgb_8bit>(std::move(item.value())))]()
+                    {
+                        return imageproc::algorithms::convert_to_gray(std::move(image), imageproc::algorithms::rgb_conversion_mode::calc_average);
+                    },
+                    [callback = std::move(callback)](auto cont_res) mutable
+                    {
+                        callback(std::move(cont_res.get()));
+                    },
+                    "image_processor::evaluate_convert_if::image_gray_8bit::callback",
+                    1,
+                    1
+                );
+            }
+            else
+            {
+                // TODO error handling !!!!
+            }
+        }
+    );
+}
+
+void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_rgb_8bit image, std::function<void(cvpg::image_rgb_8bit)> callback)
+{
+    evaluate(
+        compile_id,
+        std::move(image),
+        [this, callback = std::move(callback)](auto item) mutable
+        {
+            if (item.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image)
+            {
+                callback(std::move(std::any_cast<cvpg::image_rgb_8bit>(std::move(item.value()))));
+            }
+            else if (item.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image)
+            {
+                this->post_callback(
+                    [image = std::move(std::any_cast<cvpg::image_gray_8bit>(std::move(item.value())))]()
+                    {
+                        return imageproc::algorithms::convert_to_rgb(std::move(image));
+                    },
+                    [callback = std::move(callback)](auto cont_res) mutable
+                    {
+                        callback(std::move(cont_res.get()));
+                    },
+                    "image_processor::evaluate_convert_if::image_rgb_8bit::callback",
+                    1,
+                    1
+                );
+            }
+            else
+            {
+                // TODO error handling !!!!
+            }
+        }
+    );
 }
 
 void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit image1, cvpg::image_gray_8bit image2, std::function<void(item)> callback)

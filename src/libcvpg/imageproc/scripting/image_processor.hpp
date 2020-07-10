@@ -43,6 +43,10 @@ public:
     void evaluate(std::size_t compile_id, cvpg::image_gray_8bit image, std::function<void(item)> callback);
     void evaluate(std::size_t compile_id, cvpg::image_rgb_8bit image, std::function<void(item)> callback);
 
+    // evaluate an input image and convert the result if it is not the same as the input type
+    void evaluate_convert_if(std::size_t compile_id, cvpg::image_gray_8bit image, std::function<void(cvpg::image_gray_8bit)> callback);
+    void evaluate_convert_if(std::size_t compile_id, cvpg::image_rgb_8bit image, std::function<void(cvpg::image_rgb_8bit)> callback);
+
     // evaluate two input images
     void evaluate(std::size_t compile_id, cvpg::image_gray_8bit image1, cvpg::image_gray_8bit image2, std::function<void(item)> callback);
     void evaluate(std::size_t compile_id, cvpg::image_rgb_8bit image1, cvpg::image_rgb_8bit image2, std::function<void(item)> callback);
@@ -87,6 +91,7 @@ struct image_processor_proxy : public boost::asynchronous::servant_proxy<image_p
    BOOST_ASYNC_POST_MEMBER_LOG(compile, "compile", 1)
 
    BOOST_ASYNC_POST_MEMBER_LOG(evaluate, "evaluate", 1)
+   BOOST_ASYNC_POST_MEMBER_LOG(evaluate_convert_if, "evaluate_convert_if", 1)
 
    BOOST_ASYNC_FUTURE_MEMBER_LOG(load, "load", 1)
 
