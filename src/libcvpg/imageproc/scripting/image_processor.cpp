@@ -452,6 +452,78 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit imag
     }
 }
 
+void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_gray_8bit image1, cvpg::image_gray_8bit image2, std::function<void(cvpg::image_gray_8bit)> callback)
+{
+    evaluate(
+        compile_id,
+        std::move(image1),
+        std::move(image2),
+        [this, callback = std::move(callback)](auto item) mutable
+        {
+            if (item.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image)
+            {
+                callback(std::move(std::any_cast<cvpg::image_gray_8bit>(std::move(item.value()))));
+            }
+            else if (item.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image)
+            {
+                this->post_callback(
+                    [image = std::move(std::any_cast<cvpg::image_rgb_8bit>(std::move(item.value())))]()
+                    {
+                        return imageproc::algorithms::convert_to_gray(std::move(image), imageproc::algorithms::rgb_conversion_mode::calc_average);
+                    },
+                    [callback = std::move(callback)](auto cont_res) mutable
+                    {
+                        callback(std::move(cont_res.get()));
+                    },
+                    "image_processor::evaluate_convert_if::image_gray_8bit_2x::callback",
+                    1,
+                    1
+                );
+            }
+            else
+            {
+                // TODO error handling !!!!
+            }
+        }
+    );
+}
+
+void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_rgb_8bit image1, cvpg::image_rgb_8bit image2, std::function<void(cvpg::image_rgb_8bit)> callback)
+{
+    evaluate(
+        compile_id,
+        std::move(image1),
+        std::move(image2),
+        [this, callback = std::move(callback)](auto item) mutable
+        {
+            if (item.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image)
+            {
+                callback(std::move(std::any_cast<cvpg::image_rgb_8bit>(std::move(item.value()))));
+            }
+            else if (item.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image)
+            {
+                this->post_callback(
+                    [image = std::move(std::any_cast<cvpg::image_gray_8bit>(std::move(item.value())))]()
+                    {
+                        return imageproc::algorithms::convert_to_rgb(std::move(image));
+                    },
+                    [callback = std::move(callback)](auto cont_res) mutable
+                    {
+                        callback(std::move(cont_res.get()));
+                    },
+                    "image_processor::evaluate_convert_if::image_rgb_8bit_2x::callback",
+                    1,
+                    1
+                );
+            }
+            else
+            {
+                // TODO error handling !!!!
+            }
+        }
+    );
+}
+
 void image_processor::store(std::size_t context_id, std::uint32_t image_id, cvpg::image_gray_8bit image, std::chrono::microseconds duration)
 {
     m_context[context_id]->items[image_id] = item(item::types::grayscale_8_bit_image, std::move(image));
