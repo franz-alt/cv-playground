@@ -45,11 +45,16 @@ private:
     bool m_flush = false;
 };
 
+// suppress automatic instantiation of frame<> for some types
+extern template class frame<image_gray_8bit>;
+extern template class frame<image_rgb_8bit>;
+
 template<typename Image>
 std::ostream & operator<<(std::ostream & out, frame<Image> const & frame);
 
-extern template class frame<image_gray_8bit>;
-extern template class frame<image_rgb_8bit>;
+// suppress automatic instantiation of operator<< for some types
+extern template std::ostream & operator<< <image_gray_8bit>(std::ostream &, frame<image_gray_8bit> const &);
+extern template std::ostream & operator<< <image_rgb_8bit>(std::ostream &, frame<image_rgb_8bit> const &);
 
 } // namespace cvpg::videoproc
 

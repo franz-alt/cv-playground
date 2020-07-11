@@ -39,15 +39,19 @@ template<typename Frame> bool packet<Frame>::flush() const
                         }) != m_frames.end();
 }
 
+// manual instantiation of packet<> for some types
+template class packet<frame<image_gray_8bit> >;
+template class packet<frame<image_rgb_8bit> >;
+
 template<typename Frame> std::ostream & operator<<(std::ostream & out, packet<Frame> const & packet)
 {
-    out << "number=" << packet.number() << ",frames=" << packet.frames().size();
+    out << "number=" << packet.number() << ",frames=" << packet.frames().size() << ",flush=" << packet.flush();
 
     return out;
 }
 
-// manual instantation of packet<> for some types
-template class packet<frame<image_gray_8bit> >;
-template class packet<frame<image_rgb_8bit> >;
+// manual instantiation of operator<< for some types
+template std::ostream & operator<< <frame<image_gray_8bit> >(std::ostream &, packet<frame<image_gray_8bit> > const &);
+template std::ostream & operator<< <frame<image_rgb_8bit> >(std::ostream &, packet<frame<image_rgb_8bit> > const &);
 
 } // namespace cvpg::videoproc

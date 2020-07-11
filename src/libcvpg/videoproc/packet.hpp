@@ -49,11 +49,16 @@ private:
     std::vector<Frame> m_frames;
 };
 
+// suppress automatic instantiation of packet<> for some types
+extern template class packet<frame<image_gray_8bit> >;
+extern template class packet<frame<image_rgb_8bit> >;
+
 template<typename Frame>
 std::ostream & operator<<(std::ostream & out, packet<Frame> const & packet);
 
-extern template class packet<frame<image_gray_8bit> >;
-extern template class packet<frame<image_rgb_8bit> >;
+// suppress automatic instantiation of operator<< for some types
+extern template std::ostream & operator<< <frame<image_gray_8bit> >(std::ostream &, packet<frame<image_gray_8bit> > const &);
+extern template std::ostream & operator<< <frame<image_rgb_8bit> >(std::ostream &, packet<frame<image_rgb_8bit> > const &);
 
 } // namespace cvpg::videoproc
 

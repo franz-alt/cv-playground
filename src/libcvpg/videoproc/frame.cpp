@@ -29,6 +29,10 @@ template<typename Image> bool frame<Image>::flush() const
     return m_flush;
 }
 
+// manual instantiation of frame<> for some types
+template class frame<image_gray_8bit>;
+template class frame<image_rgb_8bit>;
+
 template<typename Image> std::ostream & operator<<(std::ostream & out, frame<Image> const & frame)
 {
     out << "number=" << frame.number() << ",image=" << frame.image() << ",flush=" << frame.flush();
@@ -36,8 +40,8 @@ template<typename Image> std::ostream & operator<<(std::ostream & out, frame<Ima
     return out;
 }
 
-// manual instantation of frame<> for some types
-template class frame<image_gray_8bit>;
-template class frame<image_rgb_8bit>;
+// manual instantiation of operator<< for some types
+template std::ostream & operator<< <image_gray_8bit>(std::ostream &, frame<image_gray_8bit> const &);
+template std::ostream & operator<< <image_rgb_8bit>(std::ostream &, frame<image_rgb_8bit> const &);
 
 } // namespace cvpg::videoproc
