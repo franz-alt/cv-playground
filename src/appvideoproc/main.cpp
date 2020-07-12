@@ -346,8 +346,6 @@ int main(int argc, char * argv[])
         interframe_script,
         [promise_pipeline]()
         {
-            // LOG_SEV(verbose) << "video pipeline processing done";
-
             promise_pipeline->set_value();
         }
     );
@@ -356,17 +354,26 @@ int main(int argc, char * argv[])
 
     auto status = future_pipeline.wait_for(std::chrono::seconds(timeout));
 
+    bool finished_with_errors = false;
+
     if (status == std::future_status::deferred)
     {
-        // LOG_SEV(verbose) << "execution ended in deferred state";
+        std::cerr << "Execution aborted in defered state" << std::endl;
+
+        finished_with_errors = true;
     }
     else if (status == std::future_status::timeout)
     {
-        // LOG_SEV(verbose) << "execution timed out";
+        std::cerr << "Execution timed out" << std::endl;
+
+        finished_with_errors = true;
     }
     else
     {
-        // LOG_SEV(verbose) << "execution finished";
+        if (!quiet)
+        {
+            std::cout << "Processing done" << std::endl;
+        }
     }
 
     std::stringstream diagnostics_stream;
@@ -379,9 +386,9 @@ int main(int argc, char * argv[])
 
         if (!quiet)
         {
-            std::cerr << "Diagnostics saved at '" << diagnostics_filename << "'" << std::endl;
+            std::cout << "Diagnostics saved at '" << diagnostics_filename << "'" << std::endl;
         }
     }
 
-    return 0;
+    return finished_with_errors ? 1 : 0;
 }
