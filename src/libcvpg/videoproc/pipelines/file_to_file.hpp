@@ -35,6 +35,14 @@ public:
                  std::shared_ptr<InterframeProcessor> interframe_processor,
                  std::shared_ptr<Sink> sink);
 
+    file_to_file(file_to_file const &) = delete;
+    file_to_file(file_to_file &&) = delete;
+
+    file_to_file & operator=(file_to_file const &) = delete;
+    file_to_file & operator=(file_to_file &&) = delete;
+
+    virtual ~file_to_file() = default;
+
     void start(std::string input_uri,
                std::string output_uri,
                std::string frame_script,
