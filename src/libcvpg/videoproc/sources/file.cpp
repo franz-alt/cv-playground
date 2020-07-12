@@ -92,6 +92,7 @@ template<typename Image> struct file<Image>::processing_context
 
         std::int64_t bit_rate = 0;
         std::int64_t duration = 0;
+        std::int64_t frames = 0;
 
         AVCodecID codec_id = AVCodecID::AV_CODEC_ID_NONE;
 
@@ -237,6 +238,14 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
     }
 
     context->frames.pixel_format = context->video.codec_context->pix_fmt;
+
+    // get amount of frames
+    if (context->video.format_context->nb_streams > 0)
+    {
+        // TODO check if index 0 is the video stream or not
+
+        context->video.frames = context->video.format_context->streams[0]->nb_frames;
+    }
 
     if (avcodec_open2(context->video.codec_context, codec, nullptr) < 0)
     {
