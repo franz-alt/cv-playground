@@ -2,6 +2,10 @@ set(target libcvpg)
 
 message(STATUS "Library '${target}'")
 
+find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL)
+
+include_directories(${FFMPEG_INCLUDE_DIRS})
+
 set(headers
     core/exception.hpp
     core/histogram.hpp
@@ -49,6 +53,12 @@ set(headers
     imageproc/scripting/diagnostics/typedefs.hpp
     videoproc/frame.hpp
     videoproc/packet.hpp
+    videoproc/stage_fsm.hpp
+    videoproc/pipelines/file_to_file.hpp
+    videoproc/processors/frame.hpp
+    videoproc/processors/interframe.hpp
+    videoproc/sinks/file.hpp
+    videoproc/sources/file.hpp
 )
 
 set(sources
@@ -90,6 +100,12 @@ set(sources
     imageproc/scripting/detail/single_node.cpp
     videoproc/frame.cpp
     videoproc/packet.cpp
+    videoproc/stage_fsm.cpp
+    videoproc/pipelines/file_to_file.cpp
+    videoproc/processors/frame.cpp
+    videoproc/processors/interframe.cpp
+    videoproc/sinks/file.cpp
+    videoproc/sources/file.cpp
 )
 
 add_library(${target} ${sources} ${headers})
