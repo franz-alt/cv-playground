@@ -26,6 +26,14 @@ class file : public boost::asynchronous::trackable_servant<imageproc::scripting:
 public:
     file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler, std::size_t buffered_frames);
 
+    file(file const &) = delete;
+    file(file &&) = delete;
+
+    file & operator=(file const &) = delete;
+    file & operator=(file &&) = delete;
+
+    virtual ~file() = default;
+
     void init(std::size_t context_id,
               std::string uri,
               std::function<void(std::size_t)> init_done_callback,

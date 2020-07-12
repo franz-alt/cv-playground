@@ -34,6 +34,8 @@ public:
     file & operator=(file const &) = delete;
     file & operator=(file &&) = delete;
 
+    virtual ~file() = default;
+
     void init(std::size_t context_id,
               std::string uri,
               std::function<void(std::size_t)> init_done_callback,

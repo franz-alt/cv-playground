@@ -30,6 +30,14 @@ public:
           std::size_t buffered_packets,
           imageproc::scripting::image_processor_proxy image_processor);
 
+    frame(frame const &) = delete;
+    frame(frame &&) = delete;
+
+    frame & operator=(frame const &) = delete;
+    frame & operator=(frame &&) = delete;
+
+    virtual ~frame() = default;
+
     void init(std::size_t context_id,
               std::string script,
               std::function<void(std::size_t)> init_done_callback,
