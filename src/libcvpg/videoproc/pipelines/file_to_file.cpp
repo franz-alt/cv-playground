@@ -1,5 +1,11 @@
 #include <libcvpg/videoproc/pipelines/file_to_file.hpp>
 
+#include <libcvpg/videoproc/update_indicator.hpp>
+
+
+#include <iostream>
+
+
 namespace cvpg::videoproc::pipelines {
 
 template<typename Source, typename FrameProcessor, typename InterframeProcessor, typename Sink>
@@ -21,7 +27,9 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
                                                                             std::string output_uri,
                                                                             std::string frame_script,
                                                                             std::string inter_frame_script,
-                                                                            std::function<void()> callback)
+                                                                            std::function<void()> callback,
+                                                                            std::function<void(std::size_t, std::int64_t)> init_indicator_callback,
+                                                                            std::function<void(std::size_t, videoproc::update_indicator)> update_indicator_callback)
 {
     auto context_id = ++m_context_counter;
 
@@ -30,8 +38,10 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
         std::move(input_uri),
         // init done callback
         make_safe_callback(
-            [this](std::size_t context_id)
+            [this, init_indicator_callback](std::size_t context_id,  std::int64_t frames)
             {
+                init_indicator_callback(context_id, frames);
+
                 stage_initialized(context_id, 1);
             },
             "pipeline::init_done_callback",
@@ -51,6 +61,11 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
         [frame_processor = m_frame_processor](std::size_t context_id)
         {
             frame_processor->finish(context_id);
+        },
+        // update indicator
+        [this, update_indicator_callback](std::size_t context_id, update_indicator update) mutable
+        {
+            update_indicator_callback(context_id, std::move(update));
         }
     );
 
@@ -85,6 +100,11 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
         [interframe_processor = m_interframe_processor](std::size_t context_id)
         {
             interframe_processor->finish(context_id);
+        },
+        // update indicator
+        [this, update_indicator_callback](std::size_t context_id, update_indicator update) mutable
+        {
+            update_indicator_callback(context_id, std::move(update));
         }
     );
 
@@ -119,6 +139,11 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
         [sink = m_sink](std::size_t context_id)
         {
             sink->finish(context_id);
+        },
+        // update indicator
+        [this, update_indicator_callback](std::size_t context_id, update_indicator update) mutable
+        {
+            update_indicator_callback(context_id, std::move(update));
         }
     );
 
@@ -140,9 +165,14 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
             interframe_processor->next(context_id);
         },
         // finished callback
-        [callback](std::size_t /*context_id*/)
+        [this, callback](std::size_t context_id)
         {
             callback();
+        },
+        // update indicator
+        [this, update_indicator_callback](std::size_t context_id, update_indicator update) mutable
+        {
+            update_indicator_callback(context_id, std::move(update));
         }
     );
 }

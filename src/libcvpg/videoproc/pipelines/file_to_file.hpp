@@ -18,6 +18,7 @@
 #include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
 #include <libcvpg/videoproc/frame.hpp>
 #include <libcvpg/videoproc/packet.hpp>
+#include <libcvpg/videoproc/update_indicator.hpp>
 #include <libcvpg/videoproc/processors/frame.hpp>
 #include <libcvpg/videoproc/processors/interframe.hpp>
 #include <libcvpg/videoproc/sinks/file.hpp>
@@ -47,7 +48,9 @@ public:
                std::string output_uri,
                std::string frame_script,
                std::string inter_frame_script,
-               std::function<void()> callback);
+               std::function<void()> callback,
+               std::function<void(std::size_t, std::int64_t)> init_indicator_callback,
+               std::function<void(std::size_t, videoproc::update_indicator)> update_indicator_callback);
 
 private:
     void stage_initialized(std::size_t context_id, std::size_t stage_id);

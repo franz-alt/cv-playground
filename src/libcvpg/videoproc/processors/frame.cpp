@@ -117,6 +117,7 @@ template<typename Image> struct frame<Image>::processing_context
         std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> deliver_packet;
         std::function<void(std::size_t)> next;
         std::function<void(std::size_t)> finished;
+        std::function<void(std::size_t, videoproc::update_indicator)> update_indicator;
     };
 
     callback_info callbacks;
@@ -140,7 +141,8 @@ template<typename Image> void frame<Image>::init(std::size_t context_id,
                                                  std::function<void(std::size_t, std::map<std::string, std::any>)> params_callback,
                                                  std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> packet_callback,
                                                  std::function<void(std::size_t)> next_callback,
-                                                 std::function<void(std::size_t)> done_callback)
+                                                 std::function<void(std::size_t)> done_callback,
+                                                 std::function<void(std::size_t, update_indicator)> update_indicator_callback)
 {
     // create new processing context
     auto context = std::make_shared<processing_context>();
@@ -148,6 +150,7 @@ template<typename Image> void frame<Image>::init(std::size_t context_id,
     context->callbacks.deliver_packet = std::move(packet_callback);
     context->callbacks.next = std::move(next_callback);
     context->callbacks.finished = std::move(done_callback);
+    context->callbacks.update_indicator = std::move(update_indicator_callback);
     context->buffer = std::make_shared<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> > > >(m_buffered_packets);
 
     m_contexts.insert({ context_id, context });
@@ -287,6 +290,8 @@ template<typename Image> void frame<Image>::process(std::size_t context_id, vide
                     try
                     {
                         auto packet = std::move(cont_res.get());
+
+                        context->callbacks.update_indicator(context_id, videoproc::update_indicator("frame", packet.frames().size(), 0));
 
                         context->buffer->push_back(std::move(packet));
 

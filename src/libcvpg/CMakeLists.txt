@@ -54,6 +54,7 @@ set(headers
     videoproc/frame.hpp
     videoproc/packet.hpp
     videoproc/stage_fsm.hpp
+    videoproc/update_indicator.hpp
     videoproc/pipelines/file_to_file.hpp
     videoproc/processors/frame.hpp
     videoproc/processors/interframe.hpp
@@ -101,6 +102,7 @@ set(sources
     videoproc/frame.cpp
     videoproc/packet.cpp
     videoproc/stage_fsm.cpp
+    videoproc/update_indicator.cpp
     videoproc/pipelines/file_to_file.cpp
     videoproc/processors/frame.cpp
     videoproc/processors/interframe.cpp

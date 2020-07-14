@@ -27,8 +27,6 @@ int decode_packet(AVPacket * packet, AVCodecContext * codec_context, AVFrame * f
 
     if (res < 0)
     {
-        // LOG_SEV(error) << "error while sending a packet to the decoder: '" << av_err2str(res) << "'";
-
         return res;
     }
 
@@ -48,8 +46,6 @@ int decode_packet(AVPacket * packet, AVCodecContext * codec_context, AVFrame * f
         }
         else if (res < 0)
         {
-            // LOG_SEV(error) << "error while receiving a frame from the decoder: '" << av_err2str(res) << "'";
-
             av_frame_unref(frame);
 
             break;
@@ -126,6 +122,7 @@ template<typename Image> struct file<Image>::processing_context
         std::function<void(std::size_t, std::map<std::string, std::any>)> params;
         std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> deliver_packet;
         std::function<void(std::size_t)> finished;
+        std::function<void(std::size_t, videoproc::update_indicator)> update_indicator;
     };
 
     callback_info callbacks;
@@ -133,7 +130,7 @@ template<typename Image> struct file<Image>::processing_context
     std::size_t buffered_frames = 0;
     std::size_t buffered_packets = 0;
 
-    std::shared_ptr<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> >> > buffer;
+    std::shared_ptr<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> > > > buffer;
 
     std::shared_ptr<videoproc::stage_fsm> fsm;
 };
@@ -149,10 +146,11 @@ template<typename Image> file<Image>::file(boost::asynchronous::any_weak_schedul
 
 template<typename Image> void file<Image>::init(std::size_t context_id,
                                                 std::string uri,
-                                                std::function<void(std::size_t)> init_done_callback,
+                                                std::function<void(std::size_t, std::int64_t)> init_done_callback,
                                                 std::function<void(std::size_t, std::map<std::string, std::any>)> params_callback,
                                                 std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> packet_callback,
-                                                std::function<void(std::size_t)> done_callback)
+                                                std::function<void(std::size_t)> done_callback,
+                                                std::function<void(std::size_t, update_indicator)> update_indicator_callback)
 {
     // create new processing context
     auto context = std::make_shared<processing_context>();
@@ -160,15 +158,11 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
     context->callbacks.params = std::move(params_callback);
     context->callbacks.deliver_packet = std::move(packet_callback);
     context->callbacks.finished = std::move(done_callback);
+    context->callbacks.update_indicator = std::move(update_indicator_callback);
     context->buffered_frames = m_buffered_frames;
     context->buffered_packets = m_buffered_packets;
     context->buffer = std::make_shared<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> > > >(m_buffered_packets);
     context->fsm = std::make_shared<videoproc::stage_fsm>("sources::file");
-    context->fsm->on_done(videoproc::stage_fsm::state_type::initializing,
-                          [context_id, callback = std::move(init_done_callback)]()
-                          {
-                              callback(context_id);
-                          });
 
     m_contexts.insert({ context_id, context });
 
@@ -246,6 +240,12 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
 
         context->video.frames = context->video.format_context->streams[0]->nb_frames;
     }
+
+    context->fsm->on_done(videoproc::stage_fsm::state_type::initializing,
+                          [context_id, frames = context->video.frames, callback = std::move(init_done_callback)]()
+                          {
+                              callback(context_id, frames);
+                          });
 
     if (avcodec_open2(context->video.codec_context, codec, nullptr) < 0)
     {
@@ -334,7 +334,7 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
                 {
                     context->status.frames_failed++;
 
-                    // TODO indicate frame failed
+                    context->callbacks.update_indicator(context_id, videoproc::update_indicator("load", 0, 1));
                 }
                 else
                 {
@@ -342,11 +342,12 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
 
                     if (packet_images.empty())
                     {
-                        // TODO indicate packet empty
+                        // TODO indicate an empty packet in a separate way !?!?
+                        context->callbacks.update_indicator(context_id, videoproc::update_indicator("load", 0, 1));
                     }
                     else
                     {
-                        // TODO indicate packet loaded
+                        context->callbacks.update_indicator(context_id, videoproc::update_indicator("load", 1, 0));
                     }
                 }
             }
@@ -354,7 +355,7 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
             {
                 context->status.frames_failed++;
 
-                // TODO indicate frame failed
+                context->callbacks.update_indicator(context_id, videoproc::update_indicator("load", 0, 1));
             }
         }
 

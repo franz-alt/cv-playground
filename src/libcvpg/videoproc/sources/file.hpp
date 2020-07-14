@@ -2,6 +2,7 @@
 #define LIBCVPG_VIDEOPROC_SOURCES_FILE_HPP
 
 #include <any>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -14,6 +15,7 @@
 #include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
 #include <libcvpg/videoproc/frame.hpp>
 #include <libcvpg/videoproc/packet.hpp>
+#include <libcvpg/videoproc/update_indicator.hpp>
 
 namespace cvpg::videoproc::sources {
 
@@ -38,10 +40,11 @@ public:
 
     void init(std::size_t context_id,
               std::string uri,
-              std::function<void(std::size_t)> init_done_callback,
+              std::function<void(std::size_t, std::int64_t)> init_done_callback,
               std::function<void(std::size_t, std::map<std::string, std::any>)> params_callback,
               std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> packet_callback,
-              std::function<void(std::size_t)> done_callback);
+              std::function<void(std::size_t)> done_callback,
+              std::function<void(std::size_t, update_indicator)> update_indicator_callback);
 
     void start(std::size_t context_id);
 

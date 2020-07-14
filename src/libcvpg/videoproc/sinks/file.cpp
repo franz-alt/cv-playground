@@ -49,6 +49,7 @@ template<typename Image> struct file<Image>::processing_context
         std::function<void(std::map<std::string, std::any>)> params;
         std::function<void(std::size_t)> next;
         std::function<void(std::size_t)> finished;
+        std::function<void(std::size_t, videoproc::update_indicator)> update_indicator;
     };
 
     callback_info callbacks;
@@ -345,13 +346,15 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
                                                 std::string uri,
                                                 std::function<void(std::size_t)> init_done_callback,
                                                 std::function<void(std::size_t)> next_callback,
-                                                std::function<void(std::size_t)> done_callback)
+                                                std::function<void(std::size_t)> done_callback,
+                                                std::function<void(std::size_t, update_indicator)> update_indicator_callback)
 {
     // create new processing context
     auto context = std::make_shared<processing_context>();
     context->video.uri = std::move(uri);
     context->callbacks.next = std::move(next_callback);
     context->callbacks.finished = std::move(done_callback);
+    context->callbacks.update_indicator = std::move(update_indicator_callback);
     context->buffer.data = std::make_shared<boost::circular_buffer<typename processing_context::buffer_info::entry> >(m_buffered_frames);
 
     m_contexts.insert({ context_id, context });
@@ -523,6 +526,8 @@ template<typename Image> void file<Image>::process(std::size_t context_id, video
                     {
                         context->buffer.data->push_back(std::move(entry));
                     }
+
+                    context->callbacks.update_indicator(context_id, videoproc::update_indicator("save", buffer.size(), 0));
 
                     this->try_flush_buffer(context_id);
                 }

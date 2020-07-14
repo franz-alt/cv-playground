@@ -14,6 +14,7 @@
 #include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
 #include <libcvpg/videoproc/frame.hpp>
 #include <libcvpg/videoproc/packet.hpp>
+#include <libcvpg/videoproc/update_indicator.hpp>
 
 namespace cvpg::videoproc::sinks {
 
@@ -38,7 +39,8 @@ public:
               std::string uri,
               std::function<void(std::size_t)> init_done_callback,
               std::function<void(std::size_t)> next_callback,
-              std::function<void(std::size_t)> done_callback);
+              std::function<void(std::size_t)> done_callback,
+              std::function<void(std::size_t, update_indicator)> update_indicator_callback);
 
     void params(std::size_t context_id, std::map<std::string, std::any> p);
 

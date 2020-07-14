@@ -15,6 +15,7 @@
 #include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
 #include <libcvpg/videoproc/frame.hpp>
 #include <libcvpg/videoproc/packet.hpp>
+#include <libcvpg/videoproc/update_indicator.hpp>
 
 namespace cvpg::videoproc::processors {
 
@@ -45,7 +46,8 @@ public:
               std::function<void(std::size_t, std::map<std::string, std::any>)> params_callback,
               std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> packet_callback,
               std::function<void(std::size_t)> next_callback,
-              std::function<void(std::size_t)> done_callback);
+              std::function<void(std::size_t)> done_callback,
+              std::function<void(std::size_t, update_indicator)> update_indicator_callback);
 
     void params(std::size_t context_id, std::map<std::string, std::any> p);
 

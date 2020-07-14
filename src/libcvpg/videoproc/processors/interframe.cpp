@@ -168,6 +168,7 @@ template<typename Image> struct interframe<Image>::processing_context
         std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> deliver_packet;
         std::function<void(std::size_t)> next;
         std::function<void(std::size_t)> finished;
+        std::function<void(std::size_t, videoproc::update_indicator)> update_indicator;
     };
 
     callback_info callbacks;
@@ -214,7 +215,8 @@ template<typename Image> void interframe<Image>::init(std::size_t context_id,
                                                       std::function<void(std::size_t, std::map<std::string, std::any>)> params_callback,
                                                       std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> packet_callback,
                                                       std::function<void(std::size_t)> next_callback,
-                                                      std::function<void(std::size_t)> done_callback)
+                                                      std::function<void(std::size_t)> done_callback,
+                                                      std::function<void(std::size_t, update_indicator)> update_indicator_callback)
 {
     // create new processing context
     auto context = std::make_shared<processing_context>();
@@ -222,6 +224,7 @@ template<typename Image> void interframe<Image>::init(std::size_t context_id,
     context->callbacks.deliver_packet = std::move(packet_callback);
     context->callbacks.next = std::move(next_callback);
     context->callbacks.finished = std::move(done_callback);
+    context->callbacks.update_indicator = std::move(update_indicator_callback);
     context->buffer_in.data = std::make_shared<std::deque<videoproc::frame<Image> > >();
     context->buffer_out.data = std::make_shared<boost::circular_buffer<typename processing_context::buffer_out_info::entry> >(m_buffered_packets);
 
@@ -464,6 +467,8 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
                     typename processing_context::buffer_out_info::entry e;
                     e.id = packet.number();
                     e.packet = std::move(packet);
+
+                    context->callbacks.update_indicator(context_id, videoproc::update_indicator("interframe", e.packet.frames().size(), 0));
 
                     context->buffer_out.data->push_back(std::move(e));
 
