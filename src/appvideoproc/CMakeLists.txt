@@ -6,8 +6,13 @@ find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL)
 
 include_directories(${FFMPEG_INCLUDE_DIRS})
 
+set(headers
+    progress_monitor.hpp
+)
+
 set(sources
     main.cpp
+    progress_monitor.cpp
 )
 
 add_executable(${target} ${sources} ${headers})

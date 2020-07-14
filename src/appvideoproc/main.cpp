@@ -20,6 +20,17 @@
 #include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
 #include <libcvpg/videoproc/pipelines/file_to_file.hpp>
 
+#include "progress_monitor.hpp"
+
+extern "C" {
+#include <libavutil/avutil.h>
+}
+
+static void avlog_cb(void *, int level, const char * szFmt, va_list varg)
+{
+    // TOOD collect data and present it (somehow) to the user
+}
+
 int main(int argc, char * argv[])
 {
     namespace po = boost::program_options;
@@ -197,6 +208,9 @@ int main(int argc, char * argv[])
         std::cout << "Loaded inter-frame script '" << interframe_script_filename << "'" << std::endl;
     }
 
+    // use own logging callback
+    av_log_set_callback(avlog_cb);
+
     // create the image processor
     auto image_processor_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
                                          boost::asynchronous::single_thread_scheduler<
@@ -330,6 +344,13 @@ int main(int argc, char * argv[])
 
     auto file_producer = std::make_shared<cvpg::videoproc::sinks::image_rgb_8bit_file_proxy>(file_out_scheduler, buffered_frames * buffered_packets);
 
+    // create an progress monitor
+    auto progress_monitor_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
+                                          boost::asynchronous::single_thread_scheduler<
+                                              boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
+
+    auto progress_monitor = std::make_shared<progress_monitor_proxy>(progress_monitor_scheduler, !quiet);
+
     // create a pipeline for the stages
     auto pipeline_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
                                     boost::asynchronous::single_thread_scheduler<
@@ -347,6 +368,14 @@ int main(int argc, char * argv[])
         [promise_pipeline]()
         {
             promise_pipeline->set_value();
+        },
+        [progress_monitor](std::size_t context_id, std::int64_t frames)
+        {
+            progress_monitor->init(context_id, frames);
+        },
+        [progress_monitor](std::size_t context_id, cvpg::videoproc::update_indicator update) mutable
+        {
+            progress_monitor->update(context_id, std::move(update));
         }
     );
 
