@@ -563,6 +563,8 @@ template<typename Image> void file<Image>::process(std::size_t context_id, video
                             context->buffer.data->push_back(std::move(entry));
                         }
 
+                        context->callbacks.update_indicator(context_id, videoproc::update_indicator("save", buffer.size(), 0));
+
                         this->try_flush_buffer(context_id);
 
                         // add sequence end code to have a real MPEG file
