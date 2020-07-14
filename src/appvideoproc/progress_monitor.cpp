@@ -137,8 +137,8 @@ void progress_monitor::print_at_console(std::size_t context_id)
         std::cout << "\e[A\e[A\e[A\e[A" << std::flush;
         
         print_progress_bar("- load  ", static_cast<double>(context->frames_load_done + context->frames_load_failed) / static_cast<double>(context->frames_total));
-        print_progress_bar("- frames", static_cast<double>(context->frames_process_done + context->frames_process_failed) / static_cast<double>(context->frames_total));
-        print_progress_bar("- inters", static_cast<double>(context->interframes_process_done + context->interframes_process_failed) / static_cast<double>(context->frames_total - 1));
-        print_progress_bar("- save  ", static_cast<double>(context->frames_save_done + context->frames_save_failed) / static_cast<double>(context->frames_total));
+        print_progress_bar("- frames", static_cast<double>(context->frames_process_done + context->frames_process_failed) / static_cast<double>(context->frames_total - context->frames_load_failed));
+        print_progress_bar("- inters", static_cast<double>(context->interframes_process_done + context->interframes_process_failed) / static_cast<double>(context->frames_total - context->frames_load_failed - 1));
+        print_progress_bar("- save  ", static_cast<double>(context->frames_save_done + context->frames_save_failed) / static_cast<double>(context->frames_total - context->frames_load_failed - 1));
     }
 }
