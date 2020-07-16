@@ -237,8 +237,12 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
     if (context->video.format_context->nb_streams > 0)
     {
         // TODO check if index 0 is the video stream or not
+        const double fps = static_cast<double>(context->video.format_context->streams[0]->avg_frame_rate.num) /
+                        static_cast<double>(context->video.format_context->streams[0]->avg_frame_rate.den);
 
-        context->video.frames = context->video.format_context->streams[0]->nb_frames;
+        const std::int64_t frames = static_cast<std::int64_t>(static_cast<double>(context->video.format_context->duration) * fps / 1000000.0);
+
+        context->video.frames = frames;
     }
 
     context->fsm->on_done(videoproc::stage_fsm::state_type::initializing,
