@@ -299,6 +299,7 @@ struct write_last_frames_task : public boost::asynchronous::continuation_task<st
             }
 
             typename cvpg::videoproc::sinks::file<Image>::processing_context::buffer_info::entry entry;
+            entry.id = m_context->video.frames_received++;
             entry.size = static_cast<std::size_t>(packet->size * sizeof(std::uint8_t));
 
             // create memory from 'AVPacket' to separate memory
