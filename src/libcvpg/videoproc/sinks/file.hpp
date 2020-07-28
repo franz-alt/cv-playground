@@ -25,7 +25,7 @@ template<typename Image>
 class file : public boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>
 {
 public:
-    file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler, std::size_t buffered_frames);
+    file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler, std::size_t max_frames_write_buffer);
 
     file(file const &) = delete;
     file(file &&) = delete;
@@ -55,7 +55,8 @@ public:
 private:
     void try_flush_buffer(std::size_t context_id);
 
-    std::size_t m_buffered_frames;
+    // maximum size of frames at output buffer when writing the video stream to file
+    std::size_t m_max_frames_write_buffer;
 
     std::map<std::size_t, std::shared_ptr<processing_context> > m_contexts;
 };

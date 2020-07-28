@@ -108,6 +108,8 @@ template<typename Image> struct file<Image>::processing_context
         bool eof_reached = false;
         bool eof_flushed = false;
 
+        std::size_t next_waiting = 0;
+
         std::size_t frames_loaded = 0;
         std::size_t frames_failed = 0;
         std::size_t frames_processed = 0;
@@ -127,20 +129,17 @@ template<typename Image> struct file<Image>::processing_context
 
     callback_info callbacks;
 
-    std::size_t buffered_frames = 0;
-    std::size_t buffered_packets = 0;
-
     std::shared_ptr<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> > > > buffer;
 
     std::shared_ptr<videoproc::stage_fsm> fsm;
 };
 
 template<typename Image> file<Image>::file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
-                                           std::size_t buffered_frames,
-                                           std::size_t buffered_packets)
+                                           std::size_t frames_per_packet,
+                                           std::size_t max_packets_output_buffer)
     : boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>(scheduler)
-    , m_buffered_frames(buffered_frames)
-    , m_buffered_packets(buffered_packets)
+    , m_frames_per_packet(frames_per_packet)
+    , m_max_packets_output_buffer(max_packets_output_buffer)
     , m_contexts()
 {}
 
@@ -159,9 +158,7 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
     context->callbacks.deliver_packet = std::move(packet_callback);
     context->callbacks.finished = std::move(done_callback);
     context->callbacks.update_indicator = std::move(update_indicator_callback);
-    context->buffered_frames = m_buffered_frames;
-    context->buffered_packets = m_buffered_packets;
-    context->buffer = std::make_shared<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> > > >(m_buffered_packets);
+    context->buffer = std::make_shared<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> > > >(m_max_packets_output_buffer);
     context->fsm = std::make_shared<videoproc::stage_fsm>("sources::file");
 
     m_contexts.insert({ context_id, context });
@@ -285,8 +282,8 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
             return;
         }
 
-        // check if packet buffer is full
-        if (context->buffer->size() == context->buffered_packets)
+        // check if packet buffer is full or would be full at next steps
+        if (context->buffer->size() >= (m_max_packets_output_buffer - (m_frames_per_packet + 1))) // +1 for possible flush packet at end of stream
         {
             // don't read new data until packet buffer is freed
             // TODO do we have to throw away old data in case of streaming mode !?!?!
@@ -294,7 +291,7 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
         }
 
         std::vector<Image> images;
-        images.reserve(context->buffered_frames);
+        images.reserve(m_frames_per_packet);
 
         AVFrame * frame = av_frame_alloc();
 
@@ -310,7 +307,7 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
             throw cvpg::exception("failed to allocate memory for packet");
         }
 
-        for (auto i = 0; i < context->buffered_frames; ++i)
+        for (auto i = 0; i < m_frames_per_packet; ++i)
         {
             int res = av_read_frame(context->video.format_context, packet);
 
@@ -378,7 +375,7 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
 
         context->buffer->push_back(std::move(packet_));
 
-        if (context->status.eof_reached)
+        if (context->status.eof_reached && !(context->status.eof_flushed))
         {
             // add 'flush packet' at end-of-file
             videoproc::packet<videoproc::frame<Image> > packet_(context->status.packet_counter++);
@@ -393,7 +390,16 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
 
 template<typename Image> void file<Image>::next(std::size_t context_id)
 {
-    try_flush_buffer(context_id);
+    auto it = m_contexts.find(context_id);
+
+    if (it != m_contexts.end())
+    {
+        auto & context = it->second;
+
+        context->status.next_waiting++;
+
+        try_flush_buffer(context_id);
+    }
 }
 
 template<typename Image> void file<Image>::try_flush_buffer(std::size_t context_id)
@@ -410,6 +416,12 @@ template<typename Image> void file<Image>::try_flush_buffer(std::size_t context_
             return;
         }
 
+        // ignore flush when next stage doesn't wait for new data at moment
+        if (context->status.next_waiting == 0)
+        {
+            return;
+        }
+
         if (!context->buffer->empty())
         {
             auto & packet = context->buffer->front();
@@ -418,6 +430,9 @@ template<typename Image> void file<Image>::try_flush_buffer(std::size_t context_
 
             // deliver packet to next stage
             context->callbacks.deliver_packet(context_id, std::move(packet));
+
+            // next stage is satisfied now
+            context->status.next_waiting--;
 
             context->buffer->pop_front();
 

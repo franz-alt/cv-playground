@@ -22,13 +22,17 @@ namespace cvpg::videoproc::sources {
 //
 // A file source reads a video from a given URI and produces packets containing video frames.
 //
+// A certain amount of frames will be read from the video file at once and bundled inside a single
+// packet. These packets will be stored inside an output buffer. Each packet at the output buffer
+// will be delivered to the next stage if this stage is ready to receive new data.
+//
 template<typename Image>
 class file : public boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>
 {
 public:
     file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
-         std::size_t buffered_frames,
-         std::size_t buffered_packets);
+         std::size_t frames_per_packet,
+         std::size_t max_packets_output_buffer);
 
     file(file const &) = delete;
     file(file &&) = delete;
@@ -53,8 +57,11 @@ public:
 private:    
     void try_flush_buffer(std::size_t context_id);
 
-    std::size_t m_buffered_frames;
-    std::size_t m_buffered_packets;
+    // amount of frames that will be (tried to) read from video file at once
+    std::size_t m_frames_per_packet;
+
+    // maximum size of packet send buffer
+    std::size_t m_max_packets_output_buffer;
 
     struct processing_context;
     std::map<std::size_t, std::shared_ptr<processing_context> > m_contexts;

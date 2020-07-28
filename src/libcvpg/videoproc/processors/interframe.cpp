@@ -86,7 +86,7 @@ struct process_inter_frames_task : public boost::asynchronous::continuation_task
                 ,image_processor = m_image_processor
                 ,packet_number = m_packet_number
                 ,images = std::move(images)
-                ,flush_frame](auto cont_res) mutable
+                ,flush_frame](auto cont_res)
                 {
                     try
                     {
@@ -156,6 +156,8 @@ template<typename Image> struct interframe<Image>::processing_context
 
     struct status_info
     {
+        std::size_t next_waiting = 0;
+
         std::size_t packets_created = 0;
         std::size_t frames_created = 0;
     };
@@ -176,7 +178,7 @@ template<typename Image> struct interframe<Image>::processing_context
     struct buffer_in_info
     {
         std::size_t next_frame = 0;
-        std::shared_ptr<std::deque<videoproc::frame<Image>> > data;
+        std::shared_ptr<std::deque<videoproc::frame<Image> > > data;
     };
 
     buffer_in_info buffer_in;
@@ -201,10 +203,10 @@ template<typename Image> struct interframe<Image>::processing_context
 
 template<typename Image> interframe<Image>::interframe(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
                                                        boost::asynchronous::any_shared_scheduler_proxy<imageproc::scripting::diagnostics::servant_job> pool,
-                                                       std::size_t buffered_packets,
+                                                       std::size_t max_packets_output_buffer,
                                                        imageproc::scripting::image_processor_proxy image_processor)
     : boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>(scheduler, pool)
-    , m_buffered_packets(buffered_packets)
+    , m_max_packets_output_buffer(max_packets_output_buffer)
     , m_image_processor(std::make_shared<imageproc::scripting::image_processor_proxy>(image_processor))
     , m_contexts()
 {}
@@ -226,7 +228,7 @@ template<typename Image> void interframe<Image>::init(std::size_t context_id,
     context->callbacks.finished = std::move(done_callback);
     context->callbacks.update_indicator = std::move(update_indicator_callback);
     context->buffer_in.data = std::make_shared<std::deque<videoproc::frame<Image> > >();
-    context->buffer_out.data = std::make_shared<boost::circular_buffer<typename processing_context::buffer_out_info::entry> >(m_buffered_packets);
+    context->buffer_out.data = std::make_shared<boost::circular_buffer<typename processing_context::buffer_out_info::entry> >(m_max_packets_output_buffer);
 
     m_contexts.insert({ context_id, context });
 
@@ -342,7 +344,16 @@ template<typename Image> void interframe<Image>::process(std::size_t context_id,
 
 template<typename Image> void interframe<Image>::next(std::size_t context_id)
 {
-    try_flush_buffer(context_id);
+    auto it = m_contexts.find(context_id);
+
+    if (it != m_contexts.end())
+    {
+        auto & context = it->second;
+
+        context->status.next_waiting++;
+
+        try_flush_buffer(context_id);
+    }
 }
 
 template<typename Image> void interframe<Image>::try_process_input(std::size_t context_id)
@@ -372,6 +383,7 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
 
         bool found = true;
 
+        // TODO speed up this code!
         while (found)
         {
             found = false;
@@ -394,14 +406,19 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
             }
         }
 
-        if ((frame_number - context->buffer_in.next_frame) == 0)
+        // check if next frame number isn't received yet
+        if (frame_number == context->buffer_in.next_frame)
         {
+            // inform previous stage that this stage is ready to receive new data
+            context->callbacks.next(context_id);
+
             return;
         }
 
         std::vector<videoproc::frame<Image> > frames;
         frames.reserve(context->buffer_in.data->size());
 
+        // TODO use partition instead of copy_if here?!?!
         std::copy_if(context->buffer_in.data->begin(),
                      context->buffer_in.data->end(),
                      std::back_inserter(frames),
@@ -417,6 +434,7 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
                      return a.number() < b.number();
                  });
 
+        // except the frame, delete all older ones
         for (auto it = context->buffer_in.data->begin(); it != context->buffer_in.data->end(); )
         {
             if (it->number() <= (frame_number - 1))
@@ -431,12 +449,14 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
 
         context->buffer_in.next_frame = frame_number;
 
-        if (frames.empty())
+        auto frames_amount = frames.size();
+
+        // check if output buffer is still full
+        if (context->buffer_out.data->size() >= (m_max_packets_output_buffer - frames_amount))
         {
+            // wait to process input data because of full output buffer
             return;
         }
-
-        auto frames_amount = frames.size();
 
         auto packets_created = context->status.packets_created;
         auto frames_created = context->status.frames_created;
@@ -508,6 +528,12 @@ template<typename Image> void interframe<Image>::try_flush_buffer(std::size_t co
         }
         else
         {
+            // ignore flush when next stage doesn't wait for new data at moment
+            if (context->status.next_waiting == 0)
+            {
+                return;
+            }
+
             bool found = true;
 
             while (found)
@@ -534,15 +560,13 @@ template<typename Image> void interframe<Image>::try_flush_buffer(std::size_t co
                     // deliver packet to next stage
                     context->callbacks.deliver_packet(context_id, std::move(packet));
 
+                    // next stage is satisfied now
+                    context->status.next_waiting--;
+
                     // if 'flush packet' is at buffer, inform next stage of finishing for this context
                     if (is_last)
                     {
                         context->callbacks.finished(context_id);
-                    }
-                    else
-                    {
-                        // inform previous stage that this stage is ready to receive new data
-                        context->callbacks.next(context_id);
                     }
 
                     context->buffer_out.data->erase(it);
@@ -554,7 +578,7 @@ template<typename Image> void interframe<Image>::try_flush_buffer(std::size_t co
                 }
             }
 
-            if (!found)
+            if (context->buffer_out.data->size() != m_max_packets_output_buffer)
             {
                 // inform previous stage that this stage is ready to receive new data
                 context->callbacks.next(context_id);

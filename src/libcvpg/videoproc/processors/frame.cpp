@@ -111,6 +111,13 @@ template<typename Image> struct frame<Image>::processing_context
 
     bool prev_stage_finished = false;
 
+    struct status_info
+    {
+        std::size_t next_waiting = 0;
+    };
+
+    status_info status;
+
     struct callback_info
     {
         std::function<void(std::size_t, std::map<std::string, std::any>)> params;
@@ -127,10 +134,10 @@ template<typename Image> struct frame<Image>::processing_context
 
 template<typename Image> frame<Image>::frame(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
                                              boost::asynchronous::any_shared_scheduler_proxy<imageproc::scripting::diagnostics::servant_job> pool,
-                                             std::size_t buffered_packets,
+                                             std::size_t max_packets_output_buffer,
                                              imageproc::scripting::image_processor_proxy image_processor)
     : boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>(scheduler, pool)
-    , m_buffered_packets(buffered_packets)
+    , m_max_packets_output_buffer(max_packets_output_buffer)
     , m_image_processor(std::make_shared<imageproc::scripting::image_processor_proxy>(image_processor))
     , m_contexts()
 {}
@@ -151,7 +158,7 @@ template<typename Image> void frame<Image>::init(std::size_t context_id,
     context->callbacks.next = std::move(next_callback);
     context->callbacks.finished = std::move(done_callback);
     context->callbacks.update_indicator = std::move(update_indicator_callback);
-    context->buffer = std::make_shared<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> > > >(m_buffered_packets);
+    context->buffer = std::make_shared<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> > > >(m_max_packets_output_buffer);
 
     m_contexts.insert({ context_id, context });
 
@@ -261,10 +268,8 @@ template<typename Image> void frame<Image>::process(std::size_t context_id, vide
 
         if (packet.flush())
         {
-            // add 'flush packet' at end of buffer
-            context->buffer->push_back(std::move(packet));
-
-            try_flush_buffer(context_id);
+            // deliver flush packet to next stage
+            context->callbacks.deliver_packet(context_id, std::move(packet));
         }
         else
         {
@@ -316,7 +321,16 @@ template<typename Image> void frame<Image>::process(std::size_t context_id, vide
 
 template<typename Image> void frame<Image>::next(std::size_t context_id)
 {
-    try_flush_buffer(context_id);
+    auto it = m_contexts.find(context_id);
+
+    if (it != m_contexts.end())
+    {
+        auto & context = it->second;
+
+        context->status.next_waiting++;
+
+        try_flush_buffer(context_id);
+    }
 }
 
 template<typename Image> void frame<Image>::try_flush_buffer(std::size_t context_id)
@@ -327,6 +341,12 @@ template<typename Image> void frame<Image>::try_flush_buffer(std::size_t context
     {
         auto & context = it->second;
 
+        // ignore flush when next stage doesn't wait for new data at moment
+        if (context->status.next_waiting == 0)
+        {
+            return;
+        }
+
         if (context->buffer->empty())
         {
             // inform previous stage that this stage is ready to receive new data
@@ -336,10 +356,13 @@ template<typename Image> void frame<Image>::try_flush_buffer(std::size_t context
         {
             auto & packet = context->buffer->front();
 
-            bool is_last = packet.flush();
+            const bool is_last = packet.flush();
 
             // deliver packet to next stage
             context->callbacks.deliver_packet(context_id, std::move(packet));
+
+            // next stage is satisfied now
+            context->status.next_waiting--;
 
             context->buffer->pop_front();
 

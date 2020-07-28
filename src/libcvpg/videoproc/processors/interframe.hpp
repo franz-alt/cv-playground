@@ -29,7 +29,7 @@ class interframe : public boost::asynchronous::trackable_servant<imageproc::scri
 public:
     interframe(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
                boost::asynchronous::any_shared_scheduler_proxy<imageproc::scripting::diagnostics::servant_job> pool,
-               std::size_t buffered_packets,
+               std::size_t max_packets_output_buffer,
                imageproc::scripting::image_processor_proxy image_processor);
 
     interframe(interframe const &) = delete;
@@ -63,7 +63,8 @@ private:
     void try_process_input(std::size_t context_id);
     void try_flush_buffer(std::size_t context_id);
 
-    std::size_t m_buffered_packets;
+    // maximum size of packet send buffer
+    std::size_t m_max_packets_output_buffer;
 
     std::shared_ptr<imageproc::scripting::image_processor_proxy> m_image_processor;
 

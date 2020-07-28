@@ -89,150 +89,157 @@ struct write_frames_task : public boost::asynchronous::continuation_task<std::ve
 
     void operator()()
     {
-        AVFrame * frame = av_frame_alloc();
-
-        if (!frame)
+        try
         {
-            throw cvpg::exception("failed to allocate memory for frame");
-        }
+            AVFrame * frame = av_frame_alloc();
 
-        frame->format = m_context->video.codec_context->pix_fmt;
-        frame->width = m_context->video.codec_context->width;
-        frame->height = m_context->video.codec_context->height;
-
-        int ret = av_frame_get_buffer(frame, 0);
-
-        if (ret < 0)
-        {
-            throw cvpg::exception("failed to allocate memory for video frame data");
-        }
-
-        AVPacket * packet = av_packet_alloc();
-
-        if (!packet)
-        {
-            throw cvpg::exception("failed to allocate memory for packet");
-        }
-
-        std::vector<typename cvpg::videoproc::sinks::file<Image>::processing_context::buffer_info::entry> buffer;
-        buffer.reserve(m_packet.frames().size());
-
-        for (auto const & inter_frame : m_packet.frames())
-        {
-            // abort if frame is a flush frame
-            if (inter_frame.flush())
+            if (!frame)
             {
-                continue;
+                throw cvpg::exception("failed to allocate memory for frame");
             }
 
-            ret = av_frame_make_writable(frame);
+            frame->format = m_context->video.codec_context->pix_fmt;
+            frame->width = m_context->video.codec_context->width;
+            frame->height = m_context->video.codec_context->height;
+
+            int ret = av_frame_get_buffer(frame, 0);
 
             if (ret < 0)
             {
-                throw cvpg::exception("failed to allocate memory for video frame");
+                throw cvpg::exception("failed to allocate memory for video frame data");
             }
 
-            frame->pts = m_context->video.frames_sent++;
+            AVPacket * packet = av_packet_alloc();
 
-            auto image = inter_frame.image();
-
-            std::int32_t ret = av_image_alloc(frame->data, frame->linesize, image.width(), image.height(), m_context->video.codec_context->pix_fmt, 32);
-
-            if (ret < 0)
+            if (!packet)
             {
-                throw cvpg::exception("failed to allocate memory for raw picture buffer");
+                throw cvpg::exception("failed to allocate memory for packet");
             }
 
-            for (std::size_t y = 0; y < m_context->video.codec_context->height; y++)
+            std::vector<typename cvpg::videoproc::sinks::file<Image>::processing_context::buffer_info::entry> buffer;
+            buffer.reserve(m_packet.frames().size());
+
+            for (auto const & inter_frame : m_packet.frames())
             {
-                for (std::size_t x = 0; x < m_context->video.codec_context->width; x++)
+                // abort if frame is a flush frame
+                if (inter_frame.flush())
                 {
-                    std::uint8_t r = (&(*image.data(0)))[y * image.width() + x];
-                    std::uint8_t g = (&(*image.data(1)))[y * image.width() + x];
-                    std::uint8_t b = (&(*image.data(2)))[y * image.width() + x];
-
-                    frame->data[0][y * frame->linesize[0] + x] = ((66 * r + 129 * g + 25 * b) >> 8) + 16;
-                }
-            }
-
-            for (std::size_t y = 0; y < m_context->video.codec_context->height / 2; y++)
-            {
-                for (std::size_t x = 0; x < m_context->video.codec_context->width / 2; x++)
-                {
-                    std::uint8_t r = (&(*image.data(0)))[y * image.width() + x];
-                    std::uint8_t g = (&(*image.data(1)))[y * image.width() + x];
-                    std::uint8_t b = (&(*image.data(2)))[y * image.width() + x];
-
-                    frame->data[1][y * frame->linesize[1] + x] = ((-38 * r + -74 * g + 112 * b) >> 8) + 128;
-                    frame->data[2][y * frame->linesize[2] + x] = ((112 * r + -94 * g + -18 * b) >> 8) + 128;
-                }
-            }
-
-            ret = avcodec_send_frame(m_context->video.codec_context, frame);
-
-            if (ret < 0)
-            {
-                if (ret == AVERROR(EAGAIN))
-                {
-                    // TODO log error "AVERROR(EAGAIN)"
-                }
-                else if (ret == AVERROR(EINVAL))
-                {
-                    // TODO log error "AVERROR(EINVAL)"
-                }
-                else if (ret == AVERROR(ENOMEM))
-                {
-                    // TODO log error "AVERROR(ENOMEM)"
-                }
-                else if (ret == AVERROR_EOF)
-                {
-                    // TODO log error "AVERROR_EOF"
-                }
-                else
-                {
-                    // TODO log error "unknown error"
+                    continue;
                 }
 
-                // TODO error handling
-            }
+                ret = av_frame_make_writable(frame);
 
-            while (ret >= 0)
-            {
-                ret = avcodec_receive_packet(m_context->video.codec_context, packet);
-
-                if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+                if (ret < 0)
                 {
-                    break;
+                    throw cvpg::exception("failed to allocate memory for video frame");
                 }
-                else if (ret < 0)
+
+                frame->pts = m_context->video.frames_sent++;
+
+                auto image = inter_frame.image();
+
+                std::int32_t ret = av_image_alloc(frame->data, frame->linesize, image.width(), image.height(), m_context->video.codec_context->pix_fmt, 32);
+
+                if (ret < 0)
                 {
+                    throw cvpg::exception("failed to allocate memory for raw picture buffer");
+                }
+
+                for (std::size_t y = 0; y < m_context->video.codec_context->height; y++)
+                {
+                    for (std::size_t x = 0; x < m_context->video.codec_context->width; x++)
+                    {
+                        std::uint8_t r = (&(*image.data(0)))[y * image.width() + x];
+                        std::uint8_t g = (&(*image.data(1)))[y * image.width() + x];
+                        std::uint8_t b = (&(*image.data(2)))[y * image.width() + x];
+
+                        frame->data[0][y * frame->linesize[0] + x] = ((66 * r + 129 * g + 25 * b) >> 8) + 16;
+                    }
+                }
+
+                for (std::size_t y = 0; y < m_context->video.codec_context->height / 2; y++)
+                {
+                    for (std::size_t x = 0; x < m_context->video.codec_context->width / 2; x++)
+                    {
+                        std::uint8_t r = (&(*image.data(0)))[y * image.width() + x];
+                        std::uint8_t g = (&(*image.data(1)))[y * image.width() + x];
+                        std::uint8_t b = (&(*image.data(2)))[y * image.width() + x];
+
+                        frame->data[1][y * frame->linesize[1] + x] = ((-38 * r + -74 * g + 112 * b) >> 8) + 128;
+                        frame->data[2][y * frame->linesize[2] + x] = ((112 * r + -94 * g + -18 * b) >> 8) + 128;
+                    }
+                }
+
+                ret = avcodec_send_frame(m_context->video.codec_context, frame);
+
+                if (ret < 0)
+                {
+                    if (ret == AVERROR(EAGAIN))
+                    {
+                        // TODO log error "AVERROR(EAGAIN)"
+                    }
+                    else if (ret == AVERROR(EINVAL))
+                    {
+                        // TODO log error "AVERROR(EINVAL)"
+                    }
+                    else if (ret == AVERROR(ENOMEM))
+                    {
+                        // TODO log error "AVERROR(ENOMEM)"
+                    }
+                    else if (ret == AVERROR_EOF)
+                    {
+                        // TODO log error "AVERROR_EOF"
+                    }
+                    else
+                    {
+                        // TODO log error "unknown error"
+                    }
+
                     // TODO error handling
-
-                    break;
                 }
 
-                typename cvpg::videoproc::sinks::file<Image>::processing_context::buffer_info::entry entry;
-                entry.id = m_context->video.frames_received++;
-                entry.size = static_cast<std::size_t>(packet->size * sizeof(std::uint8_t));
+                while (ret >= 0)
+                {
+                    ret = avcodec_receive_packet(m_context->video.codec_context, packet);
 
-                // create memory from 'AVPacket' to separate memory
-                entry.frame = std::shared_ptr<std::uint8_t>(static_cast<std::uint8_t *>(malloc(entry.size)), [](std::uint8_t * ptr){ free(ptr); });
-                memcpy(entry.frame.get(), packet->data, entry.size);
+                    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+                    {
+                        break;
+                    }
+                    else if (ret < 0)
+                    {
+                        // TODO error handling
 
-                av_packet_unref(packet);
+                        break;
+                    }
 
-                buffer.push_back(std::move(entry));
+                    typename cvpg::videoproc::sinks::file<Image>::processing_context::buffer_info::entry entry;
+                    entry.id = m_context->video.frames_received++;
+                    entry.size = static_cast<std::size_t>(packet->size * sizeof(std::uint8_t));
+
+                    // create memory from 'AVPacket' to separate memory
+                    entry.frame = std::shared_ptr<std::uint8_t>(static_cast<std::uint8_t *>(malloc(entry.size)), [](std::uint8_t * ptr){ free(ptr); });
+                    memcpy(entry.frame.get(), packet->data, entry.size);
+
+                    av_packet_unref(packet);
+
+                    buffer.push_back(std::move(entry));
+                }
+
+                av_freep(frame->data);
+
+                // TODO indicate frame written
             }
 
-            av_freep(frame->data);
+            av_packet_free(&packet);
+            av_frame_free(&frame);
 
-            // TODO indicate frame written
+            this->this_task_result().set_value(std::move(buffer));
         }
-
-        av_packet_free(&packet);
-        av_frame_free(&frame);
-
-        this->this_task_result().set_value(std::move(buffer));
+        catch (std::exception const & e)
+        {
+            this->this_task_result().set_exception(std::current_exception());
+        }
     }
 
 private:
@@ -266,52 +273,59 @@ struct write_last_frames_task : public boost::asynchronous::continuation_task<st
 
     void operator()()
     {
-        int ret = avcodec_send_frame(m_context->video.codec_context, nullptr);
-
-        if (ret < 0)
+        try
         {
-            throw cvpg::io_exception("error send frame to decoder");
-        }
+            int ret = avcodec_send_frame(m_context->video.codec_context, nullptr);
 
-        AVPacket * packet = av_packet_alloc();
-
-        if (!packet)
-        {
-            throw cvpg::exception("failed to allocate memmory for packet");
-        }
-
-        std::vector<typename cvpg::videoproc::sinks::file<Image>::processing_context::buffer_info::entry> buffer;
-        buffer.reserve(100);
-
-        while (ret >= 0)
-        {
-            ret = avcodec_receive_packet(m_context->video.codec_context, packet);
-
-            if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+            if (ret < 0)
             {
-                break;
-            }
-            else if (ret < 0)
-            {
-                // TODO error handling
-
-                break;
+                throw cvpg::io_exception("error send frame to decoder");
             }
 
-            typename cvpg::videoproc::sinks::file<Image>::processing_context::buffer_info::entry entry;
-            entry.id = m_context->video.frames_received++;
-            entry.size = static_cast<std::size_t>(packet->size * sizeof(std::uint8_t));
+            AVPacket * packet = av_packet_alloc();
 
-            // create memory from 'AVPacket' to separate memory
-            entry.frame = std::shared_ptr<std::uint8_t>(static_cast<std::uint8_t *>(malloc(entry.size)), [](std::uint8_t * ptr){ free(ptr); });
-            memcpy(entry.frame.get(), packet->data, entry.size);
+            if (!packet)
+            {
+                throw cvpg::exception("failed to allocate memmory for packet");
+            }
 
-            av_packet_unref(packet);
+            std::vector<typename cvpg::videoproc::sinks::file<Image>::processing_context::buffer_info::entry> buffer;
+            buffer.reserve(100);
 
-            buffer.push_back(std::move(entry));
+            while (ret >= 0)
+            {
+                ret = avcodec_receive_packet(m_context->video.codec_context, packet);
+
+                if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+                {
+                    break;
+                }
+                else if (ret < 0)
+                {
+                    // TODO error handling
+
+                    break;
+                }
+
+                typename cvpg::videoproc::sinks::file<Image>::processing_context::buffer_info::entry entry;
+                entry.id = m_context->video.frames_received++;
+                entry.size = static_cast<std::size_t>(packet->size * sizeof(std::uint8_t));
+
+                // create memory from 'AVPacket' to separate memory
+                entry.frame = std::shared_ptr<std::uint8_t>(static_cast<std::uint8_t *>(malloc(entry.size)), [](std::uint8_t * ptr){ free(ptr); });
+                memcpy(entry.frame.get(), packet->data, entry.size);
+
+                av_packet_unref(packet);
+
+                buffer.push_back(std::move(entry));
+            }
+
+            this->this_task_result().set_value(std::move(buffer));
         }
-
-        this->this_task_result().set_value(std::move(buffer));
+        catch (std::exception const & e)
+        {
+            this->this_task_result().set_exception(std::current_exception());
+        }
     }
 
 private:
@@ -334,12 +348,12 @@ write_last_frames(std::size_t context_id,
 
 namespace cvpg::videoproc::sinks {
 
-template<typename Image> file<Image>::file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler, std::size_t buffered_frames)
+template<typename Image> file<Image>::file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler, std::size_t max_frames_write_buffer)
     : boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>(scheduler,
                                                                                                                                              boost::asynchronous::create_shared_scheduler_proxy(
                                                                                                                                                  new boost::asynchronous::single_thread_scheduler<boost::asynchronous::lockfree_queue<imageproc::scripting::diagnostics::servant_job> >()
                                                                                                                                              ))
-    , m_buffered_frames(buffered_frames)
+    , m_max_frames_write_buffer(max_frames_write_buffer)
     , m_contexts()
 {}
 
@@ -356,7 +370,7 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
     context->callbacks.next = std::move(next_callback);
     context->callbacks.finished = std::move(done_callback);
     context->callbacks.update_indicator = std::move(update_indicator_callback);
-    context->buffer.data = std::make_shared<boost::circular_buffer<typename processing_context::buffer_info::entry> >(m_buffered_frames);
+    context->buffer.data = std::make_shared<boost::circular_buffer<typename processing_context::buffer_info::entry> >(m_max_frames_write_buffer);
 
     m_contexts.insert({ context_id, context });
 
@@ -510,43 +524,45 @@ template<typename Image> void file<Image>::process(std::size_t context_id, video
     {
         auto & context = it->second;
 
-        bool is_flush_packet = packet.flush();
+        const bool is_flush_packet = packet.flush();
 
-        post_callback(
-            [context_id, context, packet = std::move(packet)]() mutable
-            {
-                return write_frames<Image>(context_id, context, std::move(packet));
-            },
-            [this, context_id, context, is_flush_packet](auto cont_res) mutable
-            {
-                try
+        if (!is_flush_packet)
+        {
+            post_callback(
+                [context_id, context, packet = std::move(packet)]() mutable
                 {
-                    auto buffer = std::move(cont_res.get());
-
-                    for (auto & entry : buffer)
+                    return write_frames<Image>(context_id, context, std::move(packet));
+                },
+                [this, context_id, context](auto cont_res) mutable
+                {
+                    try
                     {
-                        context->buffer.data->push_back(std::move(entry));
+                        auto buffer = std::move(cont_res.get());
+
+                        for (auto & entry : buffer)
+                        {
+                            context->buffer.data->push_back(std::move(entry));
+                        }
+
+                        context->callbacks.update_indicator(context_id, videoproc::update_indicator("save", buffer.size(), 0));
+
+                        this->try_flush_buffer(context_id);
                     }
-
-                    context->callbacks.update_indicator(context_id, videoproc::update_indicator("save", buffer.size(), 0));
-
-                    this->try_flush_buffer(context_id);
-                }
-                catch (std::exception const & e)
-                {
-                    // TODO report error
-                }
-                catch (...)
-                {
-                    // TODO report error
-                }
-            },
-            "sinks::file::process",
-            1,
-            1
-        );
-
-        if (is_flush_packet)
+                    catch (std::exception const & e)
+                    {
+                        // TODO report error
+                    }
+                    catch (...)
+                    {
+                        // TODO report error
+                    }
+                },
+                "sinks::file::process",
+                1,
+                1
+            );
+        }
+        else // if (is_flush_packet)
         {
             post_callback(
                 [context_id, context]() mutable
@@ -626,8 +642,6 @@ template<typename Image> void file<Image>::try_flush_buffer(std::size_t context_
                     context->buffer.data->erase(it);
                     context->buffer.next_frame++;
 
-                    context->callbacks.next(context_id);
-
                     found = true;
 
                     break;
@@ -635,7 +649,7 @@ template<typename Image> void file<Image>::try_flush_buffer(std::size_t context_
             }
         }
 
-        if (!found)
+        if (context->buffer.data->size() != m_max_frames_write_buffer)
         {
             context->callbacks.next(context_id);
         }
