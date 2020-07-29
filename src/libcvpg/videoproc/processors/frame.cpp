@@ -44,9 +44,13 @@ struct process_frames_task : public boost::asynchronous::continuation_task<Packe
             m_image_processor->evaluate_convert_if(
                 m_frame_compile_id,
                 std::move(image),
-                [promise_evaluate = std::move(promise_evaluate), number = frame.number(), packet_number = m_packet_number](typename Packet::frame_type::image_type image) mutable
+                [promise_evaluate, number = frame.number(), packet_number = m_packet_number](typename Packet::frame_type::image_type image) mutable
                 {
                     promise_evaluate->set_value(typename Packet::frame_type(number, std::move(image)));
+                },
+                [promise_evaluate](std::size_t context_id, std::string error)
+                {
+                    promise_evaluate->set_exception(std::make_exception_ptr(cvpg::exception(std::move(error))));
                 }
             );
         }

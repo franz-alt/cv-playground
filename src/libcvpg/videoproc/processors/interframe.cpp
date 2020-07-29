@@ -77,6 +77,10 @@ struct process_inter_frames_task : public boost::asynchronous::continuation_task
                     [promise_evaluate, number = m_frames_offset + i, i, frames = m_frames.size() - 1, packet_number = m_packet_number](typename Packet::frame_type::image_type image)
                     {
                         promise_evaluate->set_value(typename Packet::frame_type(number, std::move(image)));
+                    },
+                    [promise_evaluate](std::size_t context_id, std::string error)
+                    {
+                        promise_evaluate->set_exception(std::make_exception_ptr(cvpg::exception(std::move(error))));
                     }
                 );
             }
