@@ -12,7 +12,6 @@ extern "C" {
 #include <libavutil/opt.h>
 }
 
-#include <libcvpg/core/exception.hpp>
 #include <libcvpg/videoproc/stage_fsm.hpp>
 
 namespace {
@@ -124,6 +123,7 @@ template<typename Image> struct file<Image>::processing_context
         std::function<void(std::size_t, std::map<std::string, std::any>)> params;
         std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> deliver_packet;
         std::function<void(std::size_t)> finished;
+        std::function<void(std::size_t, std::string)> failed;
         std::function<void(std::size_t, videoproc::update_indicator)> update_indicator;
     };
 
@@ -149,6 +149,7 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
                                                 std::function<void(std::size_t, std::map<std::string, std::any>)> params_callback,
                                                 std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> packet_callback,
                                                 std::function<void(std::size_t)> done_callback,
+                                                std::function<void(std::size_t, std::string)> failed_callback,
                                                 std::function<void(std::size_t, update_indicator)> update_indicator_callback)
 {
     // create new processing context
@@ -157,6 +158,7 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
     context->callbacks.params = std::move(params_callback);
     context->callbacks.deliver_packet = std::move(packet_callback);
     context->callbacks.finished = std::move(done_callback);
+    context->callbacks.failed = std::move(failed_callback);
     context->callbacks.update_indicator = std::move(update_indicator_callback);
     context->buffer = std::make_shared<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> > > >(m_max_packets_output_buffer);
     context->fsm = std::make_shared<videoproc::stage_fsm>("sources::file");
@@ -169,7 +171,9 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
 
     if (context->video.format_context == nullptr)
     {
-        throw cvpg::io_exception(std::string("failed to open input '").append(context->video.uri).append("'"));
+        context->callbacks.failed(context_id, std::string("failed to open input '").append(context->video.uri).append("'"));
+
+        return;
     }
 
     context->video.duration = context->video.format_context->duration;
@@ -186,7 +190,9 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
 
         if (local_codec == nullptr)
         {
-            throw cvpg::exception("failed to open video codec");
+            context->callbacks.failed(context_id, "failed to open video codec");
+
+            return;
         }
 
         // specific for video and audio
@@ -201,7 +207,9 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
         }
         else // if (local_codec_parameters->codec_type == AVMEDIA_TYPE_AUDIO)
         {
-            throw cvpg::exception("unsupported codec type");
+            context->callbacks.failed(context_id, "unsupported codec type");
+
+            return;
         }
 
         context->video.codec_id = local_codec->id;
@@ -216,7 +224,9 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
         avformat_free_context(context->video.format_context);
         avcodec_free_context(&context->video.codec_context);
 
-        throw cvpg::exception("failed to allocate memory");
+        context->callbacks.failed(context_id, "failed to allocate memory");
+
+        return;
     }
 
     if (avcodec_parameters_to_context(context->video.codec_context, codec_parameters) < 0)
@@ -225,7 +235,9 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
         avformat_free_context(context->video.format_context);
         avcodec_free_context(&context->video.codec_context);
 
-        throw cvpg::exception("failed to copy codec params to codec context");
+        context->callbacks.failed(context_id, "failed to copy codec params to codec context");
+
+        return;
     }
 
     context->frames.pixel_format = context->video.codec_context->pix_fmt;
@@ -254,7 +266,9 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
         avformat_free_context(context->video.format_context);
         avcodec_free_context(&context->video.codec_context);
 
-        throw cvpg::io_exception("failed to open codec");
+        context->callbacks.failed(context_id, "failed to open codec");
+
+        return;
     }
 
     std::map<std::string, std::any> params =
@@ -297,14 +311,18 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
 
         if (!frame)
         {
-            throw cvpg::exception("failed to allocate memory for frame");
+            context->callbacks.failed(context_id, "failed to allocate memory for frame");
+
+            return;
         }
 
         AVPacket * packet = av_packet_alloc();
 
         if (!packet)
         {
-            throw cvpg::exception("failed to allocate memory for packet");
+            context->callbacks.failed(context_id, "failed to allocate memory for packet");
+
+            return;
         }
 
         for (auto i = 0; i < m_frames_per_packet; ++i)
@@ -319,7 +337,9 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
                 }
                 else
                 {
-                    throw cvpg::io_exception("failed to read frame");
+                    context->callbacks.failed(context_id, "failed to read frame");
+
+                    return;
                 }
 
                 break;

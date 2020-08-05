@@ -50,6 +50,7 @@ public:
                std::string inter_frame_script,
                std::function<void()> callback,
                std::function<void(std::size_t, std::int64_t)> init_indicator_callback,
+               std::function<void(std::size_t, std::string)> failed_indicator_callback,
                std::function<void(std::size_t, videoproc::update_indicator)> update_indicator_callback);
 
 private:

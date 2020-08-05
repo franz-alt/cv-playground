@@ -40,6 +40,7 @@ public:
               std::function<void(std::size_t)> init_done_callback,
               std::function<void(std::size_t)> next_callback,
               std::function<void(std::size_t)> done_callback,
+              std::function<void(std::size_t, std::string)> failed_callback,
               std::function<void(std::size_t, update_indicator)> update_indicator_callback);
 
     void params(std::size_t context_id, std::map<std::string, std::any> p);

@@ -29,6 +29,7 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
                                                                             std::string inter_frame_script,
                                                                             std::function<void()> callback,
                                                                             std::function<void(std::size_t, std::int64_t)> init_indicator_callback,
+                                                                            std::function<void(std::size_t, std::string)> failed_indicator_callback,
                                                                             std::function<void(std::size_t, videoproc::update_indicator)> update_indicator_callback)
 {
     auto context_id = ++m_context_counter;
@@ -48,12 +49,12 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
             1
         ),
         // params callback
-        [frame_processor = m_frame_processor](std::size_t context_id, std::map<std::string, std::any> params) mutable
+        [frame_processor = m_frame_processor](std::size_t context_id, std::map<std::string, std::any> params)
         {
             frame_processor->params(context_id, std::move(params));
         },
         // packet callback
-        [frame_processor = m_frame_processor](std::size_t context_id, auto packet) mutable
+        [frame_processor = m_frame_processor](std::size_t context_id, auto packet)
         {
             frame_processor->process(context_id, std::move(packet));
         },
@@ -62,8 +63,13 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
         {
             frame_processor->finish(context_id);
         },
+        // failed callback
+        [failed_indicator_callback](std::size_t context_id, std::string error)
+        {
+            failed_indicator_callback(context_id, std::move(error));
+        },
         // update indicator
-        [this, update_indicator_callback](std::size_t context_id, update_indicator update) mutable
+        [update_indicator_callback](std::size_t context_id, update_indicator update)
         {
             update_indicator_callback(context_id, std::move(update));
         }
@@ -82,12 +88,12 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
             1
         ),
         // params callback
-        [interframe_processor = m_interframe_processor](std::size_t context_id, std::map<std::string, std::any> params) mutable
+        [interframe_processor = m_interframe_processor](std::size_t context_id, std::map<std::string, std::any> params)
         {
             interframe_processor->params(context_id, std::move(params));
         },
         // packet done callback
-        [interframe_processor = m_interframe_processor](std::size_t context_id, auto packet) mutable
+        [interframe_processor = m_interframe_processor](std::size_t context_id, auto packet)
         {
             interframe_processor->process(context_id, std::move(packet));
         },
@@ -101,8 +107,13 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
         {
             interframe_processor->finish(context_id);
         },
+        // failed callback
+        [failed_indicator_callback](std::size_t context_id, std::string error)
+        {
+            failed_indicator_callback(context_id, std::move(error));
+        },
         // update indicator
-        [this, update_indicator_callback](std::size_t context_id, update_indicator update) mutable
+        [update_indicator_callback](std::size_t context_id, update_indicator update)
         {
             update_indicator_callback(context_id, std::move(update));
         }
@@ -121,12 +132,12 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
             1
         ),
         // params callback
-        [sink = m_sink](std::size_t context_id, std::map<std::string, std::any> params) mutable
+        [sink = m_sink](std::size_t context_id, std::map<std::string, std::any> params)
         {
             sink->params(context_id, std::move(params));
         },
         // packet done callback
-        [sink = m_sink](std::size_t context_id, auto packet) mutable
+        [sink = m_sink](std::size_t context_id, auto packet)
         {
             sink->process(context_id, std::move(packet));
         },
@@ -140,8 +151,13 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
         {
             sink->finish(context_id);
         },
+        // failed callback
+        [failed_indicator_callback](std::size_t context_id, std::string error)
+        {
+            failed_indicator_callback(context_id, std::move(error));
+        },
         // update indicator
-        [this, update_indicator_callback](std::size_t context_id, update_indicator update) mutable
+        [update_indicator_callback](std::size_t context_id, update_indicator update)
         {
             update_indicator_callback(context_id, std::move(update));
         }
@@ -169,8 +185,13 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
         {
             callback();
         },
+        // failed callback
+        [failed_indicator_callback](std::size_t context_id, std::string error)
+        {
+            failed_indicator_callback(context_id, std::move(error));
+        },
         // update indicator
-        [this, update_indicator_callback](std::size_t context_id, update_indicator update) mutable
+        [update_indicator_callback](std::size_t context_id, update_indicator update)
         {
             update_indicator_callback(context_id, std::move(update));
         }

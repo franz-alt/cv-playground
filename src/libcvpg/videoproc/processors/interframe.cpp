@@ -174,6 +174,7 @@ template<typename Image> struct interframe<Image>::processing_context
         std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> deliver_packet;
         std::function<void(std::size_t)> next;
         std::function<void(std::size_t)> finished;
+        std::function<void(std::size_t, std::string)> failed;
         std::function<void(std::size_t, videoproc::update_indicator)> update_indicator;
     };
 
@@ -222,6 +223,7 @@ template<typename Image> void interframe<Image>::init(std::size_t context_id,
                                                       std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> packet_callback,
                                                       std::function<void(std::size_t)> next_callback,
                                                       std::function<void(std::size_t)> done_callback,
+                                                      std::function<void(std::size_t, std::string)> failed_callback,
                                                       std::function<void(std::size_t, update_indicator)> update_indicator_callback)
 {
     // create new processing context
@@ -230,6 +232,7 @@ template<typename Image> void interframe<Image>::init(std::size_t context_id,
     context->callbacks.deliver_packet = std::move(packet_callback);
     context->callbacks.next = std::move(next_callback);
     context->callbacks.finished = std::move(done_callback);
+    context->callbacks.failed = std::move(failed_callback);
     context->callbacks.update_indicator = std::move(update_indicator_callback);
     context->buffer_in.data = std::make_shared<std::deque<videoproc::frame<Image> > >();
     context->buffer_out.data = std::make_shared<boost::circular_buffer<typename processing_context::buffer_out_info::entry> >(m_max_packets_output_buffer);
@@ -281,11 +284,11 @@ template<typename Image> void interframe<Image>::init(std::size_t context_id,
             }
             catch (std::exception const & e)
             {
-                // TODO report error
+                context->callbacks.failed(context_id, e.what());
             }
             catch (...)
             {
-                // TODO report error
+                context->callbacks.failed(context_id, "unknown error when processing interframes");
             }
         },
         std::move(futures_compile)
@@ -482,7 +485,7 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
                            frames_id
                        );
             },
-            [this, context, context_id](auto cont_res)
+            [this, context_id, packet_number = packets_created, context](auto cont_res)
             {
                 try
                 {
@@ -500,11 +503,31 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
                 }
                 catch (std::exception const & e)
                 {
-                    // TODO report error
+                    auto packet = videoproc::packet<videoproc::frame<Image> >(packet_number, true);
+
+                    typename processing_context::buffer_out_info::entry entry;
+                    entry.id = packet.number();
+                    entry.packet = std::move(packet);
+
+                    context->buffer_out.data->push_back(std::move(entry));
+
+                    this->try_flush_buffer(context_id);
+
+                    context->callbacks.failed(context_id, e.what());
                 }
                 catch (...)
                 {
-                    // TODO report error
+                    auto packet = videoproc::packet<videoproc::frame<Image> >(packet_number, true);
+
+                    typename processing_context::buffer_out_info::entry entry;
+                    entry.id = packet.number();
+                    entry.packet = std::move(packet);
+
+                    context->buffer_out.data->push_back(std::move(entry));
+
+                    this->try_flush_buffer(context_id);
+
+                    context->callbacks.failed(context_id, "unknown error when processing interframes");
                 }
             },
             "processors::interframe::try_process_input",

@@ -49,6 +49,7 @@ template<typename Image> struct file<Image>::processing_context
         std::function<void(std::map<std::string, std::any>)> params;
         std::function<void(std::size_t)> next;
         std::function<void(std::size_t)> finished;
+        std::function<void(std::size_t, std::string)> failed;
         std::function<void(std::size_t, videoproc::update_indicator)> update_indicator;
     };
 
@@ -362,6 +363,7 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
                                                 std::function<void(std::size_t)> init_done_callback,
                                                 std::function<void(std::size_t)> next_callback,
                                                 std::function<void(std::size_t)> done_callback,
+                                                std::function<void(std::size_t, std::string)> failed_callback,
                                                 std::function<void(std::size_t, update_indicator)> update_indicator_callback)
 {
     // create new processing context
@@ -369,6 +371,7 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
     context->video.uri = std::move(uri);
     context->callbacks.next = std::move(next_callback);
     context->callbacks.finished = std::move(done_callback);
+    context->callbacks.failed = std::move(failed_callback);
     context->callbacks.update_indicator = std::move(update_indicator_callback);
     context->buffer.data = std::make_shared<boost::circular_buffer<typename processing_context::buffer_info::entry> >(m_max_frames_write_buffer);
 
@@ -550,11 +553,11 @@ template<typename Image> void file<Image>::process(std::size_t context_id, video
                     }
                     catch (std::exception const & e)
                     {
-                        // TODO report error
+                        context->callbacks.failed(context_id, e.what());
                     }
                     catch (...)
                     {
-                        // TODO report error
+                        context->callbacks.failed(context_id, "unknown error when writing video file");
                     }
                 },
                 "sinks::file::process",

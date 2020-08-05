@@ -356,7 +356,7 @@ int main(int argc, char * argv[])
                                     boost::asynchronous::single_thread_scheduler<
                                         boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
 
-    auto promise_pipeline = std::make_shared<std::promise<void> >();
+    auto promise_pipeline = std::make_shared<std::promise<std::string> >();
 
     auto pipeline = std::make_shared<cvpg::videoproc::pipelines::image_rgb_8bit_file_to_file_proxy>(pipeline_scheduler, file_reader, frame_processor, interframe_processor, file_producer);
 
@@ -367,11 +367,15 @@ int main(int argc, char * argv[])
         interframe_script,
         [promise_pipeline]()
         {
-            promise_pipeline->set_value();
+            promise_pipeline->set_value("");
         },
         [progress_monitor](std::size_t context_id, std::int64_t frames)
         {
             progress_monitor->init(context_id, frames);
+        },
+        [promise_pipeline](std::size_t context_id, std::string error)
+        {
+            promise_pipeline->set_value(std::move(error));
         },
         [progress_monitor](std::size_t context_id, cvpg::videoproc::update_indicator update) mutable
         {
@@ -399,9 +403,15 @@ int main(int argc, char * argv[])
     }
     else
     {
-        if (!quiet)
+        auto error = future_pipeline.get();
+
+        if (error.empty() && !quiet)
         {
             std::cout << "Processing done" << std::endl;
+        }
+        else if (!error.empty())
+        {
+            std::cerr << "Processing failed. Error: '" << error << "'" << std::endl;
         }
     }
 

@@ -128,6 +128,7 @@ template<typename Image> struct frame<Image>::processing_context
         std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> deliver_packet;
         std::function<void(std::size_t)> next;
         std::function<void(std::size_t)> finished;
+        std::function<void(std::size_t, std::string)> failed;
         std::function<void(std::size_t, videoproc::update_indicator)> update_indicator;
     };
 
@@ -153,6 +154,7 @@ template<typename Image> void frame<Image>::init(std::size_t context_id,
                                                  std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> packet_callback,
                                                  std::function<void(std::size_t)> next_callback,
                                                  std::function<void(std::size_t)> done_callback,
+                                                 std::function<void(std::size_t, std::string)> failed_callback,
                                                  std::function<void(std::size_t, update_indicator)> update_indicator_callback)
 {
     // create new processing context
@@ -161,6 +163,7 @@ template<typename Image> void frame<Image>::init(std::size_t context_id,
     context->callbacks.deliver_packet = std::move(packet_callback);
     context->callbacks.next = std::move(next_callback);
     context->callbacks.finished = std::move(done_callback);
+    context->callbacks.failed = std::move(failed_callback);
     context->callbacks.update_indicator = std::move(update_indicator_callback);
     context->buffer = std::make_shared<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> > > >(m_max_packets_output_buffer);
 
@@ -294,7 +297,7 @@ template<typename Image> void frame<Image>::process(std::size_t context_id, vide
                                frame_compile_id
                            );
                 },
-                [this, context_id, context](auto cont_res) mutable
+                [this, context_id, packet_number = packet.number(), context](auto cont_res) mutable
                 {
                     try
                     {
@@ -308,11 +311,23 @@ template<typename Image> void frame<Image>::process(std::size_t context_id, vide
                     }
                     catch (std::exception const & e)
                     {
-                        // TODO report error
+                        auto packet = videoproc::packet<videoproc::frame<Image> >(packet_number, true);
+
+                        context->buffer->push_back(std::move(packet));
+
+                        this->try_flush_buffer(context_id);
+
+                        context->callbacks.failed(context_id, e.what());
                     }
                     catch (...)
                     {
-                        // TODO report error
+                        auto packet = videoproc::packet<videoproc::frame<Image> >(packet_number, true);
+
+                        context->buffer->push_back(std::move(packet));
+
+                        this->try_flush_buffer(context_id);
+
+                        context->callbacks.failed(context_id, "unknown error when processing frames");
                     }
                 },
                 "processors::frame::process",
