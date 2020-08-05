@@ -19,7 +19,7 @@ public:
     using frame_type = Frame;
 
     // create a packet with a specified number
-    packet(std::size_t number = 0);
+    packet(std::size_t number = 0, bool failed = false);
 
     // get the number of the frame
     std::size_t number() const;
@@ -43,10 +43,15 @@ public:
     // check if the packet contains flush frames
     bool flush() const;
 
+    // check if the packet has a failed state
+    bool failed() const;
+
 private:
     std::size_t m_number;
 
     std::vector<Frame> m_frames;
+
+    bool m_failed;
 };
 
 // suppress automatic instantiation of packet<> for some types

@@ -4,9 +4,10 @@
 
 namespace cvpg::videoproc {
 
-template<typename Frame> packet<Frame>::packet(std::size_t number)
+template<typename Frame> packet<Frame>::packet(std::size_t number, bool failed)
     : m_number(number)
     , m_frames()
+    , m_failed(failed)
 {}
 
 template<typename Frame> std::size_t packet<Frame>::number() const
@@ -39,13 +40,18 @@ template<typename Frame> bool packet<Frame>::flush() const
                         }) != m_frames.end();
 }
 
+template<typename Frame> bool packet<Frame>::failed() const
+{
+    return m_failed;
+}
+
 // manual instantiation of packet<> for some types
 template class packet<frame<image_gray_8bit> >;
 template class packet<frame<image_rgb_8bit> >;
 
 template<typename Frame> std::ostream & operator<<(std::ostream & out, packet<Frame> const & packet)
 {
-    out << "number=" << packet.number() << ",frames=" << packet.frames().size() << ",flush=" << packet.flush();
+    out << "number=" << packet.number() << ",frames=" << packet.frames().size() << ",flush=" << packet.flush() << ",failed=" << packet.failed();
 
     return out;
 }
