@@ -15,6 +15,7 @@ set(sources
     imageproc/scripting/scharr.cpp
     imageproc/scripting/sobel.cpp
     videoproc/packet.cpp
+    videoproc/stage_data_handler.cpp
 )
 
 add_executable(${target} ${sources})

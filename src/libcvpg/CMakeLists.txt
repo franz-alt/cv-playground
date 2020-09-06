@@ -53,6 +53,7 @@ set(headers
     imageproc/scripting/diagnostics/typedefs.hpp
     videoproc/frame.hpp
     videoproc/packet.hpp
+    videoproc/stage_data_handler.hpp
     videoproc/stage_fsm.hpp
     videoproc/update_indicator.hpp
     videoproc/pipelines/file_to_file.hpp
@@ -101,6 +102,7 @@ set(sources
     imageproc/scripting/detail/single_node.cpp
     videoproc/frame.cpp
     videoproc/packet.cpp
+    videoproc/stage_data_handler.cpp
     videoproc/stage_fsm.cpp
     videoproc/update_indicator.cpp
     videoproc/pipelines/file_to_file.cpp
