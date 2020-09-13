@@ -41,6 +41,11 @@ template<typename T> void stage_data_handler<T>::add(T t)
 
 template<typename T> void stage_data_handler<T>::add(std::vector<T> t)
 {
+    if ((m_in_data.size() + t.size()) > m_max_stored_entries)
+    {
+        m_buffer_full_callback();
+    }
+
     for (auto & d : t)
     {
         m_in_data.push(std::move(d));
