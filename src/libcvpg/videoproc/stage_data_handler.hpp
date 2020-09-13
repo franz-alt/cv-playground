@@ -25,7 +25,7 @@ public:
     stage_data_handler(std::string name,
                        std::size_t max_stored_entries,
                        std::function<void()> trigger_new_data_callback,
-                       std::function<bool()> check_for_deliver_callback,
+                       std::function<std::size_t()> get_deliver_amount_callback,
                        std::function<void(std::vector<T>, std::function<void()>)> deliver_data_callback,
                        std::function<void()> buffer_full_callback);
 
@@ -57,7 +57,7 @@ private:
     std::size_t m_min_deliver_entries;
 
     std::function<void()> m_trigger_new_data_callback;
-    std::function<bool()> m_check_for_deliver_callback;
+    std::function<std::size_t()> m_get_deliver_amount_callback;
     std::function<void(std::vector<T>, std::function<void()>)> m_deliver_data_callback;
     std::function<void()> m_buffer_full_callback;
 

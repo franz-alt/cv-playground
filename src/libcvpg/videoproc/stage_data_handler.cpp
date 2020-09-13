@@ -8,13 +8,13 @@ namespace cvpg::videoproc {
 template<typename T> stage_data_handler<T>::stage_data_handler(std::string name,
                                                                std::size_t max_stored_entries,
                                                                std::function<void()> trigger_new_data_callback,
-                                                               std::function<bool()> check_for_deliver_callback,
+                                                               std::function<std::size_t()> get_deliver_amount_callback,
                                                                std::function<void(std::vector<T>, std::function<void()>)> deliver_data_callback,
                                                                std::function<void()> buffer_full_callback)
     : m_name(std::move(name))
     , m_max_stored_entries(max_stored_entries)
     , m_trigger_new_data_callback(std::move(trigger_new_data_callback))
-    , m_check_for_deliver_callback(std::move(check_for_deliver_callback))
+    , m_get_deliver_amount_callback(std::move(get_deliver_amount_callback))
     , m_deliver_data_callback(std::move(deliver_data_callback))
     , m_buffer_full_callback(std::move(buffer_full_callback))
     , m_in_data()
@@ -77,13 +77,36 @@ template<typename T> void stage_data_handler<T>::try_process_data()
 
 template<typename T> void stage_data_handler<T>::try_flush()
 {
-    if (!m_check_for_deliver_callback())
+    if (m_out_data.empty())
+    {
+        return;
+    }
+
+    const std::size_t max_deliver = m_get_deliver_amount_callback();
+
+    if (max_deliver == 0)
     {
         // don't deliver data if next stage isn't ready to receive new data
         return;
     }
 
-    m_deliver_data_callback(std::move(m_out_data), m_trigger_new_data_callback);
+    if (max_deliver >= m_out_data.size())
+    {
+        // deliver output buffer completly
+        m_deliver_data_callback(std::move(m_out_data), m_trigger_new_data_callback);
+    }
+    else
+    {
+        // deliver only 'max_deliver' entries from the beginning of the output buffer
+        decltype(m_out_data) moved;
+        moved.reserve(max_deliver);
+
+        std::move(m_out_data.begin(), m_out_data.begin() + max_deliver, std::back_inserter(moved));
+
+        m_out_data.erase(m_out_data.begin(), m_out_data.begin() + max_deliver);
+
+        m_deliver_data_callback(std::move(moved), m_trigger_new_data_callback);
+    }
 }
 
 template<typename T> bool stage_data_handler<T>::empty() const
