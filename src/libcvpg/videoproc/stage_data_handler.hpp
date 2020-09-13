@@ -44,6 +44,10 @@ public:
 
     bool empty() const;
 
+    bool full() const;
+
+    std::size_t free() const;
+
 private:
     void try_process_data();
 

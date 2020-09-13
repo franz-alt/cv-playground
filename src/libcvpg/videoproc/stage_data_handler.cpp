@@ -86,6 +86,16 @@ template<typename T> bool stage_data_handler<T>::empty() const
     return m_in_data.empty();
 }
 
+template<typename T> bool stage_data_handler<T>::full() const
+{
+    return m_in_data.size() >= m_max_stored_entries;
+}
+
+template<typename T> std::size_t stage_data_handler<T>::free() const
+{
+    return (m_max_stored_entries > m_in_data.size()) ? (m_max_stored_entries - m_in_data.size()) : 0;
+}
+
 // manual instantiation of stage_data_handler<> for some types
 template class stage_data_handler<videoproc::frame<image_gray_8bit> >;
 template class stage_data_handler<videoproc::frame<image_rgb_8bit> >;
