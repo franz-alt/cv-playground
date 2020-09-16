@@ -54,7 +54,7 @@ TEST(test_stage_data_handler, add_frames_random_order)
         },
         []()
         {
-            return true;
+            return 3;
         },
         [&deliver_counter](auto frames, std::function<void()> deliver_done_callback)
         {
@@ -77,7 +77,7 @@ TEST(test_stage_data_handler, add_frames_random_order)
     sdh.add(frame(8));
     sdh.add(frame(6));
 
-    ASSERT_EQ(deliver_counter, 10);
+    ASSERT_EQ(deliver_counter, 4);
 }
 
 TEST(test_stage_data_handler, frame_missing)
@@ -138,7 +138,7 @@ TEST(test_stage_data_handler, try_flush)
         },
         []()
         {
-            return true;
+            return 5;
         },
         [&deliver_counter](auto frames, std::function<void()> deliver_done_callback)
         {
@@ -157,7 +157,7 @@ TEST(test_stage_data_handler, try_flush)
 
     sdh.add(frame(2));
 
-    ASSERT_EQ(deliver_counter, 4);
+    ASSERT_EQ(deliver_counter, 3);
 }
 
 TEST(test_stage_data_handler, fill_many_entries)
@@ -175,7 +175,7 @@ TEST(test_stage_data_handler, fill_many_entries)
         },
         []()
         {
-            return true;
+            return 3;
         },
         [&deliver_counter](auto frames, std::function<void()> deliver_done_callback)
         {
