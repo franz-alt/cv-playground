@@ -31,10 +31,8 @@ template<typename T> void stage_data_handler<T>::add(T t)
     {
         m_buffer_full_callback();
     }
-    else
-    {    
-        m_in_data.push(std::move(t));
-    }
+
+    m_in_data.push(std::move(t));
 
     try_process_data();
 }
