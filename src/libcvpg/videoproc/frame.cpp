@@ -44,4 +44,22 @@ template<typename Image> std::ostream & operator<<(std::ostream & out, frame<Ima
 template std::ostream & operator<< <image_gray_8bit>(std::ostream &, frame<image_gray_8bit> const &);
 template std::ostream & operator<< <image_rgb_8bit>(std::ostream &, frame<image_rgb_8bit> const &);
 
+template<typename Image> bool operator<(frame<Image> const & a, frame<Image> const & b)
+{
+    return a.number() < b.number();
+}
+
+// manual instantiation of operator< for some types
+template bool operator< <image_gray_8bit>(frame<image_gray_8bit> const &, frame<image_gray_8bit> const &);
+template bool operator< <image_rgb_8bit>(frame<image_rgb_8bit> const &, frame<image_rgb_8bit> const &);
+
+template<typename Image> bool operator>(frame<Image> const & a, frame<Image> const & b)
+{
+    return a.number() > b.number();
+}
+
+// manual instantiation of operator> for some types
+template bool operator> <image_gray_8bit>(frame<image_gray_8bit> const &, frame<image_gray_8bit> const &);
+template bool operator> <image_rgb_8bit>(frame<image_rgb_8bit> const &, frame<image_rgb_8bit> const &);
+
 } // namespace cvpg::videoproc

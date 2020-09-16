@@ -56,6 +56,20 @@ std::ostream & operator<<(std::ostream & out, frame<Image> const & frame);
 extern template std::ostream & operator<< <image_gray_8bit>(std::ostream &, frame<image_gray_8bit> const &);
 extern template std::ostream & operator<< <image_rgb_8bit>(std::ostream &, frame<image_rgb_8bit> const &);
 
+template<typename Image>
+bool operator<(frame<Image> const & a, frame<Image> const & b);
+
+// suppress automatic instantiation of operator< for some types
+extern template bool operator< <image_gray_8bit>(frame<image_gray_8bit> const &, frame<image_gray_8bit> const &);
+extern template bool operator< <image_rgb_8bit>(frame<image_rgb_8bit> const &, frame<image_rgb_8bit> const &);
+
+template<typename Image>
+bool operator>(frame<Image> const & a, frame<Image> const & b);
+
+// suppress automatic instantiation of operator> for some types
+extern template bool operator> <image_gray_8bit>(frame<image_gray_8bit> const &, frame<image_gray_8bit> const &);
+extern template bool operator> <image_rgb_8bit>(frame<image_rgb_8bit> const &, frame<image_rgb_8bit> const &);
+
 } // namespace cvpg::videoproc
 
 #endif // LIBCVPG_VIDEOPROC_FRAME_HPP
