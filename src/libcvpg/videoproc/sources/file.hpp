@@ -30,9 +30,7 @@ template<typename Image>
 class file : public boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>
 {
 public:
-    file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
-         std::size_t frames_per_packet,
-         std::size_t max_packets_output_buffer);
+    file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler, std::size_t max_frames_read_buffer);
 
     file(file const &) = delete;
     file(file &&) = delete;
@@ -53,16 +51,11 @@ public:
 
     void start(std::size_t context_id);
 
-    void next(std::size_t context_id);
+    void next(std::size_t context_id, std::size_t max_new_data);
 
 private:    
-    void try_flush_buffer(std::size_t context_id);
-
     // amount of frames that will be (tried to) read from video file at once
-    std::size_t m_frames_per_packet;
-
-    // maximum size of packet send buffer
-    std::size_t m_max_packets_output_buffer;
+    std::size_t m_max_frames_read_buffer;
 
     struct processing_context;
     std::map<std::size_t, std::shared_ptr<processing_context> > m_contexts;

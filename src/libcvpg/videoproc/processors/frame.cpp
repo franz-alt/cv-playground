@@ -4,11 +4,10 @@
 #include <future>
 #include <vector>
 
-#include <boost/circular_buffer.hpp>
-
 #include <boost/asynchronous/continuation_task.hpp>
 
 #include <libcvpg/core/exception.hpp>
+#include <libcvpg/videoproc/stage_data_handler.hpp>
 
 namespace {
 
@@ -33,8 +32,18 @@ struct process_frames_task : public boost::asynchronous::continuation_task<Packe
         std::vector<std::future<typename Packet::frame_type> > futures_evaluate;
         futures_evaluate.reserve(m_frames.size());
 
+        bool flush_frame = false;
+        std::size_t flush_number = 0;
+
         for (auto & frame : m_frames)
         {
+            if (frame.flush())
+            {
+                flush_frame = true;
+                flush_number = frame.number();
+                continue;
+            }
+
             auto image = frame.image();
 
             auto promise_evaluate = std::make_shared<std::promise<typename Packet::frame_type> >();
@@ -59,7 +68,9 @@ struct process_frames_task : public boost::asynchronous::continuation_task<Packe
             [task_res = this->this_task_result()
             ,context_id = m_context_id
             ,packet_number = m_packet_number
-            ,image_processor = m_image_processor](auto cont_res) mutable
+            ,image_processor = m_image_processor
+            ,flush_frame
+            ,flush_number](auto cont_res) mutable
             {
                 try
                 {
@@ -68,6 +79,11 @@ struct process_frames_task : public boost::asynchronous::continuation_task<Packe
                     for (auto & res : cont_res)
                     {
                         packet.add_frame(std::move(res.get()));
+                    }
+
+                    if (flush_frame)
+                    {
+                        packet.add_frame(typename Packet::frame_type(flush_number));
                     }
 
                     task_res.set_value(std::move(packet));
@@ -118,6 +134,8 @@ template<typename Image> struct frame<Image>::processing_context
     struct status_info
     {
         std::size_t next_waiting = 0;
+
+        std::size_t packet_counter = 0;
     };
 
     status_info status;
@@ -126,7 +144,7 @@ template<typename Image> struct frame<Image>::processing_context
     {
         std::function<void(std::size_t, std::map<std::string, std::any>)> params;
         std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> deliver_packet;
-        std::function<void(std::size_t)> next;
+        std::function<void(std::size_t, std::size_t)> next;
         std::function<void(std::size_t)> finished;
         std::function<void(std::size_t, std::string)> failed;
         std::function<void(std::size_t, videoproc::update_indicator)> update_indicator;
@@ -134,15 +152,15 @@ template<typename Image> struct frame<Image>::processing_context
 
     callback_info callbacks;
 
-    std::shared_ptr<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> > > > buffer;
+    std::shared_ptr<stage_data_handler<videoproc::frame<Image> > > sdh_out;
 };
 
 template<typename Image> frame<Image>::frame(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
                                              boost::asynchronous::any_shared_scheduler_proxy<imageproc::scripting::diagnostics::servant_job> pool,
-                                             std::size_t max_packets_output_buffer,
+                                             std::size_t max_frames_output_buffer,
                                              imageproc::scripting::image_processor_proxy image_processor)
     : boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>(scheduler, pool)
-    , m_max_packets_output_buffer(max_packets_output_buffer)
+    , m_max_frames_output_buffer(max_frames_output_buffer)
     , m_image_processor(std::make_shared<imageproc::scripting::image_processor_proxy>(image_processor))
     , m_contexts()
 {}
@@ -152,7 +170,7 @@ template<typename Image> void frame<Image>::init(std::size_t context_id,
                                                  std::function<void(std::size_t)> init_done_callback,
                                                  std::function<void(std::size_t, std::map<std::string, std::any>)> params_callback,
                                                  std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> packet_callback,
-                                                 std::function<void(std::size_t)> next_callback,
+                                                 std::function<void(std::size_t, std::size_t)> next_callback,
                                                  std::function<void(std::size_t)> done_callback,
                                                  std::function<void(std::size_t, std::string)> failed_callback,
                                                  std::function<void(std::size_t, update_indicator)> update_indicator_callback)
@@ -165,7 +183,41 @@ template<typename Image> void frame<Image>::init(std::size_t context_id,
     context->callbacks.finished = std::move(done_callback);
     context->callbacks.failed = std::move(failed_callback);
     context->callbacks.update_indicator = std::move(update_indicator_callback);
-    context->buffer = std::make_shared<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> > > >(m_max_packets_output_buffer);
+
+    context->sdh_out = std::make_shared<stage_data_handler<videoproc::frame<Image> > >(
+        "frame",
+        m_max_frames_output_buffer,
+        [context_id, context]()
+        {
+            // inform previous stage that this stage is ready to receive new data
+            context->callbacks.next(context_id, context->sdh_out->free());
+        },
+        [context]()
+        {
+            return context->status.next_waiting;
+        },
+        [this, context_id, context](std::vector<videoproc::frame<Image> > frames, std::function<void()> deliver_done_callback)
+        {
+            context->status.next_waiting = 0;
+
+            auto packet_number = context->status.packet_counter;
+
+            videoproc::packet<videoproc::frame<Image> > packet(packet_number);
+
+            for (auto & f : frames)
+            {
+                packet.add_frame(std::move(f));
+            }
+
+            context->callbacks.deliver_packet(context_id, std::move(packet));
+
+            deliver_done_callback();
+        },
+        [context_id, context]()
+        {
+            context->callbacks.failed(context_id, "buffer full");
+        }
+    );
 
     m_contexts.insert({ context_id, context });
 
@@ -248,7 +300,7 @@ template<typename Image> void frame<Image>::start(std::size_t context_id)
 
         if (!(context->prev_stage_finished))
         {
-            context->callbacks.next(context_id);
+            context->callbacks.next(context_id, context->sdh_out->free());
         }
     }
 }
@@ -273,72 +325,13 @@ template<typename Image> void frame<Image>::process(std::size_t context_id, vide
     {
         auto & context = it->second;
 
-        if (packet.flush())
-        {
-            // deliver flush packet to next stage
-            context->callbacks.deliver_packet(context_id, std::move(packet));
-        }
-        else
-        {
-            std::vector<videoproc::frame<Image> > frames(packet.move_frames());
+        process_next_frames(context_id, std::move(packet.move_frames()));
 
-            post_callback(
-                [context_id
-                ,packet_number = packet.number()
-                ,frames = std::move(frames)
-                ,image_processor = m_image_processor
-                ,frame_compile_id = context->frames_id]()
-                {
-                    return process_frames<videoproc::packet<videoproc::frame<Image> > >(
-                               context_id,
-                               packet_number,
-                               std::move(frames),
-                               image_processor,
-                               frame_compile_id
-                           );
-                },
-                [this, context_id, packet_number = packet.number(), context](auto cont_res) mutable
-                {
-                    try
-                    {
-                        auto packet = std::move(cont_res.get());
-
-                        context->callbacks.update_indicator(context_id, videoproc::update_indicator("frame", packet.frames().size(), 0));
-
-                        context->buffer->push_back(std::move(packet));
-
-                        this->try_flush_buffer(context_id);
-                    }
-                    catch (std::exception const & e)
-                    {
-                        auto packet = videoproc::packet<videoproc::frame<Image> >(packet_number, true);
-
-                        context->buffer->push_back(std::move(packet));
-
-                        this->try_flush_buffer(context_id);
-
-                        context->callbacks.failed(context_id, e.what());
-                    }
-                    catch (...)
-                    {
-                        auto packet = videoproc::packet<videoproc::frame<Image> >(packet_number, true);
-
-                        context->buffer->push_back(std::move(packet));
-
-                        this->try_flush_buffer(context_id);
-
-                        context->callbacks.failed(context_id, "unknown error when processing frames");
-                    }
-                },
-                "processors::frame::process",
-                1,
-                1
-            );
-        }
+        context->sdh_out->try_flush();
     }
 }
 
-template<typename Image> void frame<Image>::next(std::size_t context_id)
+template<typename Image> void frame<Image>::next(std::size_t context_id, std::size_t max_new_data)
 {
     auto it = m_contexts.find(context_id);
 
@@ -346,13 +339,13 @@ template<typename Image> void frame<Image>::next(std::size_t context_id)
     {
         auto & context = it->second;
 
-        context->status.next_waiting++;
+        context->status.next_waiting += max_new_data;
 
-        try_flush_buffer(context_id);
+        context->sdh_out->try_flush();
     }
 }
 
-template<typename Image> void frame<Image>::try_flush_buffer(std::size_t context_id)
+template<typename Image> void frame<Image>::process_next_frames(std::size_t context_id, std::vector<videoproc::frame<Image> > frames)
 {
     auto it = m_contexts.find(context_id);
 
@@ -360,46 +353,51 @@ template<typename Image> void frame<Image>::try_flush_buffer(std::size_t context
     {
         auto & context = it->second;
 
-        // ignore flush when next stage doesn't wait for new data at moment
-        if (context->status.next_waiting == 0)
-        {
-            return;
-        }
+        // update packet counter
+        context->status.packet_counter++;
 
-        if (context->buffer->empty())
-        {
-            // inform previous stage that this stage is ready to receive new data
-            context->callbacks.next(context_id);
-        }
-        else
-        {
-            auto & packet = context->buffer->front();
-
-            const bool is_last = packet.flush();
-
-            // deliver packet to next stage
-            context->callbacks.deliver_packet(context_id, std::move(packet));
-
-            // next stage is satisfied now
-            context->status.next_waiting--;
-
-            context->buffer->pop_front();
-
-            // if 'flush packet' is at buffer, inform next stage of finishing for this context
-            if (is_last)
+        post_callback(
+            [context_id
+            ,packet_number = context->status.packet_counter
+            ,frames = std::move(frames)
+            ,image_processor = m_image_processor
+            ,frame_compile_id = context->frames_id]()
             {
-                context->callbacks.finished(context_id);
-            }
-            else
+                return process_frames<videoproc::packet<videoproc::frame<Image> > >(
+                           context_id,
+                           packet_number,
+                           std::move(frames),
+                           image_processor,
+                           frame_compile_id
+                       );
+            },
+            [this, context_id, packet_number = context->status.packet_counter, context](auto cont_res) mutable
             {
-                // inform previous stage that this stage is ready to receive new data
-                context->callbacks.next(context_id);
-            }
-        }
+                try
+                {
+                    auto packet = std::move(cont_res.get());
+
+                    context->callbacks.update_indicator(context_id, videoproc::update_indicator("frame", packet.frames().size(), 0));
+
+                    context->sdh_out->add(std::move(packet.move_frames()));
+                }
+                catch (std::exception const & e)
+                {
+                    context->callbacks.failed(context_id, e.what());
+                }
+                catch (...)
+                {
+                    context->callbacks.failed(context_id, "unknown error when processing frames");
+                }
+            },
+            "processors::frame::process_next_frames",
+            1,
+            1
+        );
     }
 }
 
-// manual instantation of frame<> for some types
+// manual instantiation of frame<> for some types
 template class frame<cvpg::image_gray_8bit>;
 template class frame<cvpg::image_rgb_8bit>;
 

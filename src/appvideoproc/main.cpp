@@ -46,7 +46,7 @@ int main(int argc, char * argv[])
     std::string frame_script_filename;
     std::string interframe_script_filename;
     std::size_t buffered_input_frames = 20;
-    std::size_t buffered_packets = 10;
+    std::size_t buffered_processing_frames = 50;
     std::size_t buffered_output_frames = 20;
 
     // performance options
@@ -72,9 +72,9 @@ int main(int argc, char * argv[])
     video_processing_options.add_options()
         ("frame-script", po::value<std::string>(&frame_script_filename), "name of script file that should be processed for each frame")
         ("interframe-script", po::value<std::string>(&interframe_script_filename), "name of script file that should be processed for each pair of input images")
-        ("input-buffer", po::value<std::size_t>(&buffered_input_frames)->default_value(20), "size of input buffer when reading video frames")
-        ("packet-buffer", po::value<std::size_t>(&buffered_packets)->default_value(5), "size of packet buffer used at each processing stage (minimum size = 3)")
-        ("output-buffer", po::value<std::size_t>(&buffered_output_frames)->default_value(20), "size of output buffer when writing video frames")
+        ("input-buffer", po::value<std::size_t>(&buffered_input_frames)->default_value(50), "amount of buffered frames when reading video frames")
+        ("packet-buffer", po::value<std::size_t>(&buffered_processing_frames)->default_value(50), "amount of buffered frames at each processing stage (minimum size = 3)")
+        ("output-buffer", po::value<std::size_t>(&buffered_output_frames)->default_value(50), "amount of buffered frames when writing video frames")
         ;
 
     po::options_description performance_options("performance options", window.ws_col, window.ws_col / 2);
@@ -138,7 +138,7 @@ int main(int argc, char * argv[])
         return 1;
     }
 
-    if (buffered_packets < 3)
+    if (buffered_processing_frames < 3)
     {
         std::cerr << "The internal packet buffer size must contain at least three entries." << std::endl;
         return 1;
@@ -335,15 +335,15 @@ int main(int argc, char * argv[])
                                     boost::asynchronous::single_thread_scheduler<
                                         boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
 
-    auto file_reader = std::make_shared<cvpg::videoproc::sources::image_rgb_8bit_file_proxy>(file_in_scheduler, buffered_input_frames, buffered_packets);
+    auto file_reader = std::make_shared<cvpg::videoproc::sources::image_rgb_8bit_file_proxy>(file_in_scheduler, buffered_input_frames);
 
     // create a frame and interframe processor
     auto processors_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
                                     boost::asynchronous::single_thread_scheduler<
                                         boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("processors"));
 
-    auto frame_processor = std::make_shared<cvpg::videoproc::processors::image_rgb_8bit_frame_proxy>(processors_scheduler, pool, buffered_packets, image_processor);
-    auto interframe_processor = std::make_shared<cvpg::videoproc::processors::image_rgb_8bit_interframe_proxy>(processors_scheduler, pool, buffered_packets, image_processor);
+    auto frame_processor = std::make_shared<cvpg::videoproc::processors::image_rgb_8bit_frame_proxy>(processors_scheduler, pool, buffered_processing_frames, image_processor);
+    auto interframe_processor = std::make_shared<cvpg::videoproc::processors::image_rgb_8bit_interframe_proxy>(processors_scheduler, pool, buffered_processing_frames, image_processor);
 
     // create a video file producer
     auto file_out_scheduler = boost::asynchronous::make_shared_scheduler_proxy<

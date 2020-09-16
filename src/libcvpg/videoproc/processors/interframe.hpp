@@ -29,7 +29,7 @@ class interframe : public boost::asynchronous::trackable_servant<imageproc::scri
 public:
     interframe(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
                boost::asynchronous::any_shared_scheduler_proxy<imageproc::scripting::diagnostics::servant_job> pool,
-               std::size_t max_packets_output_buffer,
+               std::size_t max_frames_output_buffer,
                imageproc::scripting::image_processor_proxy image_processor);
 
     interframe(interframe const &) = delete;
@@ -45,7 +45,7 @@ public:
               std::function<void(std::size_t)> init_done_callback,
               std::function<void(std::size_t, std::map<std::string, std::any>)> params_callback,
               std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> packet_callback,
-              std::function<void(std::size_t)> next_callback,
+              std::function<void(std::size_t, std::size_t)> next_callback,
               std::function<void(std::size_t)> done_callback,
               std::function<void(std::size_t, std::string)> failed_callback,
               std::function<void(std::size_t, update_indicator)> update_indicator_callback);
@@ -58,14 +58,13 @@ public:
 
     void process(std::size_t context_id, videoproc::packet<videoproc::frame<Image> > packet);
 
-    void next(std::size_t context_id);
+    void next(std::size_t context_id, std::size_t max_new_data);
 
 private:
     void try_process_input(std::size_t context_id);
-    void try_flush_buffer(std::size_t context_id);
 
-    // maximum size of packet send buffer
-    std::size_t m_max_packets_output_buffer;
+    // maximum amount of frames at output buffer
+    std::size_t m_max_frames_output_buffer;
 
     std::shared_ptr<imageproc::scripting::image_processor_proxy> m_image_processor;
 

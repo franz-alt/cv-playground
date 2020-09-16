@@ -2,8 +2,6 @@
 
 #include <cstdint>
 
-#include <boost/circular_buffer.hpp>
-
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -12,6 +10,7 @@ extern "C" {
 #include <libavutil/opt.h>
 }
 
+#include <libcvpg/videoproc/stage_data_handler.hpp>
 #include <libcvpg/videoproc/stage_fsm.hpp>
 
 namespace {
@@ -129,17 +128,15 @@ template<typename Image> struct file<Image>::processing_context
 
     callback_info callbacks;
 
-    std::shared_ptr<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> > > > buffer;
+    std::shared_ptr<stage_data_handler<videoproc::frame<Image> > > sdh;
 
     std::shared_ptr<videoproc::stage_fsm> fsm;
 };
 
 template<typename Image> file<Image>::file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
-                                           std::size_t frames_per_packet,
-                                           std::size_t max_packets_output_buffer)
+                                           std::size_t max_frames_read_buffer)
     : boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>(scheduler)
-    , m_frames_per_packet(frames_per_packet)
-    , m_max_packets_output_buffer(max_packets_output_buffer)
+    , m_max_frames_read_buffer(max_frames_read_buffer)
     , m_contexts()
 {}
 
@@ -160,7 +157,67 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
     context->callbacks.finished = std::move(done_callback);
     context->callbacks.failed = std::move(failed_callback);
     context->callbacks.update_indicator = std::move(update_indicator_callback);
-    context->buffer = std::make_shared<boost::circular_buffer<videoproc::packet<videoproc::frame<Image> > > >(m_max_packets_output_buffer);
+
+    context->sdh = std::make_shared<stage_data_handler<videoproc::frame<Image> > >(
+        "sources::file",
+        m_max_frames_read_buffer,
+        [this, context_id, context]()
+        {
+            // start reading new data ...
+            post_self(
+                [this, context_id]()
+                {
+                    start(context_id);
+                },
+                "sources::file::next",
+                1
+            );
+        },
+        [context]()
+        {
+            return context->status.next_waiting;
+        },
+        [this, context_id, context](std::vector<videoproc::frame<Image> > frames, std::function<void()> deliver_done_callback)
+        {
+            if (frames.empty())
+            {
+                deliver_done_callback();
+                return;
+            }
+
+            context->status.next_waiting = 0;
+
+            auto packet_number = context->status.packet_counter;
+
+            videoproc::packet<videoproc::frame<Image> > packet(packet_number);
+
+            bool is_last = false;
+
+            for (auto & f : frames)
+            {
+                is_last |= f.flush();
+
+                packet.add_frame(std::move(f));
+            }
+
+            context->callbacks.deliver_packet(context_id, std::move(packet));
+
+            if (is_last)
+            {
+                context->status.eof_flushed = true;
+                context->callbacks.finished(context_id);
+            }
+            else
+            {
+                deliver_done_callback();
+            }
+        },
+        [context_id, context]()
+        {
+            context->callbacks.failed(context_id, "buffer full");
+        }
+    );
+
     context->fsm = std::make_shared<videoproc::stage_fsm>("sources::file");
 
     m_contexts.insert({ context_id, context });
@@ -247,7 +304,7 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
     {
         // TODO check if index 0 is the video stream or not
         const double fps = static_cast<double>(context->video.format_context->streams[0]->avg_frame_rate.num) /
-                        static_cast<double>(context->video.format_context->streams[0]->avg_frame_rate.den);
+                           static_cast<double>(context->video.format_context->streams[0]->avg_frame_rate.den);
 
         const std::int64_t frames = static_cast<std::int64_t>(static_cast<double>(context->video.format_context->duration) * fps / 1000000.0);
 
@@ -296,16 +353,23 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
             return;
         }
 
-        // check if packet buffer is full or would be full at next steps
-        if (context->buffer->size() >= (m_max_packets_output_buffer - (m_frames_per_packet + 1))) // +1 for possible flush packet at end of stream
+        // check if input buffer is full
+        if (context->sdh->full())
         {
-            // don't read new data until packet buffer is freed
-            // TODO do we have to throw away old data in case of streaming mode !?!?!
-            return;
+            // start reading new data ...
+            // TODO perform post after a certain amount of time
+            post_self(
+                [this, context_id]()
+                {
+                    start(context_id);
+                },
+                "sources::file::next",
+                1
+            );
         }
 
         std::vector<Image> images;
-        images.reserve(m_frames_per_packet);
+        images.reserve(m_max_frames_read_buffer);
 
         AVFrame * frame = av_frame_alloc();
 
@@ -325,7 +389,8 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
             return;
         }
 
-        for (auto i = 0; i < m_frames_per_packet; ++i)
+        // try to read files to fill a quarter of the input buffer
+        for (auto i = 0; i < context->sdh->free(); ++i)
         {
             int res = av_read_frame(context->video.format_context, packet);
 
@@ -386,29 +451,25 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
         av_frame_free(&frame);
         av_packet_free(&packet);
 
-        videoproc::packet<videoproc::frame<Image> > packet_(context->status.packet_counter++);
+        std::vector<videoproc::frame<Image> > frames;
+        frames.reserve(images.size());
 
         for (auto & image : images)
         {
-            packet_.add_frame(context->status.frames_processed++, std::move(image));
+            frames.emplace_back(context->status.frames_processed++, std::move(image));
         }
 
-        context->buffer->push_back(std::move(packet_));
+        context->sdh->add(std::move(frames));
 
         if (context->status.eof_reached && !(context->status.eof_flushed))
         {
-            // add 'flush packet' at end-of-file
-            videoproc::packet<videoproc::frame<Image> > packet_(context->status.packet_counter++);
-            packet_.add_frame(context->status.frames_processed++);
-
-            context->buffer->push_back(std::move(packet_));
+            // add flush frame when end-of-file reached
+            context->sdh->add(videoproc::frame<Image>(context->status.frames_processed++));
         }
-
-        try_flush_buffer(context_id);
     }
 }
 
-template<typename Image> void file<Image>::next(std::size_t context_id)
+template<typename Image> void file<Image>::next(std::size_t context_id, std::size_t max_new_data)
 {
     auto it = m_contexts.find(context_id);
 
@@ -416,67 +477,13 @@ template<typename Image> void file<Image>::next(std::size_t context_id)
     {
         auto & context = it->second;
 
-        context->status.next_waiting++;
+        context->status.next_waiting += max_new_data;
 
-        try_flush_buffer(context_id);
+        context->sdh->try_flush();
     }
 }
 
-template<typename Image> void file<Image>::try_flush_buffer(std::size_t context_id)
-{
-    auto it = m_contexts.find(context_id);
-
-    if (it != m_contexts.end())
-    {
-        auto & context = it->second;
-
-        // ignore flush when end-of-file already flushed
-        if (context->status.eof_flushed)
-        {
-            return;
-        }
-
-        // ignore flush when next stage doesn't wait for new data at moment
-        if (context->status.next_waiting == 0)
-        {
-            return;
-        }
-
-        if (!context->buffer->empty())
-        {
-            auto & packet = context->buffer->front();
-
-            const bool is_last = packet.flush();
-
-            // deliver packet to next stage
-            context->callbacks.deliver_packet(context_id, std::move(packet));
-
-            // next stage is satisfied now
-            context->status.next_waiting--;
-
-            context->buffer->pop_front();
-
-            // if 'flush packet' is at buffer, inform next stage of finishing for this context
-            if (is_last)
-            {
-                context->status.eof_flushed = true;
-                context->callbacks.finished(context_id);
-            }
-        }
-
-        // start reading new data ...
-        post_self(
-            [this, context_id]()
-            {
-                start(context_id);
-            },
-            "sources::file::next",
-            1
-        );
-    }
-}
-
-// manual instantation of file<> for some types
+// manual instantiation of file<> for some types
 template class file<cvpg::image_gray_8bit>;
 template class file<cvpg::image_rgb_8bit>;
 

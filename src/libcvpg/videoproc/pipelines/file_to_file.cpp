@@ -2,10 +2,6 @@
 
 #include <libcvpg/videoproc/update_indicator.hpp>
 
-
-#include <iostream>
-
-
 namespace cvpg::videoproc::pipelines {
 
 template<typename Source, typename FrameProcessor, typename InterframeProcessor, typename Sink>
@@ -98,9 +94,9 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
             interframe_processor->process(context_id, std::move(packet));
         },
         // next callback
-        [source = m_source](std::size_t context_id)
+        [source = m_source](std::size_t context_id, std::size_t max_new_data)
         {
-            source->next(context_id);
+            source->next(context_id, max_new_data);
         },
         // done/finish callback
         [interframe_processor = m_interframe_processor](std::size_t context_id)
@@ -142,9 +138,9 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
             sink->process(context_id, std::move(packet));
         },
         // next callback
-        [frame_processor = m_frame_processor](std::size_t context_id)
+        [frame_processor = m_frame_processor](std::size_t context_id, std::size_t max_new_data)
         {
-            frame_processor->next(context_id);
+            frame_processor->next(context_id, max_new_data);
         },
         // done/finish callback
         [sink = m_sink](std::size_t context_id)
@@ -176,9 +172,9 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(std:
             1
         ),
         // next callback
-        [interframe_processor = m_interframe_processor](std::size_t context_id)
+        [interframe_processor = m_interframe_processor](std::size_t context_id, std::size_t max_new_data)
         {
-            interframe_processor->next(context_id);
+            interframe_processor->next(context_id, max_new_data);
         },
         // finished callback
         [this, callback](std::size_t context_id)

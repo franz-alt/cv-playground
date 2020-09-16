@@ -7,8 +7,6 @@
 #include <boost/asynchronous/scheduler_shared_proxy.hpp>
 #include <boost/asynchronous/scheduler/single_thread_scheduler.hpp>
 
-#include <boost/circular_buffer.hpp>
-
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -18,6 +16,7 @@ extern "C" {
 }
 
 #include <libcvpg/core/exception.hpp>
+#include <libcvpg/videoproc/stage_data_handler.hpp>
 
 namespace cvpg::videoproc::sinks {
 
@@ -47,7 +46,7 @@ template<typename Image> struct file<Image>::processing_context
     struct callback_info
     {
         std::function<void(std::map<std::string, std::any>)> params;
-        std::function<void(std::size_t)> next;
+        std::function<void(std::size_t, std::size_t)> next;
         std::function<void(std::size_t)> finished;
         std::function<void(std::size_t, std::string)> failed;
         std::function<void(std::size_t, videoproc::update_indicator)> update_indicator;
@@ -68,10 +67,12 @@ template<typename Image> struct file<Image>::processing_context
             std::size_t size = 0;
         };
 
-        std::shared_ptr<boost::circular_buffer<entry> > data;
+        std::vector<entry> data;
     };
 
     buffer_info buffer;
+
+    std::shared_ptr<stage_data_handler<videoproc::frame<Image> > > sdh;
 
     bool finished = false;
 };
@@ -81,11 +82,11 @@ struct write_frames_task : public boost::asynchronous::continuation_task<std::ve
 {
     write_frames_task(std::size_t context_id,
                       std::shared_ptr<typename cvpg::videoproc::sinks::file<Image>::processing_context> context,
-                      videoproc::packet<videoproc::frame<Image> > packet)
+                      std::vector<videoproc::frame<Image> > frames)
         : boost::asynchronous::continuation_task<std::vector<typename cvpg::videoproc::sinks::file<Image>::processing_context::buffer_info::entry> >("sinks::file::write_frames")
         , m_context_id(context_id)
         , m_context(context)
-        , m_packet(std::move(packet))
+        , m_frames(std::move(frames))
     {}
 
     void operator()()
@@ -118,9 +119,9 @@ struct write_frames_task : public boost::asynchronous::continuation_task<std::ve
             }
 
             std::vector<typename cvpg::videoproc::sinks::file<Image>::processing_context::buffer_info::entry> buffer;
-            buffer.reserve(m_packet.frames().size());
+            buffer.reserve(m_frames.size());
 
-            for (auto const & inter_frame : m_packet.frames())
+            for (auto const & inter_frame : m_frames)
             {
                 // abort if frame is a flush frame
                 if (inter_frame.flush())
@@ -248,17 +249,17 @@ private:
 
     std::shared_ptr<typename cvpg::videoproc::sinks::file<Image>::processing_context> m_context;
 
-    videoproc::packet<videoproc::frame<Image> > m_packet;
+    std::vector<videoproc::frame<Image> > m_frames;
 };
 
 template<typename Image>
 boost::asynchronous::detail::callback_continuation<std::vector<typename cvpg::videoproc::sinks::file<Image>::processing_context::buffer_info::entry> >
 write_frames(std::size_t context_id,
              std::shared_ptr<typename cvpg::videoproc::sinks::file<Image>::processing_context> context,
-             videoproc::packet<videoproc::frame<Image> > packet)
+             std::vector<videoproc::frame<Image> > frames)
 {
     return boost::asynchronous::top_level_callback_continuation<std::vector<typename cvpg::videoproc::sinks::file<Image>::processing_context::buffer_info::entry> >(
-               write_frames_task<Image>(context_id, context, std::move(packet))
+               write_frames_task<Image>(context_id, context, std::move(frames))
            );
 }
 
@@ -361,7 +362,7 @@ template<typename Image> file<Image>::file(boost::asynchronous::any_weak_schedul
 template<typename Image> void file<Image>::init(std::size_t context_id,
                                                 std::string uri,
                                                 std::function<void(std::size_t)> init_done_callback,
-                                                std::function<void(std::size_t)> next_callback,
+                                                std::function<void(std::size_t, std::size_t)> next_callback,
                                                 std::function<void(std::size_t)> done_callback,
                                                 std::function<void(std::size_t, std::string)> failed_callback,
                                                 std::function<void(std::size_t, update_indicator)> update_indicator_callback)
@@ -373,7 +374,125 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
     context->callbacks.finished = std::move(done_callback);
     context->callbacks.failed = std::move(failed_callback);
     context->callbacks.update_indicator = std::move(update_indicator_callback);
-    context->buffer.data = std::make_shared<boost::circular_buffer<typename processing_context::buffer_info::entry> >(m_max_frames_write_buffer);
+    context->buffer.data.reserve(m_max_frames_write_buffer);
+
+    context->sdh = std::make_shared<stage_data_handler<videoproc::frame<Image> > >(
+        "sinks::file",
+        m_max_frames_write_buffer,
+        [context_id, context]()
+        {
+            // inform previous stage that this stage is ready to receive new data
+            context->callbacks.next(context_id, context->sdh->free());
+        },
+        [context]()
+        {
+            // return max_frames_write_buffer;
+            return context->sdh->free();
+        },
+        [this, context_id, context](std::vector<videoproc::frame<Image> > frames, std::function<void()> deliver_done_callback)
+        {
+            // check if a flush frame is contained at 'frames'
+            bool has_flush = false;
+
+            for (auto const & frame : frames)
+            {
+                if (frame.flush())
+                {
+                    has_flush = true;
+                    break;
+                }
+            }
+
+            if (has_flush)
+            {
+                post_callback(
+                    [context_id, context, frames = std::move(frames)]() mutable
+                    {
+                        return write_last_frames<Image>(context_id, context);
+                    },
+                    [this, context_id, context, deliver_done_callback = std::move(deliver_done_callback)](auto cont_res) mutable
+                    {
+                        try
+                        {
+                            auto buffer = std::move(cont_res.get());
+
+                            for (auto & entry : buffer)
+                            {
+                                context->buffer.data.push_back(std::move(entry));
+                            }
+
+                            context->callbacks.update_indicator(context_id, videoproc::update_indicator("save", buffer.size(), 0));
+
+                            this->try_flush_buffer(context_id);
+
+                            // add sequence end code to have a real MPEG file
+                            std::uint8_t endcode[] = { 0, 0, 1, 0xb7 };
+                            fwrite(endcode, 1, sizeof(endcode), context->video.file);
+
+                            // close file
+                            fclose(context->video.file);
+
+                            context->finished = true;
+                            context->callbacks.finished(context_id);
+                        }
+                        catch (std::exception const & e)
+                        {
+                            context->callbacks.failed(context_id, e.what());
+                        }
+                        catch (...)
+                        {
+                            context->callbacks.failed(context_id, "unknown error when writing video file");
+                        }
+                    },
+                    "sinks::file::process",
+                    1,
+                    1
+                );
+            }
+            else
+            {
+                post_callback(
+                    [context_id, context, frames = std::move(frames)]() mutable
+                    {
+                        return write_frames<Image>(context_id, context, std::move(frames));
+                    },
+                    [this, context_id, context, deliver_done_callback = std::move(deliver_done_callback)](auto cont_res) mutable
+                    {
+                        try
+                        {
+                            auto buffer = std::move(cont_res.get());
+
+                            for (auto & entry : buffer)
+                            {
+                                context->buffer.data.push_back(std::move(entry));
+                            }
+
+                            context->callbacks.update_indicator(context_id, videoproc::update_indicator("save", buffer.size(), 0));
+
+                            this->try_flush_buffer(context_id);
+
+                            deliver_done_callback();
+                        }
+                        catch (std::exception const & e)
+                        {
+                            context->callbacks.failed(context_id, e.what());
+                        }
+                        catch (...)
+                        {
+                            context->callbacks.failed(context_id, "unknown error when writing video file");
+                        }
+                    },
+                    "sinks::file::process",
+                    1,
+                    1
+                );
+            }
+        },
+        [context_id, context]()
+        {
+            context->callbacks.failed(context_id, "buffer full");
+        }
+    );
 
     m_contexts.insert({ context_id, context });
 
@@ -502,7 +621,7 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
 
         if (!(context->prev_stage_finished))
         {
-            context->callbacks.next(context_id);
+            context->callbacks.next(context_id, context->sdh->free());
         }
     }
 }
@@ -527,90 +646,7 @@ template<typename Image> void file<Image>::process(std::size_t context_id, video
     {
         auto & context = it->second;
 
-        const bool is_flush_packet = packet.flush();
-
-        if (!is_flush_packet)
-        {
-            post_callback(
-                [context_id, context, packet = std::move(packet)]() mutable
-                {
-                    return write_frames<Image>(context_id, context, std::move(packet));
-                },
-                [this, context_id, context](auto cont_res) mutable
-                {
-                    try
-                    {
-                        auto buffer = std::move(cont_res.get());
-
-                        for (auto & entry : buffer)
-                        {
-                            context->buffer.data->push_back(std::move(entry));
-                        }
-
-                        context->callbacks.update_indicator(context_id, videoproc::update_indicator("save", buffer.size(), 0));
-
-                        this->try_flush_buffer(context_id);
-                    }
-                    catch (std::exception const & e)
-                    {
-                        context->callbacks.failed(context_id, e.what());
-                    }
-                    catch (...)
-                    {
-                        context->callbacks.failed(context_id, "unknown error when writing video file");
-                    }
-                },
-                "sinks::file::process",
-                1,
-                1
-            );
-        }
-        else // if (is_flush_packet)
-        {
-            post_callback(
-                [context_id, context]() mutable
-                {
-                    return write_last_frames<Image>(context_id, context);
-                },
-                [this, context_id, context](auto cont_res) mutable
-                {
-                    try
-                    {
-                        auto buffer = std::move(cont_res.get());
-
-                        for (auto & entry : buffer)
-                        {
-                            context->buffer.data->push_back(std::move(entry));
-                        }
-
-                        context->callbacks.update_indicator(context_id, videoproc::update_indicator("save", buffer.size(), 0));
-
-                        this->try_flush_buffer(context_id);
-
-                        // add sequence end code to have a real MPEG file
-                        std::uint8_t endcode[] = { 0, 0, 1, 0xb7 };
-                        fwrite(endcode, 1, sizeof(endcode), context->video.file);
-
-                        // close file
-                        fclose(context->video.file);
-
-                        context->finished = true;
-                        context->callbacks.finished(context_id);
-                    }
-                    catch (std::exception const & e)
-                    {
-                        // TODO report error
-                    }
-                    catch (...)
-                    {
-                        // TODO report error
-                    }
-                },
-                "sinks::file::process::last_frame",
-                1,
-                1
-            );
-        }
+        context->sdh->add(packet.move_frames());
     }
 }
 
@@ -628,13 +664,13 @@ template<typename Image> void file<Image>::try_flush_buffer(std::size_t context_
         {
             found = false;
 
-            if (!context->buffer.initialized && !context->buffer.data->empty())
+            if (!context->buffer.initialized && !context->buffer.data.empty())
             {
                 context->buffer.initialized = true;
-                context->buffer.next_frame = context->buffer.data->front().id;
+                context->buffer.next_frame = context->buffer.data.front().id;
             }
 
-            for (auto it = context->buffer.data->begin(); it != context->buffer.data->end(); ++it)
+            for (auto it = context->buffer.data.begin(); it != context->buffer.data.end(); ++it)
             {
                 auto & entry = *it;
 
@@ -642,7 +678,7 @@ template<typename Image> void file<Image>::try_flush_buffer(std::size_t context_
                 {
                     fwrite(entry.frame.get(), 1, entry.size, context->video.file);
 
-                    context->buffer.data->erase(it);
+                    context->buffer.data.erase(it);
                     context->buffer.next_frame++;
 
                     found = true;
@@ -651,15 +687,10 @@ template<typename Image> void file<Image>::try_flush_buffer(std::size_t context_
                 }
             }
         }
-
-        if (context->buffer.data->size() != m_max_frames_write_buffer)
-        {
-            context->callbacks.next(context_id);
-        }
     }
 }
 
-// manual instantation of file<> for some types
+// manual instantiation of file<> for some types
 template class file<cvpg::image_gray_8bit>;
 template class file<cvpg::image_rgb_8bit>;
 

@@ -5,11 +5,10 @@
 #include <exception>
 #include <future>
 
-#include <boost/circular_buffer.hpp>
-
 #include <boost/asynchronous/continuation_task.hpp>
 
 #include <libcvpg/core/exception.hpp>
+#include <libcvpg/videoproc/stage_data_handler.hpp>
 
 namespace {
 
@@ -42,6 +41,7 @@ struct process_inter_frames_task : public boost::asynchronous::continuation_task
             futures_evaluate.reserve(m_frames.size() - 1);
 
             bool flush_frame = false;
+            std::size_t flush_number = 0;
 
             // extract/get raw images from items
             for (auto & frame : m_frames)
@@ -50,10 +50,18 @@ struct process_inter_frames_task : public boost::asynchronous::continuation_task
                 if (frame.flush())
                 {
                     flush_frame = true;
+                    flush_number = frame.number();
                     continue;
                 }
 
                 images->push_back(std::any_cast<typename Packet::frame_type::image_type>(frame.image()));
+            }
+
+            if (flush_frame)
+            {
+                // assume that we've 'lost' a single frame at interframe stage, so flush frame is one minus the last frame number
+                // TODO find a more rubost solution here
+                flush_number = m_frames.back().number() - 1;
             }
 
             if (images->empty())
@@ -90,7 +98,8 @@ struct process_inter_frames_task : public boost::asynchronous::continuation_task
                 ,image_processor = m_image_processor
                 ,packet_number = m_packet_number
                 ,images = std::move(images)
-                ,flush_frame](auto cont_res)
+                ,flush_frame
+                ,flush_number](auto cont_res)
                 {
                     try
                     {
@@ -103,7 +112,7 @@ struct process_inter_frames_task : public boost::asynchronous::continuation_task
 
                         if (flush_frame)
                         {
-                            packet.add_frame(std::numeric_limits<std::size_t>::max());
+                            packet.add_frame(flush_number);
                         }
 
                         task_res.set_value(std::move(packet));
@@ -162,6 +171,8 @@ template<typename Image> struct interframe<Image>::processing_context
     {
         std::size_t next_waiting = 0;
 
+        std::size_t packet_counter = 0;
+
         std::size_t packets_created = 0;
         std::size_t frames_created = 0;
     };
@@ -172,7 +183,7 @@ template<typename Image> struct interframe<Image>::processing_context
     {
         std::function<void(std::size_t, std::map<std::string, std::any>)> params;
         std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> deliver_packet;
-        std::function<void(std::size_t)> next;
+        std::function<void(std::size_t, std::size_t)> next;
         std::function<void(std::size_t)> finished;
         std::function<void(std::size_t, std::string)> failed;
         std::function<void(std::size_t, videoproc::update_indicator)> update_indicator;
@@ -188,30 +199,15 @@ template<typename Image> struct interframe<Image>::processing_context
 
     buffer_in_info buffer_in;
 
-    struct buffer_out_info
-    {
-        bool initialized = false;
-
-        std::size_t next_packet = 0;
-
-        struct entry
-        {
-            std::size_t id = 0;
-            videoproc::packet<videoproc::frame<Image> > packet;
-        };
-
-        std::shared_ptr<boost::circular_buffer<entry> > data;
-    };
-
-    buffer_out_info buffer_out;
+    std::shared_ptr<stage_data_handler<videoproc::frame<Image> > > sdh_out;
 };
 
 template<typename Image> interframe<Image>::interframe(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
                                                        boost::asynchronous::any_shared_scheduler_proxy<imageproc::scripting::diagnostics::servant_job> pool,
-                                                       std::size_t max_packets_output_buffer,
+                                                       std::size_t max_frames_output_buffer,
                                                        imageproc::scripting::image_processor_proxy image_processor)
     : boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>(scheduler, pool)
-    , m_max_packets_output_buffer(max_packets_output_buffer)
+    , m_max_frames_output_buffer(max_frames_output_buffer)
     , m_image_processor(std::make_shared<imageproc::scripting::image_processor_proxy>(image_processor))
     , m_contexts()
 {}
@@ -221,7 +217,7 @@ template<typename Image> void interframe<Image>::init(std::size_t context_id,
                                                       std::function<void(std::size_t)> init_done_callback,
                                                       std::function<void(std::size_t, std::map<std::string, std::any>)> params_callback,
                                                       std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> packet_callback,
-                                                      std::function<void(std::size_t)> next_callback,
+                                                      std::function<void(std::size_t, std::size_t)> next_callback,
                                                       std::function<void(std::size_t)> done_callback,
                                                       std::function<void(std::size_t, std::string)> failed_callback,
                                                       std::function<void(std::size_t, update_indicator)> update_indicator_callback)
@@ -235,7 +231,41 @@ template<typename Image> void interframe<Image>::init(std::size_t context_id,
     context->callbacks.failed = std::move(failed_callback);
     context->callbacks.update_indicator = std::move(update_indicator_callback);
     context->buffer_in.data = std::make_shared<std::deque<videoproc::frame<Image> > >();
-    context->buffer_out.data = std::make_shared<boost::circular_buffer<typename processing_context::buffer_out_info::entry> >(m_max_packets_output_buffer);
+
+    context->sdh_out = std::make_shared<stage_data_handler<videoproc::frame<Image> > >(
+        "interframe",
+        m_max_frames_output_buffer,
+        [context_id, context]()
+        {
+            // inform previous stage that this stage is ready to receive new data
+            context->callbacks.next(context_id, context->sdh_out->free());
+        },
+        [context]()
+        {
+            return context->status.next_waiting;
+        },
+        [this, context_id, context](std::vector<videoproc::frame<Image> > frames, std::function<void()> deliver_done_callback)
+        {
+            context->status.next_waiting = 0;
+
+            auto packet_number = context->status.packet_counter;
+
+            videoproc::packet<videoproc::frame<Image> > packet(packet_number);
+
+            for (auto & f : frames)
+            {
+                packet.add_frame(std::move(f));
+            }
+
+            context->callbacks.deliver_packet(context_id, std::move(packet));
+
+            deliver_done_callback();
+        },
+        [context_id, context]()
+        {
+            context->callbacks.failed(context_id, "buffer full");
+        }
+    );
 
     m_contexts.insert({ context_id, context });
 
@@ -317,7 +347,7 @@ template<typename Image> void interframe<Image>::start(std::size_t context_id)
 
         if (!(context->prev_stage_finished))
         {
-            context->callbacks.next(context_id);
+            context->callbacks.next(context_id, context->sdh_out->free());
         }
     }
 }
@@ -349,7 +379,7 @@ template<typename Image> void interframe<Image>::process(std::size_t context_id,
     }
 }
 
-template<typename Image> void interframe<Image>::next(std::size_t context_id)
+template<typename Image> void interframe<Image>::next(std::size_t context_id, std::size_t max_new_data)
 {
     auto it = m_contexts.find(context_id);
 
@@ -357,9 +387,9 @@ template<typename Image> void interframe<Image>::next(std::size_t context_id)
     {
         auto & context = it->second;
 
-        context->status.next_waiting++;
+        context->status.next_waiting += max_new_data;
 
-        try_flush_buffer(context_id);
+        context->sdh_out->try_flush();
     }
 }
 
@@ -413,15 +443,6 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
             }
         }
 
-        // check if next frame number isn't received yet
-        if (frame_number == context->buffer_in.next_frame)
-        {
-            // inform previous stage that this stage is ready to receive new data
-            context->callbacks.next(context_id);
-
-            return;
-        }
-
         std::vector<videoproc::frame<Image> > frames;
         frames.reserve(context->buffer_in.data->size());
 
@@ -458,13 +479,6 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
 
         auto frames_amount = frames.size();
 
-        // check if output buffer is still full
-        if (context->buffer_out.data->size() >= (m_max_packets_output_buffer - frames_amount))
-        {
-            // wait to process input data because of full output buffer
-            return;
-        }
-
         auto packets_created = context->status.packets_created;
         auto frames_created = context->status.frames_created;
 
@@ -491,42 +505,16 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
                 {
                     auto packet = std::move(cont_res.get());
 
-                    typename processing_context::buffer_out_info::entry e;
-                    e.id = packet.number();
-                    e.packet = std::move(packet);
+                    context->callbacks.update_indicator(context_id, videoproc::update_indicator("interframe", packet.frames().size(), 0));
 
-                    context->callbacks.update_indicator(context_id, videoproc::update_indicator("interframe", e.packet.frames().size(), 0));
-
-                    context->buffer_out.data->push_back(std::move(e));
-
-                    this->try_flush_buffer(context_id);
+                    context->sdh_out->add(std::move(packet.move_frames()));
                 }
                 catch (std::exception const & e)
                 {
-                    auto packet = videoproc::packet<videoproc::frame<Image> >(packet_number, true);
-
-                    typename processing_context::buffer_out_info::entry entry;
-                    entry.id = packet.number();
-                    entry.packet = std::move(packet);
-
-                    context->buffer_out.data->push_back(std::move(entry));
-
-                    this->try_flush_buffer(context_id);
-
                     context->callbacks.failed(context_id, e.what());
                 }
                 catch (...)
                 {
-                    auto packet = videoproc::packet<videoproc::frame<Image> >(packet_number, true);
-
-                    typename processing_context::buffer_out_info::entry entry;
-                    entry.id = packet.number();
-                    entry.packet = std::move(packet);
-
-                    context->buffer_out.data->push_back(std::move(entry));
-
-                    this->try_flush_buffer(context_id);
-
                     context->callbacks.failed(context_id, "unknown error when processing interframes");
                 }
             },
@@ -540,81 +528,7 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
     }
 }
 
-template<typename Image> void interframe<Image>::try_flush_buffer(std::size_t context_id)
-{
-    auto it = m_contexts.find(context_id);
-
-    if (it != m_contexts.end())
-    {
-        auto & context = it->second;
-
-        if (context->buffer_out.data->empty())
-        {
-            // inform previous stage that this stage is ready to receive new data
-            context->callbacks.next(context_id);
-        }
-        else
-        {
-            // ignore flush when next stage doesn't wait for new data at moment
-            if (context->status.next_waiting == 0)
-            {
-                return;
-            }
-
-            bool found = true;
-
-            while (found)
-            {
-                found = false;
-
-                if (!context->buffer_out.initialized && !context->buffer_out.data->empty())
-                {
-                    context->buffer_out.initialized = true;
-                    context->buffer_out.next_packet = context->buffer_out.data->front().id;
-                }
-            }
-
-            for (auto it = context->buffer_out.data->begin(); it != context->buffer_out.data->end(); ++it)
-            {
-                auto & entry = *it;
-
-                if (entry.id == context->buffer_out.next_packet)
-                {
-                    auto & packet = it->packet;
-
-                    bool is_last = packet.flush();
-
-                    // deliver packet to next stage
-                    context->callbacks.deliver_packet(context_id, std::move(packet));
-
-                    // next stage is satisfied now
-                    context->status.next_waiting--;
-
-                    // if 'flush packet' is at buffer, inform next stage of finishing for this context
-                    if (is_last)
-                    {
-                        context->callbacks.finished(context_id);
-                    }
-
-                    context->buffer_out.data->erase(it);
-                    context->buffer_out.next_packet++;
-
-                    found = true;
-
-                    break;
-                }
-            }
-
-            if (context->buffer_out.data->size() != m_max_packets_output_buffer)
-            {
-                // inform previous stage that this stage is ready to receive new data
-                context->callbacks.next(context_id);
-            }
-        }
-    }
-}
-
-// manual instantation of interframe<> for some types
+// manual instantiation of interframe<> for some types
 template class interframe<cvpg::image_gray_8bit>;
 template class interframe<cvpg::image_rgb_8bit>;
 
