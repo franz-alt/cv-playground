@@ -9,20 +9,19 @@
 #include <libcvpg/core/image.hpp>
 #include <libcvpg/imageproc/algorithms/tiling.hpp>
 #include <libcvpg/imageproc/algorithms/tiling/diff.hpp>
-#include <libcvpg/imageproc/scripting/image_processor.hpp>
 #include <libcvpg/imageproc/scripting/item.hpp>
+#include <libcvpg/imageproc/scripting/processing_context.hpp>
 #include <libcvpg/imageproc/scripting/detail/compiler.hpp>
 #include <libcvpg/imageproc/scripting/detail/handler.hpp>
 #include <libcvpg/imageproc/scripting/detail/parser.hpp>
 
 namespace detail {
 
-struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::image_processor> >
+struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::processing_context> >
 {
-    diff_task(std::shared_ptr<cvpg::imageproc::scripting::image_processor> image_processor, std::size_t context_id, std::uint32_t result_id, cvpg::imageproc::scripting::detail::parser::item item)
-        : boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::image_processor> >("algorithms::diff_task")
-        , m_image_processor(image_processor)
-        , m_context_id(context_id)
+    diff_task(std::shared_ptr<cvpg::imageproc::scripting::processing_context> context, std::uint32_t result_id, cvpg::imageproc::scripting::detail::parser::item item)
+        : boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::processing_context> >("algorithms::diff_task")
+        , m_context(context)
         , m_result_id(result_id)
         , m_item(std::move(item))
     {}
@@ -35,10 +34,10 @@ struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr
             auto id2 = std::any_cast<std::uint32_t>(m_item.arguments.at(1).value());
             auto offset = std::any_cast<std::int32_t>(m_item.arguments.at(2).value());
 
-            auto input1 = m_image_processor->load(m_context_id, id1);
-            auto input2 = m_image_processor->load(m_context_id, id2);
+            auto input1 = m_context->load(id1);
+            auto input2 = m_context->load(id2);
 
-            auto parameters = m_image_processor->parameters();
+            auto parameters = m_context->parameters();
 
             std::uint32_t cutoff_x = 512;
             std::uint32_t cutoff_y = 512;
@@ -85,15 +84,15 @@ struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr
                 };
 
                 boost::asynchronous::create_callback_continuation(
-                    [result = this->this_task_result(), image_processor = m_image_processor, context_id = m_context_id, result_id = m_result_id, start](auto cont_res) mutable
+                    [result = this->this_task_result(), context = m_context, result_id = m_result_id, start](auto cont_res) mutable
                     {
                         auto stop = std::chrono::system_clock::now();
 
                         try
                         {
-                            image_processor->store(context_id, result_id, std::get<0>(cont_res).get(), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
+                            context->store(result_id, std::get<0>(cont_res).get(), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
 
-                            result.set_value(image_processor);
+                            result.set_value(context);
                         }
                         catch (...)
                         {
@@ -129,15 +128,15 @@ struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr
                 };
 
                 boost::asynchronous::create_callback_continuation(
-                    [result = this->this_task_result(), image_processor = m_image_processor, context_id = m_context_id, result_id = m_result_id, start](auto cont_res) mutable
+                    [result = this->this_task_result(), context = m_context, result_id = m_result_id, start](auto cont_res) mutable
                     {
                         auto stop = std::chrono::system_clock::now();
 
                         try
                         {
-                            image_processor->store(context_id, result_id, std::get<0>(cont_res).get(), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
+                            context->store(result_id, std::get<0>(cont_res).get(), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
 
-                            result.set_value(image_processor);
+                            result.set_value(context);
                         }
                         catch (...)
                         {
@@ -155,19 +154,17 @@ struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr
     }
 
 private:
-    std::shared_ptr<cvpg::imageproc::scripting::image_processor> m_image_processor;
-
-    std::size_t m_context_id;
+    std::shared_ptr<cvpg::imageproc::scripting::processing_context> m_context;
 
     std::uint32_t m_result_id;
 
     cvpg::imageproc::scripting::detail::parser::item m_item;
 };
 
-auto diff(std::shared_ptr<cvpg::imageproc::scripting::image_processor> image_processor, std::size_t context_id, std::uint32_t result_id, cvpg::imageproc::scripting::detail::parser::item item)
+auto diff(std::shared_ptr<cvpg::imageproc::scripting::processing_context> context, std::uint32_t result_id, cvpg::imageproc::scripting::detail::parser::item item)
 {
-    return boost::asynchronous::top_level_callback_continuation<std::shared_ptr<cvpg::imageproc::scripting::image_processor> >(
-               diff_task(image_processor, context_id, result_id, std::move(item))
+    return boost::asynchronous::top_level_callback_continuation<std::shared_ptr<cvpg::imageproc::scripting::processing_context> >(
+               diff_task(context, result_id, std::move(item))
            );
 }
 
@@ -310,9 +307,9 @@ void diff::on_compile(std::uint32_t item_id, std::shared_ptr<detail::compiler> c
 {
     auto handler =
         detail::handler(
-            [result_id = item_id, item = compiler->get_item(item_id)](std::shared_ptr<image_processor> image_processor, std::size_t context_id)
+            [result_id = item_id, item = compiler->get_item(item_id)](std::shared_ptr<processing_context> context)
             {
-                return ::detail::diff(image_processor, context_id, result_id, std::move(item));
+                return ::detail::diff(context, result_id, std::move(item));
             });
 
     compiler->register_handler(item_id, name(), std::move(handler));

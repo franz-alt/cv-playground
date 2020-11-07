@@ -9,20 +9,19 @@
 #include <libcvpg/core/exception.hpp>
 #include <libcvpg/core/image.hpp>
 #include <libcvpg/imageproc/algorithms/tiling.hpp>
-#include <libcvpg/imageproc/scripting/image_processor.hpp>
 #include <libcvpg/imageproc/scripting/item.hpp>
+#include <libcvpg/imageproc/scripting/processing_context.hpp>
 #include <libcvpg/imageproc/scripting/detail/compiler.hpp>
 #include <libcvpg/imageproc/scripting/detail/handler.hpp>
 #include <libcvpg/imageproc/scripting/detail/parser.hpp>
 
 namespace detail {
 
-struct input_task :  public boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::image_processor> >
+struct input_task :  public boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::processing_context> >
 {
-    input_task(std::shared_ptr<cvpg::imageproc::scripting::image_processor> image_processor, std::size_t context_id, std::uint32_t result_id, cvpg::imageproc::scripting::detail::parser::item item)
-        : boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::image_processor> >("algorithms::input_task")
-        , m_image_processor(image_processor)
-        , m_context_id(context_id)
+    input_task(std::shared_ptr<cvpg::imageproc::scripting::processing_context> context, std::uint32_t result_id, cvpg::imageproc::scripting::detail::parser::item item)
+        : boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::processing_context> >("algorithms::input_task")
+        , m_context(context)
         , m_result_id(result_id)
         , m_item(std::move(item))
     {}
@@ -33,22 +32,22 @@ struct input_task :  public boost::asynchronous::continuation_task<std::shared_p
         {
             auto id = std::any_cast<std::uint32_t>(m_item.arguments.at(0).value());
 
-            auto input = m_image_processor->load(m_context_id, id);
+            auto input = m_context->load(id);
 
             if (input.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image)
             {
-                m_image_processor->store(m_context_id, m_result_id, std::move(std::any_cast<cvpg::image_gray_8bit>(input.value())));
+                m_context->store(m_result_id, std::move(std::any_cast<cvpg::image_gray_8bit>(input.value())));
             }
             else if (input.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image)
             {
-                m_image_processor->store(m_context_id, m_result_id, std::move(std::any_cast<cvpg::image_rgb_8bit>(input.value())));
+                m_context->store(m_result_id, std::move(std::any_cast<cvpg::image_rgb_8bit>(input.value())));
             }
             else
             {
                 // TODO error handling
             }
 
-            this->this_task_result().set_value(m_image_processor);
+            this->this_task_result().set_value(m_context);
         }
         catch (...)
         {
@@ -57,19 +56,17 @@ struct input_task :  public boost::asynchronous::continuation_task<std::shared_p
     }
 
 private:
-    std::shared_ptr<cvpg::imageproc::scripting::image_processor> m_image_processor;
-
-    std::size_t m_context_id;
+    std::shared_ptr<cvpg::imageproc::scripting::processing_context> m_context;
 
     std::uint32_t m_result_id;
 
     cvpg::imageproc::scripting::detail::parser::item m_item;
 };
 
-auto input(std::shared_ptr<cvpg::imageproc::scripting::image_processor> image_processor, std::size_t context_id, std::uint32_t result_id, cvpg::imageproc::scripting::detail::parser::item item)
+auto input(std::shared_ptr<cvpg::imageproc::scripting::processing_context> context, std::uint32_t result_id, cvpg::imageproc::scripting::detail::parser::item item)
 {
-    return boost::asynchronous::top_level_callback_continuation<std::shared_ptr<cvpg::imageproc::scripting::image_processor> >(
-               input_task(image_processor, context_id, result_id, std::move(item))
+    return boost::asynchronous::top_level_callback_continuation<std::shared_ptr<cvpg::imageproc::scripting::processing_context> >(
+               input_task(context, result_id, std::move(item))
            );
 }
 
@@ -223,9 +220,9 @@ void input::on_compile(std::uint32_t item_id, std::shared_ptr<detail::compiler> 
 {
     auto handler =
         detail::handler(
-            [result_id = item_id, item = compiler->get_item(item_id)](std::shared_ptr<image_processor> image_processor, std::size_t context_id)
+            [result_id = item_id, item = compiler->get_item(item_id)](std::shared_ptr<processing_context> context)
             {
-                return ::detail::input(image_processor, context_id, result_id, std::move(item));
+                return ::detail::input(context, result_id, std::move(item));
             });
 
     compiler->register_handler(item_id, name(), std::move(handler));

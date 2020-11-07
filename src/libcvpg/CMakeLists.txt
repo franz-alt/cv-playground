@@ -28,6 +28,7 @@ set(headers
     imageproc/scripting/algorithm_set.hpp
     imageproc/scripting/image_processor.hpp
     imageproc/scripting/item.hpp
+    imageproc/scripting/processing_context.hpp
     imageproc/scripting/algorithms/base.hpp
     imageproc/scripting/algorithms/convert_to_gray.hpp
     imageproc/scripting/algorithms/convert_to_rgb.hpp
@@ -81,6 +82,7 @@ set(sources
     imageproc/scripting/algorithm_set.cpp
     imageproc/scripting/image_processor.cpp
     imageproc/scripting/item.cpp
+    imageproc/scripting/processing_context.cpp
     imageproc/scripting/algorithms/convert_to_gray.cpp
     imageproc/scripting/algorithms/convert_to_rgb.cpp
     imageproc/scripting/algorithms/diff.cpp
