@@ -262,7 +262,11 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
             context->frames.width = local_codec_parameters->width;
             context->frames.height = local_codec_parameters->height;
         }
-        else // if (local_codec_parameters->codec_type == AVMEDIA_TYPE_AUDIO)
+        else if (local_codec_parameters->codec_type == AVMEDIA_TYPE_AUDIO)
+        {
+            // TODO ignore this at moment
+        }
+        else
         {
             context->callbacks.failed(context_id, "unsupported codec type");
 
