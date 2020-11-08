@@ -73,7 +73,7 @@ int main(int argc, char * argv[])
         ("frame-script", po::value<std::string>(&frame_script_filename), "name of script file that should be processed for each frame")
         ("interframe-script", po::value<std::string>(&interframe_script_filename), "name of script file that should be processed for each pair of input images")
         ("input-buffer", po::value<std::size_t>(&buffered_input_frames)->default_value(50), "amount of buffered frames when reading video frames")
-        ("packet-buffer", po::value<std::size_t>(&buffered_processing_frames)->default_value(50), "amount of buffered frames at each processing stage (minimum size = 3)")
+        ("processing-buffer", po::value<std::size_t>(&buffered_processing_frames)->default_value(50), "amount of buffered frames at each processing stage (minimum size is size of input buffer)")
         ("output-buffer", po::value<std::size_t>(&buffered_output_frames)->default_value(50), "amount of buffered frames when writing video frames")
         ;
 
@@ -138,10 +138,14 @@ int main(int argc, char * argv[])
         return 1;
     }
 
-    if (buffered_processing_frames < 3)
+    if (buffered_processing_frames < buffered_input_frames)
     {
-        std::cerr << "The internal packet buffer size must contain at least three entries." << std::endl;
-        return 1;
+        if (!quiet)
+        {
+            std::cout << "The internal packet buffer size must contain at least as many entries as the input buffer. Correct parameter." << std::endl;
+        }
+
+        buffered_processing_frames = buffered_input_frames;
     }
 
     if (variables.count("threads"))
