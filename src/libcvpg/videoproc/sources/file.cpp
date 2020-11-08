@@ -307,8 +307,8 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
     if (context->video.format_context->nb_streams > 0)
     {
         // TODO check if index 0 is the video stream or not
-        const double fps = static_cast<double>(context->video.format_context->streams[0]->avg_frame_rate.num) /
-                           static_cast<double>(context->video.format_context->streams[0]->avg_frame_rate.den);
+        const double fps = static_cast<double>(context->video.format_context->streams[context->video.stream_index]->avg_frame_rate.num) /
+                           static_cast<double>(context->video.format_context->streams[context->video.stream_index]->avg_frame_rate.den);
 
         const std::int64_t frames = static_cast<std::int64_t>(static_cast<double>(context->video.format_context->duration) * fps / 1000000.0);
 
@@ -396,7 +396,7 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
         }
 
         // try to read files to fill a quarter of the input buffer
-        for (auto i = 0; i < context->sdh->free(); ++i)
+        for (auto i = 0; i < context->sdh->free(); /* increment only when really encode */)
         {
             int res = av_read_frame(context->video.format_context, packet);
 
@@ -418,6 +418,8 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
 
             if (packet->stream_index == context->video.stream_index)
             {
+                ++i;
+
                 context->status.frames_loaded++;
 
                 std::vector<Image> packet_images;
@@ -442,12 +444,6 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
                         context->callbacks.update_indicator(context_id, videoproc::update_indicator("load", 1, 0));
                     }
                 }
-            }
-            else
-            {
-                context->status.frames_failed++;
-
-                context->callbacks.update_indicator(context_id, videoproc::update_indicator("load", 0, 1));
             }
         }
 
