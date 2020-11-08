@@ -12,11 +12,11 @@
 namespace cvpg::videoproc {
 
 //
-// A stage data handler is responsible to store incoming or outgoing data at a processing stage
-// and return the next valid data in the correct order to the stage if the next stage indicates
-// that new data could be send.
+// A stage data handler is responsible to store outgoing data that is delivered in any order at a
+// processing stage and return the next valid data in the correct order to the stage if the next
+// stage indicates that new data could be send.
 //
-// The input template type 'T' has to provide a 'number()' function.
+// The template type 'T' has to provide a 'number()' function.
 //
 template<typename T>
 class stage_data_handler
@@ -49,12 +49,12 @@ public:
     std::size_t free() const;
 
 private:
-    void try_process_data();
+    void try_process_input();
+    void flush_output();
 
     std::string m_name;
 
     std::size_t m_max_stored_entries;
-    std::size_t m_min_deliver_entries;
 
     std::function<void()> m_trigger_new_data_callback;
     std::function<std::size_t()> m_get_deliver_amount_callback;
