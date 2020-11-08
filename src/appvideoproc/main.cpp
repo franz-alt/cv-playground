@@ -162,32 +162,6 @@ int main(int argc, char * argv[])
         threads = std::thread::hardware_concurrency();
     }
 
-    // create a thread pool
-    auto pool = boost::asynchronous::make_shared_scheduler_proxy<
-                    boost::asynchronous::multiqueue_threadpool_scheduler<
-                        boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(threads, std::string("threadpool"));
-
-    // a single-threaded world, where the image processor will live
-    auto scheduler = boost::asynchronous::make_shared_scheduler_proxy<
-                         boost::asynchronous::single_thread_scheduler<
-                             boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("image_processor"));
-
-    // formatter to produce diagnostics in markdown format
-    auto formatter_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
-                                   boost::asynchronous::single_thread_scheduler<
-                                       boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("formatter"));
-
-    using formatter_type = cvpg::imageproc::scripting::diagnostics::markdown_formatter<>;
-
-    boost::asynchronous::formatter_proxy<formatter_type> formatter(formatter_scheduler,
-                                                                   pool,
-                                                                   boost::asynchronous::make_scheduler_interfaces(scheduler, pool, formatter_scheduler));
-
-    if (!quiet)
-    {
-        std::cout << "Using threadpool with " << threads << " worker threads" << std::endl;
-    }
-
     // read frame script file
     std::ifstream frame_script_file(frame_script_filename);
     std::string frame_script { std::istreambuf_iterator<char>(frame_script_file), std::istreambuf_iterator<char>() };
@@ -223,16 +197,33 @@ int main(int argc, char * argv[])
     // use own logging callback
     av_log_set_callback(avlog_cb);
 
+    // create a thread pool
+    auto thread_pool = boost::asynchronous::make_shared_scheduler_proxy<
+                           boost::asynchronous::multiqueue_threadpool_scheduler<
+                               boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(threads, std::string("threadpool"));
+
+    if (!quiet)
+    {
+        std::cout << "Using threadpool with " << threads << " worker threads" << std::endl;
+    }
+
     // create the image processor
     auto image_processor_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
                                          boost::asynchronous::single_thread_scheduler<
                                              boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("image_processor"));
 
-    boost::asynchronous::formatter_proxy<formatter_type> diagnostics_formatter(formatter_scheduler,
-                                                                               pool,
-                                                                               boost::asynchronous::make_scheduler_interfaces(scheduler, pool, formatter_scheduler));
+    cvpg::imageproc::scripting::image_processor_proxy image_processor(image_processor_scheduler, thread_pool);
 
-    cvpg::imageproc::scripting::image_processor_proxy image_processor(image_processor_scheduler, pool);
+    // create formatter to produce diagnostics in markdown format
+    auto formatter_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
+                                   boost::asynchronous::single_thread_scheduler<
+                                       boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("formatter"));
+
+    using formatter_type = cvpg::imageproc::scripting::diagnostics::markdown_formatter<>;
+
+    boost::asynchronous::formatter_proxy<formatter_type> diagnostics_formatter(formatter_scheduler,
+                                                                               thread_pool,
+                                                                               boost::asynchronous::make_scheduler_interfaces(/*image_processor_scheduler*/formatter_scheduler, thread_pool, formatter_scheduler));
 
     // set cutoff parameters
     image_processor.add_param("cutoff_x", xcutoff);
@@ -336,8 +327,8 @@ int main(int argc, char * argv[])
 
     // create a video file reader
     auto file_in_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
-                                    boost::asynchronous::single_thread_scheduler<
-                                        boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
+                                 boost::asynchronous::single_thread_scheduler<
+                                     boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
 
     auto file_reader = std::make_shared<cvpg::videoproc::sources::image_rgb_8bit_file_proxy>(file_in_scheduler, buffered_input_frames);
 
@@ -346,13 +337,13 @@ int main(int argc, char * argv[])
                                     boost::asynchronous::single_thread_scheduler<
                                         boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("processors"));
 
-    auto frame_processor = std::make_shared<cvpg::videoproc::processors::image_rgb_8bit_frame_proxy>(processors_scheduler, pool, buffered_processing_frames, image_processor);
-    auto interframe_processor = std::make_shared<cvpg::videoproc::processors::image_rgb_8bit_interframe_proxy>(processors_scheduler, pool, buffered_processing_frames, image_processor);
+    auto frame_processor = std::make_shared<cvpg::videoproc::processors::image_rgb_8bit_frame_proxy>(processors_scheduler, buffered_processing_frames, image_processor);
+    auto interframe_processor = std::make_shared<cvpg::videoproc::processors::image_rgb_8bit_interframe_proxy>(processors_scheduler, buffered_processing_frames, image_processor);
 
     // create a video file producer
     auto file_out_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
-                                    boost::asynchronous::single_thread_scheduler<
-                                        boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
+                                  boost::asynchronous::single_thread_scheduler<
+                                      boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
 
     auto file_producer = std::make_shared<cvpg::videoproc::sinks::image_rgb_8bit_file_proxy>(file_out_scheduler, buffered_output_frames);
 
@@ -365,8 +356,8 @@ int main(int argc, char * argv[])
 
     // create a pipeline for the stages
     auto pipeline_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
-                                    boost::asynchronous::single_thread_scheduler<
-                                        boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
+                                  boost::asynchronous::single_thread_scheduler<
+                                      boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
 
     auto promise_pipeline = std::make_shared<std::promise<std::string> >();
 

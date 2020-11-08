@@ -386,7 +386,6 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
         },
         [context]()
         {
-            // return max_frames_write_buffer;
             return context->sdh->free();
         },
         [this, context_id, context](std::vector<videoproc::frame<Image> > frames, std::function<void()> deliver_done_callback)

@@ -10,155 +10,6 @@
 #include <libcvpg/core/exception.hpp>
 #include <libcvpg/videoproc/stage_data_handler.hpp>
 
-namespace {
-
-template<typename Packet>
-struct process_inter_frames_task : public boost::asynchronous::continuation_task<Packet>
-{
-    process_inter_frames_task(std::size_t context_id,
-                              std::vector<typename Packet::frame_type> frames,
-                              std::size_t packet_number,
-                              std::size_t frames_offset,
-                              std::shared_ptr<cvpg::imageproc::scripting::image_processor_proxy> image_processor,
-                              std::size_t inter_frame_compile_id)
-        : boost::asynchronous::continuation_task<Packet>("processors::interframe::process_inter_frames")
-        , m_context_id(context_id)
-        , m_frames(std::move(frames))
-        , m_packet_number(packet_number)
-        , m_frames_offset(frames_offset)
-        , m_image_processor(image_processor)
-        , m_inter_frame_compile_id(inter_frame_compile_id)
-    {}
-
-    void operator()()
-    {
-        try
-        {
-            auto images = std::make_shared<std::vector<typename Packet::frame_type::image_type> >();
-            images->reserve(m_frames.size());
-
-            std::vector<std::future<typename Packet::frame_type> > futures_evaluate;
-            futures_evaluate.reserve(m_frames.size() - 1);
-
-            bool flush_frame = false;
-            std::size_t flush_number = 0;
-
-            // extract/get raw images from items
-            for (auto & frame : m_frames)
-            {
-                // abort if frame is a flush frame
-                if (frame.flush())
-                {
-                    flush_frame = true;
-                    flush_number = frame.number();
-                    continue;
-                }
-
-                images->push_back(std::any_cast<typename Packet::frame_type::image_type>(frame.image()));
-            }
-
-            if (flush_frame)
-            {
-                // assume that we've 'lost' a single frame at interframe stage, so flush frame is one minus the last frame number
-                // TODO find a more rubost solution here
-                flush_number = m_frames.back().number() - 1;
-            }
-
-            if (images->empty())
-            {
-                // create a flush packet
-                this->this_task_result().set_value(Packet(m_packet_number));
-
-                return;
-            }
-
-            for (std::size_t i = 0; i < images->size() - 1; ++i)
-            {
-                auto promise_evaluate = std::make_shared<std::promise<typename Packet::frame_type> >();
-
-                futures_evaluate.emplace_back(promise_evaluate->get_future());
-
-                m_image_processor->evaluate_convert_if(
-                    m_inter_frame_compile_id,
-                    (*images)[i],
-                    (*images)[i + 1],
-                    [promise_evaluate, number = m_frames_offset + i, i, frames = m_frames.size() - 1, packet_number = m_packet_number](typename Packet::frame_type::image_type image)
-                    {
-                        promise_evaluate->set_value(typename Packet::frame_type(number, std::move(image)));
-                    },
-                    [promise_evaluate](std::size_t context_id, std::string error)
-                    {
-                        promise_evaluate->set_exception(std::make_exception_ptr(cvpg::exception(std::move(error))));
-                    }
-                );
-            }
-
-            boost::asynchronous::create_continuation_job<cvpg::imageproc::scripting::diagnostics::diag_type>(
-                [task_res = this->this_task_result()
-                ,image_processor = m_image_processor
-                ,packet_number = m_packet_number
-                ,images = std::move(images)
-                ,flush_frame
-                ,flush_number](auto cont_res)
-                {
-                    try
-                    {
-                        Packet packet(packet_number);
-
-                        for (auto & res : cont_res)
-                        {
-                            packet.add_frame(std::move(res.get()));
-                        }
-
-                        if (flush_frame)
-                        {
-                            packet.add_frame(flush_number);
-                        }
-
-                        task_res.set_value(std::move(packet));
-                    }
-                    catch (...)
-                    {
-                        task_res.set_exception(std::current_exception());
-                    }
-                },
-                std::move(futures_evaluate)
-            );
-        }
-        catch (...)
-        {
-            this->this_task_result().set_exception(std::current_exception());
-        }
-    }
-
-private:
-    std::size_t m_context_id;
-
-    std::vector<typename Packet::frame_type> m_frames;
-
-    std::size_t m_packet_number;
-    std::size_t m_frames_offset;
-
-    std::shared_ptr<cvpg::imageproc::scripting::image_processor_proxy> m_image_processor;
-
-    std::size_t m_inter_frame_compile_id;
-};
-
-template<typename Packet>
-boost::asynchronous::detail::callback_continuation<Packet> process_inter_frames(std::size_t context_id,
-                                                                                std::vector<typename Packet::frame_type> frames,
-                                                                                std::size_t packet_number,
-                                                                                std::size_t frames_offset,
-                                                                                std::shared_ptr<cvpg::imageproc::scripting::image_processor_proxy> image_processor,
-                                                                                std::size_t inter_frame_compile_id)
-{
-    return boost::asynchronous::top_level_callback_continuation<Packet>(
-               process_inter_frames_task<Packet>(context_id, std::move(frames), packet_number, frames_offset, image_processor, inter_frame_compile_id)
-           );
-}
-
-}
-
 namespace cvpg::videoproc::processors {
 
 template<typename Image> struct interframe<Image>::processing_context
@@ -203,10 +54,9 @@ template<typename Image> struct interframe<Image>::processing_context
 };
 
 template<typename Image> interframe<Image>::interframe(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
-                                                       boost::asynchronous::any_shared_scheduler_proxy<imageproc::scripting::diagnostics::servant_job> pool,
                                                        std::size_t max_frames_output_buffer,
                                                        imageproc::scripting::image_processor_proxy image_processor)
-    : boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>(scheduler, pool)
+    : boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>(scheduler)
     , m_max_frames_output_buffer(max_frames_output_buffer)
     , m_image_processor(std::make_shared<imageproc::scripting::image_processor_proxy>(image_processor))
     , m_contexts()
@@ -237,8 +87,13 @@ template<typename Image> void interframe<Image>::init(std::size_t context_id,
         m_max_frames_output_buffer,
         [context_id, context]()
         {
-            // inform previous stage that this stage is ready to receive new data
-            context->callbacks.next(context_id, context->sdh_out->free());
+            const auto free = context->sdh_out->free();
+
+            if (free != 0)
+            {
+                // inform previous stage that this stage is ready to receive new data
+                context->callbacks.next(context_id, free);
+            }
         },
         [context]()
         {
@@ -246,6 +101,12 @@ template<typename Image> void interframe<Image>::init(std::size_t context_id,
         },
         [this, context_id, context](std::vector<videoproc::frame<Image> > frames, std::function<void()> deliver_done_callback)
         {
+            if (frames.empty())
+            {
+                deliver_done_callback();
+                return;
+            }
+
             context->status.next_waiting = 0;
 
             auto packet_number = context->status.packet_counter;
@@ -439,7 +300,14 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
             }
             else
             {
-                --frame_number;
+                if (numbers.size() > 1)
+                {
+                    --frame_number;
+                }
+                else
+                {
+                    break;
+                }
             }
         }
 
@@ -462,8 +330,16 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
                      return a.number() < b.number();
                  });
 
+        if (frames.size() < 2)
+        {
+            // try flush output and trigger new input in case we have not enough images
+            context->sdh_out->try_flush();
+
+            return;
+        }
+
         // except the frame, delete all older ones
-        for (auto it = context->buffer_in.data->begin(); it != context->buffer_in.data->end(); )
+        for (auto it = context->buffer_in.data->begin(); it != context->buffer_in.data->end(); /* increment inside loop */)
         {
             if (it->number() <= (frame_number - 1))
             {
@@ -482,49 +358,71 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
         auto packets_created = context->status.packets_created;
         auto frames_created = context->status.frames_created;
 
-        post_callback(
-            [context_id
-            ,image_processor = m_image_processor
-            ,frames = std::move(frames)
-            ,packets_created
-            ,frames_created
-            ,frames_id = context->frames_id]()
+        // create a vector of images for the image processor
+        auto images = std::make_shared<std::vector<typename videoproc::frame<Image>::image_type> >();
+        images->reserve(frames.size());
+
+        bool flush_frame = false;
+        std::size_t flush_number = 0;
+
+        // extract/get raw images from items
+        for (auto & frame : frames)
+        {
+            // abort if frame is a flush frame
+            if (frame.flush())
             {
-                return process_inter_frames<videoproc::packet<videoproc::frame<Image> > >(
-                           context_id,
-                           std::move(frames),
-                           packets_created,
-                           frames_created,
-                           image_processor,
-                           frames_id
-                       );
-            },
-            [this, context_id, packet_number = packets_created, context](auto cont_res)
-            {
-                try
-                {
-                    auto packet = std::move(cont_res.get());
+                flush_frame = true;
+                flush_number = frame.number();
+                continue;
+            }
 
-                    context->callbacks.update_indicator(context_id, videoproc::update_indicator("interframe", packet.frames().size(), 0));
+            images->push_back(std::any_cast<typename videoproc::frame<Image>::image_type>(frame.image()));
+        }
 
-                    context->sdh_out->add(std::move(packet.move_frames()));
-                }
-                catch (std::exception const & e)
-                {
-                    context->callbacks.failed(context_id, e.what());
-                }
-                catch (...)
-                {
-                    context->callbacks.failed(context_id, "unknown error when processing interframes");
-                }
-            },
-            "processors::interframe::try_process_input",
-            1,
-            1
-        );
+        if (flush_frame)
+        {
+            // assume that we've 'lost' a single frame at interframe stage, so flush frame is one minus the last frame number
+            --flush_number;
+        }
 
+        for (std::size_t i = 0; i < images->size() - 1; ++i)
+        {
+            const auto current_frame_number = frames_created + i;
+
+            m_image_processor->evaluate_convert_if(
+                context->frames_id,
+                (*images)[i],
+                (*images)[i + 1],
+                make_safe_callback(
+                    [context, context_id, current_frame_number, images](typename videoproc::frame<Image>::image_type image)
+                    {
+                        context->callbacks.update_indicator(context_id, videoproc::update_indicator("interframe", 1, 0));
+
+                        context->sdh_out->add(typename videoproc::frame<Image>(current_frame_number, std::move(image)));
+                    },
+                    "processors::interframe::try_process_input::callback::success",
+                    1
+                ),
+                make_safe_callback(
+                    [context](std::size_t context_id, std::string error)
+                    {
+                        context->callbacks.update_indicator(context_id, videoproc::update_indicator("interframe", 0, 1));
+
+                        context->callbacks.failed(context_id, std::move(error));
+                    },
+                    "processors::interframe::try_process_input::callback::failed",
+                    1
+                )
+            );
+        }
+
+        if (flush_frame)
+        {
+            context->sdh_out->add(typename videoproc::frame<Image>(flush_number));
+        }
+
+        context->status.frames_created += images->size()/*frames_amount*/ - 1 - (flush_frame ? 1 : 0);
         context->status.packets_created++;
-        context->status.frames_created += frames_amount - 1;
     }
 }
 

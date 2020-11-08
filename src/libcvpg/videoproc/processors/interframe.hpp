@@ -28,7 +28,6 @@ class interframe : public boost::asynchronous::trackable_servant<imageproc::scri
 {
 public:
     interframe(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
-               boost::asynchronous::any_shared_scheduler_proxy<imageproc::scripting::diagnostics::servant_job> pool,
                std::size_t max_frames_output_buffer,
                imageproc::scripting::image_processor_proxy image_processor);
 

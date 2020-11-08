@@ -366,6 +366,8 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
                 "sources::file::next",
                 1
             );
+
+            return;
         }
 
         std::vector<Image> images;
@@ -451,20 +453,23 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
         av_frame_free(&frame);
         av_packet_free(&packet);
 
-        std::vector<videoproc::frame<Image> > frames;
-        frames.reserve(images.size());
-
-        for (auto & image : images)
+        if (!images.empty())
         {
-            frames.emplace_back(context->status.frames_processed++, std::move(image));
-        }
+            std::vector<videoproc::frame<Image> > frames;
+            frames.reserve(images.size());
 
-        context->sdh->add(std::move(frames));
+            for (auto & image : images)
+            {
+                frames.emplace_back(context->status.frames_processed++, std::move(image));
+            }
 
-        if (context->status.eof_reached && !(context->status.eof_flushed))
-        {
-            // add flush frame when end-of-file reached
-            context->sdh->add(videoproc::frame<Image>(context->status.frames_processed++));
+            context->sdh->add(std::move(frames));
+
+            if (context->status.eof_reached && !(context->status.eof_flushed))
+            {
+                // add flush frame when end-of-file reached
+                context->sdh->add(videoproc::frame<Image>(context->status.frames_processed++));
+            }
         }
     }
 }
