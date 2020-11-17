@@ -106,7 +106,7 @@ template<typename T> void stage_data_handler<T>::try_flush()
 {
     if (m_in_data.empty())
     {
-        // m_trigger_new_data_callback();
+        m_trigger_new_data_callback();
     }
     else
     {
