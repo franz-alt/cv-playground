@@ -82,32 +82,32 @@ extern template class interframe<cvpg::image_rgb_8bit>;
 
 struct image_gray_8bit_interframe_proxy : public boost::asynchronous::servant_proxy<image_gray_8bit_interframe_proxy, interframe<cvpg::image_gray_8bit>, imageproc::scripting::diagnostics::servant_job>
 {
-   template<typename... Args>
-   image_gray_8bit_interframe_proxy(Args... args)
-       : boost::asynchronous::servant_proxy<image_gray_8bit_interframe_proxy, interframe<cvpg::image_gray_8bit>, imageproc::scripting::diagnostics::servant_job>(std::forward<Args>(args)...)
-   {}
+    template<typename... Args>
+    image_gray_8bit_interframe_proxy(Args... args)
+        : boost::asynchronous::servant_proxy<image_gray_8bit_interframe_proxy, interframe<cvpg::image_gray_8bit>, imageproc::scripting::diagnostics::servant_job>(std::forward<Args>(args)...)
+    {}
 
-   BOOST_ASYNC_POST_MEMBER_LOG(init, "init", 1)
-   BOOST_ASYNC_POST_MEMBER_LOG(params, "params", 1)
-   BOOST_ASYNC_POST_MEMBER_LOG(start, "start", 1)
-   BOOST_ASYNC_POST_MEMBER_LOG(finish, "finish", 1)
-   BOOST_ASYNC_POST_MEMBER_LOG(process, "process", 1)
-   BOOST_ASYNC_POST_MEMBER_LOG(next, "next", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(init, "init", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(params, "params", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(start, "start", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(finish, "finish", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(process, "process", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(next, "next", 1)
 };
 
 struct image_rgb_8bit_interframe_proxy : public boost::asynchronous::servant_proxy<image_rgb_8bit_interframe_proxy, interframe<cvpg::image_rgb_8bit>, imageproc::scripting::diagnostics::servant_job>
 {
-   template<typename... Args>
-   image_rgb_8bit_interframe_proxy(Args... args)
-       : boost::asynchronous::servant_proxy<image_rgb_8bit_interframe_proxy, interframe<cvpg::image_rgb_8bit>, imageproc::scripting::diagnostics::servant_job>(std::forward<Args>(args)...)
-   {}
+    template<typename... Args>
+    image_rgb_8bit_interframe_proxy(Args... args)
+        : boost::asynchronous::servant_proxy<image_rgb_8bit_interframe_proxy, interframe<cvpg::image_rgb_8bit>, imageproc::scripting::diagnostics::servant_job>(std::forward<Args>(args)...)
+    {}
 
-   BOOST_ASYNC_POST_MEMBER_LOG(init, "init", 1)
-   BOOST_ASYNC_POST_MEMBER_LOG(params, "params", 1)
-   BOOST_ASYNC_POST_MEMBER_LOG(start, "start", 1)
-   BOOST_ASYNC_POST_MEMBER_LOG(finish, "finish", 1)
-   BOOST_ASYNC_POST_MEMBER_LOG(process, "process", 1)
-   BOOST_ASYNC_POST_MEMBER_LOG(next, "next", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(init, "init", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(params, "params", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(start, "start", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(finish, "finish", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(process, "process", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(next, "next", 1)
 };
 
 } // namespace cvpg::videoproc::processors
