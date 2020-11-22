@@ -1,11 +1,11 @@
-#include <libcvpg/videoproc/pipelines/file_to_file.hpp>
+#include <libcvpg/videoproc/pipelines/rtsp_to_file.hpp>
 
 #include <libcvpg/videoproc/update_indicator.hpp>
 
 namespace cvpg::videoproc::pipelines {
 
 template<typename Source, typename FrameProcessor, typename InterframeProcessor, typename Sink>
-file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::file_to_file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
+rtsp_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::rtsp_to_file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
                                                                               std::shared_ptr<Source> source,
                                                                               std::shared_ptr<FrameProcessor> frame_processor,
                                                                               std::shared_ptr<InterframeProcessor> interframe_processor,
@@ -19,7 +19,7 @@ file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::file_to_file(bo
 {}
 
 template<typename Source, typename FrameProcessor, typename InterframeProcessor, typename Sink>
-void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(pipelines::parameters::uris uris, pipelines::parameters::scripts scripts, pipelines::parameters::callbacks callbacks)
+void rtsp_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(parameters::uris uris, parameters::scripts scripts, parameters::callbacks callbacks)
 {
     auto context_id = ++m_context_counter;
 
@@ -28,9 +28,10 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(pipe
         std::move(uris.input),
         // init done callback
         make_safe_callback(
-            [this, init_indicator_callback = callbacks.init](std::size_t context_id,  std::int64_t frames)
+            [this, init_indicator_callback = callbacks.init](std::size_t context_id,  std::int64_t /*frames*/)
             {
-                init_indicator_callback(context_id, frames);
+                // init update indicator with 0 frames to indicate 'endless'
+                init_indicator_callback(context_id, 0);
 
                 stage_initialized(context_id, 1);
             },
@@ -188,7 +189,7 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(pipe
 }
 
 template<typename Source, typename FrameProcessor, typename InterframeProcessor, typename Sink>
-void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::stage_initialized(std::size_t context_id, std::size_t stage_id)
+void rtsp_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::stage_initialized(std::size_t context_id, std::size_t stage_id)
 {
     m_stages_initialized[context_id].push_back(stage_id);
 
@@ -201,8 +202,8 @@ void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::stage_init
     }
 }
 
-// manual instantation of file_to_file<> for some types
-template class file_to_file<sources::image_gray_8bit_file_proxy, processors::image_gray_8bit_frame_proxy, processors::image_gray_8bit_interframe_proxy, sinks::image_gray_8bit_file_proxy>;
-template class file_to_file<sources::image_rgb_8bit_file_proxy, processors::image_rgb_8bit_frame_proxy, processors::image_rgb_8bit_interframe_proxy, sinks::image_rgb_8bit_file_proxy>;
+// manual instantation of rtsp_to_file<> for some types
+template class rtsp_to_file<sources::image_gray_8bit_rtsp_proxy, processors::image_gray_8bit_frame_proxy, processors::image_gray_8bit_interframe_proxy, sinks::image_gray_8bit_file_proxy>;
+template class rtsp_to_file<sources::image_rgb_8bit_rtsp_proxy, processors::image_rgb_8bit_frame_proxy, processors::image_rgb_8bit_interframe_proxy, sinks::image_rgb_8bit_file_proxy>;
 
 } // cvpg::videoproc::pipelines

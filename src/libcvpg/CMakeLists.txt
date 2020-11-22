@@ -57,11 +57,15 @@ set(headers
     videoproc/stage_data_handler.hpp
     videoproc/stage_fsm.hpp
     videoproc/update_indicator.hpp
+    videoproc/pipelines/any_pipeline.hpp
     videoproc/pipelines/file_to_file.hpp
+    videoproc/pipelines/parameters.hpp
+    videoproc/pipelines/rtsp_to_file.hpp
     videoproc/processors/frame.hpp
     videoproc/processors/interframe.hpp
     videoproc/sinks/file.hpp
     videoproc/sources/file.hpp
+    videoproc/sources/rtsp.hpp
 )
 
 set(sources
@@ -108,10 +112,12 @@ set(sources
     videoproc/stage_fsm.cpp
     videoproc/update_indicator.cpp
     videoproc/pipelines/file_to_file.cpp
+    videoproc/pipelines/rtsp_to_file.cpp
     videoproc/processors/frame.cpp
     videoproc/processors/interframe.cpp
     videoproc/sinks/file.cpp
     videoproc/sources/file.cpp
+    videoproc/sources/rtsp.cpp
 )
 
 add_library(${target} ${sources} ${headers})

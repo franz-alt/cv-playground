@@ -1,5 +1,5 @@
-#ifndef LIBCVPG_VIDEOPROC_PIPELINES_FILE_TO_FILE_HPP
-#define LIBCVPG_VIDEOPROC_PIPELINES_FILE_TO_FILE_HPP
+#ifndef LIBCVPG_VIDEOPROC_PIPELINES_RTSP_TO_FILE_HPP
+#define LIBCVPG_VIDEOPROC_PIPELINES_RTSP_TO_FILE_HPP
 
 #include <functional>
 #include <map>
@@ -23,27 +23,27 @@
 #include <libcvpg/videoproc/processors/frame.hpp>
 #include <libcvpg/videoproc/processors/interframe.hpp>
 #include <libcvpg/videoproc/sinks/file.hpp>
-#include <libcvpg/videoproc/sources/file.hpp>
+#include <libcvpg/videoproc/sources/rtsp.hpp>
 
 namespace cvpg::videoproc::pipelines {
 
 template<typename Source, typename FrameProcessor, typename InterframeProcessor, typename Sink>
-class file_to_file : public boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>
+class rtsp_to_file : public boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>
 {
 public:
-    file_to_file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
+    rtsp_to_file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
                  std::shared_ptr<Source> source,
                  std::shared_ptr<FrameProcessor> frame_processor,
                  std::shared_ptr<InterframeProcessor> interframe_processor,
                  std::shared_ptr<Sink> sink);
 
-    file_to_file(file_to_file const &) = delete;
-    file_to_file(file_to_file &&) = delete;
+    rtsp_to_file(rtsp_to_file const &) = delete;
+    rtsp_to_file(rtsp_to_file &&) = delete;
 
-    file_to_file & operator=(file_to_file const &) = delete;
-    file_to_file & operator=(file_to_file &&) = delete;
+    rtsp_to_file & operator=(rtsp_to_file const &) = delete;
+    rtsp_to_file & operator=(rtsp_to_file &&) = delete;
 
-    virtual ~file_to_file() = default;
+    virtual ~rtsp_to_file() = default;
 
     void start(parameters::uris uris, parameters::scripts scripts, parameters::callbacks callbacks);
 
@@ -62,19 +62,19 @@ private:
     std::map<std::size_t, std::vector<std::size_t> > m_stages_initialized;
 };
 
-// suppress automatic instantiation of file_to_file<> for some types
-extern template class file_to_file<sources::image_gray_8bit_file_proxy, processors::image_gray_8bit_frame_proxy, processors::image_gray_8bit_interframe_proxy, sinks::image_gray_8bit_file_proxy>;
-extern template class file_to_file<sources::image_rgb_8bit_file_proxy, processors::image_rgb_8bit_frame_proxy, processors::image_rgb_8bit_interframe_proxy, sinks::image_rgb_8bit_file_proxy>;
+// suppress automatic instantiation of rtsp_to_file<> for some types
+extern template class rtsp_to_file<sources::image_gray_8bit_rtsp_proxy, processors::image_gray_8bit_frame_proxy, processors::image_gray_8bit_interframe_proxy, sinks::image_gray_8bit_file_proxy>;
+extern template class rtsp_to_file<sources::image_rgb_8bit_rtsp_proxy, processors::image_rgb_8bit_frame_proxy, processors::image_rgb_8bit_interframe_proxy, sinks::image_rgb_8bit_file_proxy>;
 
 //
 // Hint: Boost.Asynchronous does not support templated proxies. Becaues the servant itself could
 // have template parameters we have to create a proxy for each wanted type.
 //
 
-struct image_gray_8bit_file_to_file_proxy : public boost::asynchronous::servant_proxy<
-                                                       image_gray_8bit_file_to_file_proxy,
-                                                       file_to_file<
-                                                           sources::image_gray_8bit_file_proxy,
+struct image_gray_8bit_rtsp_to_file_proxy : public boost::asynchronous::servant_proxy<
+                                                       image_gray_8bit_rtsp_to_file_proxy,
+                                                       rtsp_to_file<
+                                                           sources::image_gray_8bit_rtsp_proxy,
                                                            processors::image_gray_8bit_frame_proxy,
                                                            processors::image_gray_8bit_interframe_proxy,
                                                            sinks::image_gray_8bit_file_proxy
@@ -83,11 +83,11 @@ struct image_gray_8bit_file_to_file_proxy : public boost::asynchronous::servant_
                                                    >
 {
    template<typename... Args>
-   image_gray_8bit_file_to_file_proxy(Args... args)
+   image_gray_8bit_rtsp_to_file_proxy(Args... args)
        : boost::asynchronous::servant_proxy<
-             image_gray_8bit_file_to_file_proxy,
-             file_to_file<
-                 sources::image_gray_8bit_file_proxy,
+             image_gray_8bit_rtsp_to_file_proxy,
+             rtsp_to_file<
+                 sources::image_gray_8bit_rtsp_proxy,
                  processors::image_gray_8bit_frame_proxy,
                  processors::image_gray_8bit_interframe_proxy,
                  sinks::image_gray_8bit_file_proxy
@@ -99,10 +99,10 @@ struct image_gray_8bit_file_to_file_proxy : public boost::asynchronous::servant_
    BOOST_ASYNC_POST_MEMBER_LOG(start, "start", 1)
 };
 
-struct image_rgb_8bit_file_to_file_proxy : public boost::asynchronous::servant_proxy<
-                                                      image_rgb_8bit_file_to_file_proxy,
-                                                      file_to_file<
-                                                          sources::image_rgb_8bit_file_proxy,
+struct image_rgb_8bit_rtsp_to_file_proxy : public boost::asynchronous::servant_proxy<
+                                                      image_rgb_8bit_rtsp_to_file_proxy,
+                                                      rtsp_to_file<
+                                                          sources::image_rgb_8bit_rtsp_proxy,
                                                           processors::image_rgb_8bit_frame_proxy,
                                                           processors::image_rgb_8bit_interframe_proxy,
                                                           sinks::image_rgb_8bit_file_proxy
@@ -111,11 +111,11 @@ struct image_rgb_8bit_file_to_file_proxy : public boost::asynchronous::servant_p
                                                   >
 {
    template<typename... Args>
-   image_rgb_8bit_file_to_file_proxy(Args... args)
+   image_rgb_8bit_rtsp_to_file_proxy(Args... args)
        : boost::asynchronous::servant_proxy<
-             image_rgb_8bit_file_to_file_proxy,
-             file_to_file<
-                 sources::image_rgb_8bit_file_proxy,
+             image_rgb_8bit_rtsp_to_file_proxy,
+             rtsp_to_file<
+                 sources::image_rgb_8bit_rtsp_proxy,
                  processors::image_rgb_8bit_frame_proxy,
                  processors::image_rgb_8bit_interframe_proxy,
                  sinks::image_rgb_8bit_file_proxy
@@ -129,4 +129,4 @@ struct image_rgb_8bit_file_to_file_proxy : public boost::asynchronous::servant_p
 
 } // cvpg::videoproc::pipelines
 
-#endif // LIBCVPG_VIDEOPROC_PIPELINES_FILE_TO_FILE_HPP
+#endif // LIBCVPG_VIDEOPROC_PIPELINES_RTSP_TO_FILE_HPP
