@@ -34,10 +34,13 @@ At the moment only some easy algorithms at different categories are implemented.
 
 An application used to apply multiple filters stored at a script file to an image.
 
+### videoproc
+
+An application used to apply multiple filters stored at script files to all frames and inter-frames of a MP4 video file or a RTSP video stream.
+
 ## Planned
 
 * Vectorized (AVX 2) algorithms
-* Sample application applying scripts to video files or network streams (via FFmpeg)
 
 ## Building
 
