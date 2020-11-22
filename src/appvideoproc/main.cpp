@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <regex>
 #include <sstream>
 #include <string>
 
@@ -18,7 +19,9 @@
 #include <libcvpg/imageproc/scripting/image_processor.hpp>
 #include <libcvpg/imageproc/scripting/diagnostics/markdown_formatter.hpp>
 #include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
+#include <libcvpg/videoproc/pipelines/any_pipeline.hpp>
 #include <libcvpg/videoproc/pipelines/file_to_file.hpp>
+#include <libcvpg/videoproc/pipelines/rtsp_to_file.hpp>
 
 #include "progress_monitor.hpp"
 
@@ -36,7 +39,7 @@ int main(int argc, char * argv[])
     namespace po = boost::program_options;
 
     // general options
-    std::string input_filename;
+    std::string input_uri;
     std::string output_filename;
     std::string diagnostics_filename;
     std::uint32_t timeout = 60;
@@ -61,7 +64,7 @@ int main(int argc, char * argv[])
     po::options_description general_options("general options", window.ws_col, window.ws_col / 2);
     general_options.add_options()
         ("help,h", "show this help text")
-        ("input,i", po::value<std::string>(&input_filename), "filename of input video (MP4 format supported only)")
+        ("input,i", po::value<std::string>(&input_uri), "filename of input video (MP4 format supported only) or URI of RTSP stream")
         ("output,o", po::value<std::string>(&output_filename)->default_value("output.mp4"), "filename of output video")
         ("diagnostics", po::value<std::string>(&diagnostics_filename), "filename where programm diagnostics (in 'Markdown' format) will be generated")
         ("timeout", po::value<std::uint32_t>(&timeout)->default_value(10), "timeout in seconds the processing will be aborted")
@@ -101,7 +104,7 @@ int main(int argc, char * argv[])
 
     if (variables.count("input"))
     {
-        input_filename = variables["input"].as<std::string>();
+        input_uri = variables["input"].as<std::string>();
     }
     else
     {
@@ -160,6 +163,58 @@ int main(int argc, char * argv[])
     else
     {
         threads = std::thread::hardware_concurrency();
+    }
+
+    // determine if input is a video file or a video stream
+    enum class input_mode_types
+    {
+        undefined,
+        video,
+        stream
+    };
+
+    input_mode_types input_mode = input_mode_types::undefined;
+
+    // check if input is a video
+    {
+        std::regex rx(".*\\.mp4$");
+
+        if (std::regex_match(input_uri, rx))
+        {
+            input_mode = input_mode_types::video;
+        }
+    }
+
+    // check if input is a RTSP stream
+    {
+        std::regex rx("(rtsp?):\\/\\/(?:([^\\s@\\/]+?)[@])?([^\\s\\/:]+)(?:[:]([0-9]+))?(?:(\\/[^\\s?#]+)([?][^\\s#]+)?)?([#]\\S*)?");
+
+        if (std::regex_match(input_uri, rx))
+        {
+            input_mode = input_mode_types::stream;
+        }
+    }
+
+    if (!quiet)
+    {
+        std::cout << "Start processing ";
+
+        switch (input_mode)
+        {
+            case input_mode_types::undefined:
+                std::cout << "undefined input";
+                break;
+
+            case input_mode_types::video:
+                std::cout << "video file";
+                break;
+
+            case input_mode_types::stream:
+                std::cout << "RTSP stream";
+                break;
+        }
+
+        std::cout << " from '" << input_uri << "'" << std::endl;
     }
 
     // read frame script file
@@ -325,13 +380,6 @@ int main(int argc, char * argv[])
         }
     }
 
-    // create a video file reader
-    auto file_in_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
-                                 boost::asynchronous::single_thread_scheduler<
-                                     boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
-
-    auto file_reader = std::make_shared<cvpg::videoproc::sources::image_rgb_8bit_file_proxy>(file_in_scheduler, buffered_input_frames);
-
     // create a frame and interframe processor
     auto processors_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
                                     boost::asynchronous::single_thread_scheduler<
@@ -361,28 +409,69 @@ int main(int argc, char * argv[])
 
     auto promise_pipeline = std::make_shared<std::promise<std::string> >();
 
-    auto pipeline = std::make_shared<cvpg::videoproc::pipelines::image_rgb_8bit_file_to_file_proxy>(pipeline_scheduler, file_reader, frame_processor, interframe_processor, file_producer);
+    cvpg::videoproc::pipelines::any_pipeline pipeline;
 
-    pipeline->start(
-        input_filename,
-        output_filename,
-        frame_script,
-        interframe_script,
-        [promise_pipeline]()
+    switch (input_mode)
+    {
+        case input_mode_types::undefined:
+            break;
+
+        case input_mode_types::video:
         {
-            promise_pipeline->set_value("");
+            // create a video file reader
+            auto file_in_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
+                                        boost::asynchronous::single_thread_scheduler<
+                                            boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
+
+            auto file_reader = std::make_shared<cvpg::videoproc::sources::image_rgb_8bit_file_proxy>(file_in_scheduler, buffered_input_frames);
+
+            pipeline = std::make_shared<cvpg::videoproc::pipelines::image_rgb_8bit_file_to_file_proxy>(pipeline_scheduler, file_reader, frame_processor, interframe_processor, file_producer);
+            break;
+        }
+
+        case input_mode_types::stream:
+        {
+            // create a RTSP video stream reader
+            auto rtsp_in_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
+                                        boost::asynchronous::single_thread_scheduler<
+                                            boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
+
+            auto rtsp_reader = std::make_shared<cvpg::videoproc::sources::image_rgb_8bit_rtsp_proxy>(rtsp_in_scheduler, buffered_input_frames);
+
+            pipeline = std::make_shared<cvpg::videoproc::pipelines::image_rgb_8bit_rtsp_to_file_proxy>(pipeline_scheduler, rtsp_reader, frame_processor, interframe_processor, file_producer);
+            break;
+        }
+    }
+
+    (*pipeline).start(
+        // input and output URIs
+        {
+            input_uri,
+            output_filename
         },
-        [progress_monitor](std::size_t context_id, std::int64_t frames)
+        // scripts
         {
-            progress_monitor->init(context_id, frames);
+            frame_script,
+            interframe_script
         },
-        [promise_pipeline](std::size_t context_id, std::string error)
+        // callbacks
         {
-            promise_pipeline->set_value(std::move(error));
-        },
-        [progress_monitor](std::size_t context_id, cvpg::videoproc::update_indicator update) mutable
-        {
-            progress_monitor->update(context_id, std::move(update));
+            [promise_pipeline]()
+            {
+                promise_pipeline->set_value("");
+            },
+            [progress_monitor](std::size_t context_id, std::int64_t frames)
+            {
+                progress_monitor->init(context_id, frames);
+            },
+            [promise_pipeline](std::size_t context_id, std::string error)
+            {
+                promise_pipeline->set_value(std::move(error));
+            },
+            [progress_monitor](std::size_t context_id, cvpg::videoproc::update_indicator update) mutable
+            {
+                progress_monitor->update(context_id, std::move(update));
+            }
         }
     );
 
