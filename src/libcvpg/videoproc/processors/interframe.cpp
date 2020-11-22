@@ -101,24 +101,21 @@ template<typename Image> void interframe<Image>::init(std::size_t context_id,
         },
         [this, context_id, context](std::vector<videoproc::frame<Image> > frames, std::function<void()> deliver_done_callback)
         {
-            if (frames.empty())
+            if (!frames.empty())
             {
-                deliver_done_callback();
-                return;
+                context->status.next_waiting = 0;
+
+                auto packet_number = context->status.packet_counter;
+
+                videoproc::packet<videoproc::frame<Image> > packet(packet_number);
+
+                for (auto & f : frames)
+                {
+                    packet.add_frame(std::move(f));
+                }
+
+                context->callbacks.deliver_packet(context_id, std::move(packet));
             }
-
-            context->status.next_waiting = 0;
-
-            auto packet_number = context->status.packet_counter;
-
-            videoproc::packet<videoproc::frame<Image> > packet(packet_number);
-
-            for (auto & f : frames)
-            {
-                packet.add_frame(std::move(f));
-            }
-
-            context->callbacks.deliver_packet(context_id, std::move(packet));
 
             deliver_done_callback();
         },
