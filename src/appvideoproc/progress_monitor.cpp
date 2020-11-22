@@ -105,40 +105,56 @@ void progress_monitor::print_at_console(std::size_t context_id)
     {
         auto & context = it->second;
 
-        auto print_progress_bar =
-            [](std::string title, double progress)
-            {
-                // TODO make the dynamic depending on current width of console
-                const int bar_width = 70;
-
-                std::cout << title << ": [";
-
-                int pos = bar_width * progress;
-
-                for (int i = 0; i < bar_width; ++i)
-                {
-                    if (i < pos)
-                    {
-                        std::cout << "=";
-                    }
-                    else if (i == pos)
-                    {
-                        std::cout << ">";
-                    }
-                    else
-                    {
-                        std::cout << " ";
-                    }
-                }
-
-                std::cout << "] " << static_cast<int>(progress * 100.0) << " %\r" << std::flush << std::endl;
-            };
-
         std::cout << "\e[A\e[A\e[A\e[A" << std::flush;
-        
-        print_progress_bar("- load  ", static_cast<double>(context->frames_load_done + context->frames_load_failed) / static_cast<double>(context->frames_total));
-        print_progress_bar("- frames", static_cast<double>(context->frames_process_done + context->frames_process_failed) / static_cast<double>(context->frames_total - context->frames_load_failed));
-        print_progress_bar("- inters", static_cast<double>(context->interframes_process_done + context->interframes_process_failed) / static_cast<double>(context->frames_total - context->frames_load_failed - 1));
-        print_progress_bar("- save  ", static_cast<double>(context->frames_save_done + context->frames_save_failed) / static_cast<double>(context->frames_total - context->frames_load_failed - 1));
+
+        if (context->frames_total > 0)
+        {
+            auto print_progress_bar =
+                [](std::string title, double progress)
+                {
+                    // TODO make the dynamic depending on current width of console
+                    const int bar_width = 70;
+
+                    std::cout << title << ": [";
+
+                    int pos = bar_width * progress;
+
+                    for (int i = 0; i < bar_width; ++i)
+                    {
+                        if (i < pos)
+                        {
+                            std::cout << "=";
+                        }
+                        else if (i == pos)
+                        {
+                            std::cout << ">";
+                        }
+                        else
+                        {
+                            std::cout << " ";
+                        }
+                    }
+
+                    std::cout << "] " << static_cast<int>(progress * 100.0) << " %\r" << std::flush << std::endl;
+                };
+
+            print_progress_bar("- load  ", static_cast<double>(context->frames_load_done + context->frames_load_failed) / static_cast<double>(context->frames_total));
+            print_progress_bar("- frames", static_cast<double>(context->frames_process_done + context->frames_process_failed) / static_cast<double>(context->frames_total - context->frames_load_failed));
+            print_progress_bar("- inters", static_cast<double>(context->interframes_process_done + context->interframes_process_failed) / static_cast<double>(context->frames_total - context->frames_load_failed - 1));
+            print_progress_bar("- save  ", static_cast<double>(context->frames_save_done + context->frames_save_failed) / static_cast<double>(context->frames_total - context->frames_load_failed - 1));
+        }
+        else
+        {
+            auto print_update =
+                [](std::string title, std::size_t amount)
+                {
+                    std::cout << title << ": " << amount << std::endl;
+                };
+
+            print_update("- load  ", (context->frames_load_done + context->frames_load_failed));
+            print_update("- frames", (context->frames_process_done + context->frames_process_failed));
+            print_update("- inters", (context->interframes_process_done + context->interframes_process_failed));
+            print_update("- save  ", (context->frames_save_done + context->frames_save_failed));
+        }
     }
 }
