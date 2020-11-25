@@ -52,10 +52,12 @@ set(headers
     imageproc/scripting/detail/single_node.hpp
     imageproc/scripting/diagnostics/markdown_formatter.hpp
     imageproc/scripting/diagnostics/typedefs.hpp
+    videoproc/any_stage.hpp
     videoproc/frame.hpp
     videoproc/packet.hpp
     videoproc/stage_data_handler.hpp
     videoproc/stage_fsm.hpp
+    videoproc/stage_parameters.hpp
     videoproc/update_indicator.hpp
     videoproc/pipelines/any_pipeline.hpp
     videoproc/pipelines/file_to_file.hpp

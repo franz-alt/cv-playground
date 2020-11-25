@@ -140,23 +140,16 @@ template<typename Image> rtsp<Image>::rtsp(boost::asynchronous::any_weak_schedul
     , m_contexts()
 {}
 
-template<typename Image> void rtsp<Image>::init(std::size_t context_id,
-                                                std::string uri,
-                                                std::function<void(std::size_t, std::int64_t)> init_done_callback,
-                                                std::function<void(std::size_t, std::map<std::string, std::any>)> params_callback,
-                                                std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> packet_callback,
-                                                std::function<void(std::size_t)> done_callback,
-                                                std::function<void(std::size_t, std::string)> failed_callback,
-                                                std::function<void(std::size_t, update_indicator)> update_indicator_callback)
+template<typename Image> void rtsp<Image>::init(std::size_t context_id, std::string uri, stage_callbacks<Image> callbacks)
 {
     // create new processing context
     auto context = std::make_shared<processing_context>();
     context->video.uri = std::move(uri);
-    context->callbacks.params = std::move(params_callback);
-    context->callbacks.deliver_packet = std::move(packet_callback);
-    context->callbacks.finished = std::move(done_callback);
-    context->callbacks.failed = std::move(failed_callback);
-    context->callbacks.update_indicator = std::move(update_indicator_callback);
+    context->callbacks.params = std::move(callbacks.parameters);
+    context->callbacks.deliver_packet = std::move(callbacks.deliver);
+    context->callbacks.finished = std::move(callbacks.finished);
+    context->callbacks.failed = std::move(callbacks.failed);
+    context->callbacks.update_indicator = std::move(callbacks.update);
 
     context->sdh = std::make_shared<stage_data_handler<videoproc::frame<Image> > >(
         "sources::rtsp",
@@ -328,7 +321,7 @@ template<typename Image> void rtsp<Image>::init(std::size_t context_id,
     }
 
     context->fsm->on_done(videoproc::stage_fsm::state_type::initializing,
-                          [context_id, frames = context->video.frames, callback = std::move(init_done_callback)]()
+                          [context_id, frames = context->video.frames, callback = std::move(callbacks.initialized)]()
                           {
                               callback(context_id, frames);
                           });
@@ -345,6 +338,11 @@ template<typename Image> void rtsp<Image>::init(std::size_t context_id,
     context->callbacks.params(context_id, std::move(params));
 
     context->fsm->process(videoproc::stage_fsm::event_type::initialize_done);
+}
+
+template<typename Image> void rtsp<Image>::params(std::size_t /*context_id*/, std::map<std::string, std::any> /*p*/)
+{
+    // not needed here!
 }
 
 template<typename Image> void rtsp<Image>::start(std::size_t context_id)
@@ -476,6 +474,16 @@ template<typename Image> void rtsp<Image>::start(std::size_t context_id)
             }
         }
     }
+}
+
+template<typename Image> void rtsp<Image>::finish(std::size_t /*context_id*/)
+{
+    // no finish needed here!
+}
+
+template<typename Image> void rtsp<Image>::process(std::size_t /*context_id*/, videoproc::packet<videoproc::frame<Image> > /*packet*/)
+{
+    // no process needed here!
 }
 
 template<typename Image> void rtsp<Image>::next(std::size_t context_id, std::size_t max_new_data)

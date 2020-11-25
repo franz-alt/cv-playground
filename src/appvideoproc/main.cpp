@@ -19,6 +19,7 @@
 #include <libcvpg/imageproc/scripting/image_processor.hpp>
 #include <libcvpg/imageproc/scripting/diagnostics/markdown_formatter.hpp>
 #include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
+#include <libcvpg/videoproc/any_stage.hpp>
 #include <libcvpg/videoproc/pipelines/any_pipeline.hpp>
 #include <libcvpg/videoproc/pipelines/file_to_file.hpp>
 #include <libcvpg/videoproc/pipelines/rtsp_to_file.hpp>
@@ -380,20 +381,25 @@ int main(int argc, char * argv[])
         }
     }
 
+    // create a scheduler for the source stage
+    auto source_stage_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
+                                      boost::asynchronous::single_thread_scheduler<
+                                          boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
+
     // create a frame and interframe processor
     auto processors_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
                                     boost::asynchronous::single_thread_scheduler<
                                         boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("processors"));
 
-    auto frame_processor = std::make_shared<cvpg::videoproc::processors::image_rgb_8bit_frame_proxy>(processors_scheduler, buffered_processing_frames, image_processor);
-    auto interframe_processor = std::make_shared<cvpg::videoproc::processors::image_rgb_8bit_interframe_proxy>(processors_scheduler, buffered_processing_frames, image_processor);
+    cvpg::videoproc::any_stage<cvpg::image_rgb_8bit> frame_processor = std::make_shared<cvpg::videoproc::processors::image_rgb_8bit_frame_proxy>(processors_scheduler, buffered_processing_frames, image_processor);
+    cvpg::videoproc::any_stage<cvpg::image_rgb_8bit> interframe_processor = std::make_shared<cvpg::videoproc::processors::image_rgb_8bit_interframe_proxy>(processors_scheduler, buffered_processing_frames, image_processor);
 
     // create a video file producer
     auto file_out_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
                                   boost::asynchronous::single_thread_scheduler<
                                       boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
 
-    auto file_producer = std::make_shared<cvpg::videoproc::sinks::image_rgb_8bit_file_proxy>(file_out_scheduler, buffered_output_frames);
+    cvpg::videoproc::any_stage<cvpg::image_rgb_8bit> file_producer = std::make_shared<cvpg::videoproc::sinks::image_rgb_8bit_file_proxy>(file_out_scheduler, buffered_output_frames);
 
     // create an progress monitor
     auto progress_monitor_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
@@ -409,6 +415,8 @@ int main(int argc, char * argv[])
 
     auto promise_pipeline = std::make_shared<std::promise<std::string> >();
 
+    cvpg::videoproc::any_stage<cvpg::image_rgb_8bit> source_stage;
+
     cvpg::videoproc::pipelines::any_pipeline pipeline;
 
     switch (input_mode)
@@ -418,27 +426,15 @@ int main(int argc, char * argv[])
 
         case input_mode_types::video:
         {
-            // create a video file reader
-            auto file_in_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
-                                        boost::asynchronous::single_thread_scheduler<
-                                            boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
-
-            auto file_reader = std::make_shared<cvpg::videoproc::sources::image_rgb_8bit_file_proxy>(file_in_scheduler, buffered_input_frames);
-
-            pipeline = std::make_shared<cvpg::videoproc::pipelines::image_rgb_8bit_file_to_file_proxy>(pipeline_scheduler, file_reader, frame_processor, interframe_processor, file_producer);
+            source_stage = std::make_shared<cvpg::videoproc::sources::image_rgb_8bit_file_proxy>(source_stage_scheduler, buffered_input_frames);
+            pipeline = std::make_shared<cvpg::videoproc::pipelines::image_rgb_8bit_file_to_file_proxy>(pipeline_scheduler, source_stage, frame_processor, interframe_processor, file_producer);
             break;
         }
 
         case input_mode_types::stream:
         {
-            // create a RTSP video stream reader
-            auto rtsp_in_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
-                                        boost::asynchronous::single_thread_scheduler<
-                                            boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
-
-            auto rtsp_reader = std::make_shared<cvpg::videoproc::sources::image_rgb_8bit_rtsp_proxy>(rtsp_in_scheduler, buffered_input_frames);
-
-            pipeline = std::make_shared<cvpg::videoproc::pipelines::image_rgb_8bit_rtsp_to_file_proxy>(pipeline_scheduler, rtsp_reader, frame_processor, interframe_processor, file_producer);
+            source_stage = std::make_shared<cvpg::videoproc::sources::image_rgb_8bit_rtsp_proxy>(source_stage_scheduler, buffered_input_frames);
+            pipeline = std::make_shared<cvpg::videoproc::pipelines::image_rgb_8bit_rtsp_to_file_proxy>(pipeline_scheduler, source_stage, frame_processor, interframe_processor, file_producer);
             break;
         }
     }

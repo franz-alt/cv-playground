@@ -14,6 +14,7 @@
 #include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
 #include <libcvpg/videoproc/frame.hpp>
 #include <libcvpg/videoproc/packet.hpp>
+#include <libcvpg/videoproc/stage_parameters.hpp>
 #include <libcvpg/videoproc/update_indicator.hpp>
 
 namespace cvpg::videoproc::sinks {
@@ -35,13 +36,7 @@ public:
 
     virtual ~file() = default;
 
-    void init(std::size_t context_id,
-              std::string uri,
-              std::function<void(std::size_t)> init_done_callback,
-              std::function<void(std::size_t, std::size_t)> next_callback,
-              std::function<void(std::size_t)> done_callback,
-              std::function<void(std::size_t, std::string)> failed_callback,
-              std::function<void(std::size_t, update_indicator)> update_indicator_callback);
+    void init(std::size_t context_id, std::string uri, stage_callbacks<Image> callbacks);
 
     void params(std::size_t context_id, std::map<std::string, std::any> p);
 
@@ -50,6 +45,8 @@ public:
     void finish(std::size_t context_id);
 
     void process(std::size_t context_id, videoproc::packet<videoproc::frame<Image> > packet);
+
+    void next(std::size_t context_id, std::size_t max_new_data);
 
     struct processing_context; // TODO make this private
 
@@ -83,6 +80,7 @@ struct image_gray_8bit_file_proxy : public boost::asynchronous::servant_proxy<im
     BOOST_ASYNC_POST_MEMBER_LOG(start, "start", 1)
     BOOST_ASYNC_POST_MEMBER_LOG(finish, "finish", 1)
     BOOST_ASYNC_POST_MEMBER_LOG(process, "process", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(next, "next", 1)
 };
 
 struct image_rgb_8bit_file_proxy : public boost::asynchronous::servant_proxy<image_rgb_8bit_file_proxy, file<cvpg::image_rgb_8bit>, imageproc::scripting::diagnostics::servant_job>
@@ -97,6 +95,7 @@ struct image_rgb_8bit_file_proxy : public boost::asynchronous::servant_proxy<ima
     BOOST_ASYNC_POST_MEMBER_LOG(start, "start", 1)
     BOOST_ASYNC_POST_MEMBER_LOG(finish, "finish", 1)
     BOOST_ASYNC_POST_MEMBER_LOG(process, "process", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(next, "next", 1)
 };
 
 } // namespace cvpg::videoproc::sinks

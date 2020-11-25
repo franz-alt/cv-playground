@@ -359,21 +359,15 @@ template<typename Image> file<Image>::file(boost::asynchronous::any_weak_schedul
     , m_contexts()
 {}
 
-template<typename Image> void file<Image>::init(std::size_t context_id,
-                                                std::string uri,
-                                                std::function<void(std::size_t)> init_done_callback,
-                                                std::function<void(std::size_t, std::size_t)> next_callback,
-                                                std::function<void(std::size_t)> done_callback,
-                                                std::function<void(std::size_t, std::string)> failed_callback,
-                                                std::function<void(std::size_t, update_indicator)> update_indicator_callback)
+template<typename Image> void file<Image>::init(std::size_t context_id, std::string uri, stage_callbacks<Image> callbacks)
 {
     // create new processing context
     auto context = std::make_shared<processing_context>();
     context->video.uri = std::move(uri);
-    context->callbacks.next = std::move(next_callback);
-    context->callbacks.finished = std::move(done_callback);
-    context->callbacks.failed = std::move(failed_callback);
-    context->callbacks.update_indicator = std::move(update_indicator_callback);
+    context->callbacks.next = std::move(callbacks.next);
+    context->callbacks.finished = std::move(callbacks.finished);
+    context->callbacks.failed = std::move(callbacks.failed);
+    context->callbacks.update_indicator = std::move(callbacks.update);
     context->buffer.data.reserve(m_max_frames_write_buffer);
 
     context->sdh = std::make_shared<stage_data_handler<videoproc::frame<Image> > >(
@@ -559,7 +553,7 @@ template<typename Image> void file<Image>::init(std::size_t context_id,
         throw cvpg::exception("could not allocate an encoding context");
     }
 
-    init_done_callback(context_id);
+    callbacks.initialized(context_id, 0);
 }
 
 template<typename Image> void file<Image>::params(std::size_t context_id, std::map<std::string, std::any> p)
@@ -647,6 +641,11 @@ template<typename Image> void file<Image>::process(std::size_t context_id, video
 
         context->sdh->add(packet.move_frames());
     }
+}
+
+template<typename Image> void file<Image>::next(std::size_t /*context_id*/, std::size_t /*max_new_data*/)
+{
+    // no next at sink
 }
 
 template<typename Image> void file<Image>::try_flush_buffer(std::size_t context_id)

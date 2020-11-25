@@ -3,7 +3,6 @@
 
 #include <functional>
 #include <map>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -16,6 +15,7 @@
 #include <libcvpg/core/image.hpp>
 #include <libcvpg/imageproc/scripting/image_processor.hpp>
 #include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
+#include <libcvpg/videoproc/any_stage.hpp>
 #include <libcvpg/videoproc/frame.hpp>
 #include <libcvpg/videoproc/packet.hpp>
 #include <libcvpg/videoproc/update_indicator.hpp>
@@ -32,10 +32,10 @@ class file_to_file : public boost::asynchronous::trackable_servant<imageproc::sc
 {
 public:
     file_to_file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
-                 std::shared_ptr<Source> source,
-                 std::shared_ptr<FrameProcessor> frame_processor,
-                 std::shared_ptr<InterframeProcessor> interframe_processor,
-                 std::shared_ptr<Sink> sink);
+                 Source source,
+                 FrameProcessor frame_processor,
+                 InterframeProcessor interframe_processor,
+                 Sink sink);
 
     file_to_file(file_to_file const &) = delete;
     file_to_file(file_to_file &&) = delete;
@@ -50,12 +50,12 @@ public:
 private:
     void stage_initialized(std::size_t context_id, std::size_t stage_id);
 
-    std::shared_ptr<Source> m_source;
+    Source m_source;
 
-    std::shared_ptr<FrameProcessor> m_frame_processor;
-    std::shared_ptr<InterframeProcessor> m_interframe_processor;
+    FrameProcessor m_frame_processor;
+    InterframeProcessor m_interframe_processor;
 
-    std::shared_ptr<Sink> m_sink;
+    Sink m_sink;
 
     std::size_t m_context_counter;
 
@@ -63,8 +63,8 @@ private:
 };
 
 // suppress automatic instantiation of file_to_file<> for some types
-extern template class file_to_file<sources::image_gray_8bit_file_proxy, processors::image_gray_8bit_frame_proxy, processors::image_gray_8bit_interframe_proxy, sinks::image_gray_8bit_file_proxy>;
-extern template class file_to_file<sources::image_rgb_8bit_file_proxy, processors::image_rgb_8bit_frame_proxy, processors::image_rgb_8bit_interframe_proxy, sinks::image_rgb_8bit_file_proxy>;
+extern template class file_to_file<any_stage<image_gray_8bit>, any_stage<image_gray_8bit>, any_stage<image_gray_8bit>, any_stage<image_gray_8bit> >;
+extern template class file_to_file<any_stage<image_rgb_8bit>, any_stage<image_rgb_8bit>, any_stage<image_rgb_8bit>, any_stage<image_rgb_8bit> >;
 
 //
 // Hint: Boost.Asynchronous does not support templated proxies. Becaues the servant itself could
@@ -74,10 +74,10 @@ extern template class file_to_file<sources::image_rgb_8bit_file_proxy, processor
 struct image_gray_8bit_file_to_file_proxy : public boost::asynchronous::servant_proxy<
                                                        image_gray_8bit_file_to_file_proxy,
                                                        file_to_file<
-                                                           sources::image_gray_8bit_file_proxy,
-                                                           processors::image_gray_8bit_frame_proxy,
-                                                           processors::image_gray_8bit_interframe_proxy,
-                                                           sinks::image_gray_8bit_file_proxy
+                                                           cvpg::videoproc::any_stage<cvpg::image_gray_8bit>,
+                                                           cvpg::videoproc::any_stage<cvpg::image_gray_8bit>,
+                                                           cvpg::videoproc::any_stage<cvpg::image_gray_8bit>,
+                                                           cvpg::videoproc::any_stage<cvpg::image_gray_8bit>
                                                        >,
                                                        imageproc::scripting::diagnostics::servant_job
                                                    >
@@ -87,10 +87,10 @@ struct image_gray_8bit_file_to_file_proxy : public boost::asynchronous::servant_
        : boost::asynchronous::servant_proxy<
              image_gray_8bit_file_to_file_proxy,
              file_to_file<
-                 sources::image_gray_8bit_file_proxy,
-                 processors::image_gray_8bit_frame_proxy,
-                 processors::image_gray_8bit_interframe_proxy,
-                 sinks::image_gray_8bit_file_proxy
+                 cvpg::videoproc::any_stage<cvpg::image_gray_8bit>,
+                 cvpg::videoproc::any_stage<cvpg::image_gray_8bit>,
+                 cvpg::videoproc::any_stage<cvpg::image_gray_8bit>,
+                 cvpg::videoproc::any_stage<cvpg::image_gray_8bit>
              >,
              imageproc::scripting::diagnostics::servant_job
          >(std::forward<Args>(args)...)
@@ -102,10 +102,10 @@ struct image_gray_8bit_file_to_file_proxy : public boost::asynchronous::servant_
 struct image_rgb_8bit_file_to_file_proxy : public boost::asynchronous::servant_proxy<
                                                       image_rgb_8bit_file_to_file_proxy,
                                                       file_to_file<
-                                                          sources::image_rgb_8bit_file_proxy,
-                                                          processors::image_rgb_8bit_frame_proxy,
-                                                          processors::image_rgb_8bit_interframe_proxy,
-                                                          sinks::image_rgb_8bit_file_proxy
+                                                          cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>,
+                                                          cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>,
+                                                          cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>,
+                                                          cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>
                                                       >,
                                                       imageproc::scripting::diagnostics::servant_job
                                                   >
@@ -115,10 +115,10 @@ struct image_rgb_8bit_file_to_file_proxy : public boost::asynchronous::servant_p
        : boost::asynchronous::servant_proxy<
              image_rgb_8bit_file_to_file_proxy,
              file_to_file<
-                 sources::image_rgb_8bit_file_proxy,
-                 processors::image_rgb_8bit_frame_proxy,
-                 processors::image_rgb_8bit_interframe_proxy,
-                 sinks::image_rgb_8bit_file_proxy
+                 cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>,
+                 cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>,
+                 cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>,
+                 cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>
              >,
              imageproc::scripting::diagnostics::servant_job
          >(std::forward<Args>(args)...)

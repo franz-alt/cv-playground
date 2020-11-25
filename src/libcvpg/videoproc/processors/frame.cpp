@@ -50,24 +50,16 @@ template<typename Image> frame<Image>::frame(boost::asynchronous::any_weak_sched
     , m_contexts()
 {}
 
-template<typename Image> void frame<Image>::init(std::size_t context_id,
-                                                 std::string script,
-                                                 std::function<void(std::size_t)> init_done_callback,
-                                                 std::function<void(std::size_t, std::map<std::string, std::any>)> params_callback,
-                                                 std::function<void(std::size_t, videoproc::packet<videoproc::frame<Image> >)> packet_callback,
-                                                 std::function<void(std::size_t, std::size_t)> next_callback,
-                                                 std::function<void(std::size_t)> done_callback,
-                                                 std::function<void(std::size_t, std::string)> failed_callback,
-                                                 std::function<void(std::size_t, update_indicator)> update_indicator_callback)
+template<typename Image> void frame<Image>::init(std::size_t context_id, std::string script, stage_callbacks<Image> callbacks)
 {
     // create new processing context
     auto context = std::make_shared<processing_context>();
-    context->callbacks.params = std::move(params_callback);
-    context->callbacks.deliver_packet = std::move(packet_callback);
-    context->callbacks.next = std::move(next_callback);
-    context->callbacks.finished = std::move(done_callback);
-    context->callbacks.failed = std::move(failed_callback);
-    context->callbacks.update_indicator = std::move(update_indicator_callback);
+    context->callbacks.params = std::move(callbacks.parameters);
+    context->callbacks.deliver_packet = std::move(callbacks.deliver);
+    context->callbacks.next = std::move(callbacks.next);
+    context->callbacks.finished = std::move(callbacks.finished);
+    context->callbacks.failed = std::move(callbacks.failed);
+    context->callbacks.update_indicator = std::move(callbacks.update);
 
     context->sdh_out = std::make_shared<stage_data_handler<videoproc::frame<Image> > >(
         "frame",
@@ -141,7 +133,7 @@ template<typename Image> void frame<Image>::init(std::size_t context_id,
     );
 
     boost::asynchronous::create_continuation_job<imageproc::scripting::diagnostics::diag_type>(
-        [image_processor = m_image_processor, context, context_id, init_done_callback](auto cont_res) mutable
+        [image_processor = m_image_processor, context, context_id, init_done_callback = std::move(callbacks.initialized)](auto cont_res) mutable
         {
             try
             {
@@ -151,7 +143,7 @@ template<typename Image> void frame<Image>::init(std::size_t context_id,
 
                 if (result.error.empty())
                 {
-                    init_done_callback(context_id);
+                    init_done_callback(context_id, 0);
                 }
                 else
                 {
