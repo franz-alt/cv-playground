@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <string>
+#include <vector>
 
 #include <boost/asynchronous/detail/any_pointer.hpp>
 
@@ -26,7 +27,7 @@ typedef boost::mpl::vector5<
     boost::type_erasure::same_type<boost::asynchronous::pointer<>::element_type, boost::type_erasure::_a>,
     boost::type_erasure::relaxed,
     boost::type_erasure::copy_constructible<>,
-    pipeline_has_start<void(parameters::uris, parameters::scripts, parameters::callbacks), boost::type_erasure::_a>
+    pipeline_has_start<void(std::vector<std::string>, parameters::callbacks), boost::type_erasure::_a>
 > any_pipeline_concept;
 
 typedef boost::type_erasure::any<any_pipeline_concept> any_pipeline;

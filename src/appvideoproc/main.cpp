@@ -401,7 +401,7 @@ int main(int argc, char * argv[])
 
     cvpg::videoproc::any_stage<cvpg::image_rgb_8bit> file_producer = std::make_shared<cvpg::videoproc::sinks::image_rgb_8bit_file_proxy>(file_out_scheduler, buffered_output_frames);
 
-    // create an progress monitor
+    // create a progress monitor
     auto progress_monitor_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
                                           boost::asynchronous::single_thread_scheduler<
                                               boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >();
@@ -440,15 +440,12 @@ int main(int argc, char * argv[])
     }
 
     (*pipeline).start(
-        // input and output URIs
+        // stage parameters
         {
-            input_uri,
-            output_filename
-        },
-        // scripts
-        {
-            frame_script,
-            interframe_script
+            input_uri,              // source stage
+            frame_script,           // frame stage
+            interframe_script,      // interframe stage
+            output_filename         // sink stage
         },
         // callbacks
         {
@@ -460,7 +457,7 @@ int main(int argc, char * argv[])
             {
                 progress_monitor->init(context_id, frames);
             },
-            [promise_pipeline](std::size_t context_id, std::string error)
+            [promise_pipeline](std::size_t /*context_id*/, std::string error)
             {
                 promise_pipeline->set_value(std::move(error));
             },

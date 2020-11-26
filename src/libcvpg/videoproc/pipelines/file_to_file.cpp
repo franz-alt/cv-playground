@@ -1,240 +1,118 @@
 #include <libcvpg/videoproc/pipelines/file_to_file.hpp>
 
+#include <boost/range/adaptor/reversed.hpp>
+
 #include <libcvpg/videoproc/stage_parameters.hpp>
 #include <libcvpg/videoproc/update_indicator.hpp>
 
 namespace cvpg::videoproc::pipelines {
 
-template<typename Source, typename FrameProcessor, typename InterframeProcessor, typename Sink>
-file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::file_to_file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
-                                                                              Source source,
-                                                                              FrameProcessor frame_processor,
-                                                                              InterframeProcessor interframe_processor,
-                                                                              Sink sink)
-    : boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>(scheduler)
-    , m_source(source)
-    , m_frame_processor(frame_processor)
-    , m_interframe_processor(interframe_processor)
-    , m_sink(sink)
-    , m_context_counter(0)
-{}
-
-template<typename Source, typename FrameProcessor, typename InterframeProcessor, typename Sink>
-void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::start(pipelines::parameters::uris uris, pipelines::parameters::scripts scripts, pipelines::parameters::callbacks callbacks)
+template<typename Stage>
+void file_to_file<Stage>::start(std::vector<std::string> stage_parameters, pipelines::parameters::callbacks callbacks)
 {
+    if (stage_parameters.size() != m_stages.size())
+    {
+        // TODO handle error
+    }
+
     auto context_id = ++m_context_counter;
 
-    (*m_source).init(
-        context_id,
-        std::move(uris.input),
-        // callbacks
-        stage_callbacks<typename Source::image_type>(
-        {
-            // init done callback
-            make_safe_callback(
-                [this, init_indicator_callback = callbacks.init](std::size_t context_id,  std::int64_t frames)
-                {
-                    init_indicator_callback(context_id, frames);
+    for (std::size_t i = 0; i < m_stages.size(); ++i)
+    {
+        auto & current_stage = m_stages[i];
 
-                    stage_initialized(context_id, 1);
-                },
-                "pipeline::init_done_callback",
-                1
-            ),
-            // params callback
-            [frame_processor = m_frame_processor](std::size_t context_id, std::map<std::string, std::any> params)
-            {
-                (*frame_processor).params(context_id, std::move(params));
-            },
-            // packet callback
-            [frame_processor = m_frame_processor](std::size_t context_id, auto packet)
-            {
-                (*frame_processor).process(context_id, std::move(packet));
-            },
-            // next callback
-            [](std::size_t /*context_id*/, std::size_t /*free*/)
-            {
-                // no next at source!
-            },
-            // done/finish callback
-            [frame_processor = m_frame_processor](std::size_t context_id)
-            {
-                (*frame_processor).finish(context_id);
-            },
-            // failed callback
-            [failed_indicator_callback = callbacks.failed](std::size_t context_id, std::string error)
-            {
-                failed_indicator_callback(context_id, std::move(error));
-            },
-            // update indicator
-            [update_indicator_callback = callbacks.update](std::size_t context_id, update_indicator update)
-            {
-                update_indicator_callback(context_id, std::move(update));
-            }
-        })
-    );
+        const bool has_prev_stage = i > 0;
+        const bool has_next_stage = i < (m_stages.size() - 1);
 
-    (*m_frame_processor).init(
-        context_id,
-        std::move(scripts.frame),
-        // callbacks
-        stage_callbacks<typename Source::image_type>(
-        {
-            // init done callback
-            make_safe_callback(
-                [this](std::size_t context_id, std::int64_t /*frames*/)
-                {
-                    stage_initialized(context_id, 2);
-                },
-                "pipeline::init_done_callback",
-                1
-            ),
-            // params callback
-            [interframe_processor = m_interframe_processor](std::size_t context_id, std::map<std::string, std::any> params)
+        (*current_stage).init(
+            context_id,
+            stage_parameters[i],
+            stage_callbacks<typename Stage::image_type>(
             {
-                (*interframe_processor).params(context_id, std::move(params));
-            },
-            // packet done callback
-            [interframe_processor = m_interframe_processor](std::size_t context_id, auto packet)
-            {
-                (*interframe_processor).process(context_id, std::move(packet));
-            },
-            // next callback
-            [source = m_source](std::size_t context_id, std::size_t max_new_data)
-            {
-                (*source).next(context_id, max_new_data);
-            },
-            // done/finish callback
-            [interframe_processor = m_interframe_processor](std::size_t context_id)
-            {
-                (*interframe_processor).finish(context_id);
-            },
-            // failed callback
-            [failed_indicator_callback = callbacks.failed](std::size_t context_id, std::string error)
-            {
-                failed_indicator_callback(context_id, std::move(error));
-            },
-            // update indicator
-            [update_indicator_callback = callbacks.update](std::size_t context_id, update_indicator update)
-            {
-                update_indicator_callback(context_id, std::move(update));
-            }
-        })
-    );
+                // init callback
+                make_safe_callback(
+                    [this, i, callback = (i == 0) ? callbacks.init : [](std::size_t, std::int64_t){}](std::size_t context_id, std::int64_t frames)
+                    {
+                        callback(context_id, frames);
 
-    (*m_interframe_processor).init(
-        context_id,
-        std::move(scripts.interframe),
-        // callbacks
-        stage_callbacks<typename Source::image_type>(
-        {
-            // init done callback
-            make_safe_callback(
-                [this](std::size_t context_id, std::int64_t /*frames*/)
+                        stage_initialized(context_id, i + 1);
+                    },
+                    "file_to_file::init_done_callback",
+                    1
+                ),
+                // parameters callback
+                [next_stage = has_next_stage ? &(m_stages[i + 1]) : nullptr](std::size_t context_id, std::map<std::string, std::any> params)
                 {
-                    stage_initialized(context_id, 3);
+                    if (!!next_stage)
+                    {
+                        (**next_stage).params(context_id, std::move(params));
+                    }
                 },
-                "pipeline::init_done_callback",
-                1
-            ),
-            // params callback
-            [sink = m_sink](std::size_t context_id, std::map<std::string, std::any> params)
-            {
-                (*sink).params(context_id, std::move(params));
-            },
-            // packet done callback
-            [sink = m_sink](std::size_t context_id, auto packet)
-            {
-                (*sink).process(context_id, std::move(packet));
-            },
-            // next callback
-            [frame_processor = m_frame_processor](std::size_t context_id, std::size_t max_new_data)
-            {
-                (*frame_processor).next(context_id, max_new_data);
-            },
-            // done/finish callback
-            [sink = m_sink](std::size_t context_id)
-            {
-                (*sink).finish(context_id);
-            },
-            // failed callback
-            [failed_indicator_callback = callbacks.failed](std::size_t context_id, std::string error)
-            {
-                failed_indicator_callback(context_id, std::move(error));
-            },
-            // update indicator
-            [update_indicator_callback = callbacks.update](std::size_t context_id, update_indicator update)
-            {
-                update_indicator_callback(context_id, std::move(update));
-            }
-        })
-    );
-
-    (*m_sink).init(
-        context_id,
-        std::move(uris.output),
-        // callbacks
-        stage_callbacks<typename Source::image_type>(
-        {
-            // init done callback
-            make_safe_callback(
-                [this](std::size_t context_id, std::int64_t /*frames*/)
+                // deliver callback
+                [next_stage = has_next_stage ? &(m_stages[i + 1]) : nullptr](std::size_t context_id, auto packet)
                 {
-                    stage_initialized(context_id, 4);
+                    if (!!next_stage)
+                    {
+                        (**next_stage).process(context_id, std::move(packet));
+                    }
                 },
-                "pipeline::init_done_callback",
-                1
-            ),
-            // params callback
-            [](std::size_t /*context_id*/, std::map<std::string, std::any> /*params*/)
-            {
-                // no next at sink!
-            },
-            // packet done callback
-            [](std::size_t /*context_id*/, auto /*packet*/)
-            {
-                // no deliver at sink!
-            },
-            // next callback
-            [interframe_processor = m_interframe_processor](std::size_t context_id, std::size_t max_new_data)
-            {
-                (*interframe_processor).next(context_id, max_new_data);
-            },
-            // finished callback
-            [this, finished_callback = callbacks.finished](std::size_t context_id)
-            {
-                finished_callback();
-            },
-            // failed callback
-            [failed_indicator_callback = callbacks.failed](std::size_t context_id, std::string error)
-            {
-                failed_indicator_callback(context_id, std::move(error));
-            },
-            // update indicator
-            [update_indicator_callback = callbacks.update](std::size_t context_id, update_indicator update)
-            {
-                update_indicator_callback(context_id, std::move(update));
-            }
-        })
-    );
+                // next callback
+                [prev_stage = has_prev_stage ? &(m_stages[i - 1]) : nullptr](std::size_t context_id, std::size_t max_new_data)
+                {
+                    if (!!prev_stage)
+                    {
+                        (**prev_stage).next(context_id, max_new_data);
+                    }
+                },
+                // finished callback
+                [callback =
+                    [next_stage = has_next_stage ? &(m_stages[i + 1]) : nullptr, finished_callback = callbacks.finished](std::size_t context_id)
+                    {
+                        if (!!next_stage)
+                        {
+                            (**next_stage).finish(context_id);
+                        }
+                        else
+                        {
+                            finished_callback();
+                        }
+                    }
+                ](std::size_t context_id)
+                {
+                    callback(context_id);
+                },
+                // failed callback
+                [callback = callbacks.failed](std::size_t context_id, std::string error)
+                {
+                    callback(context_id, std::move(error));
+                },
+                // update callback
+                [callback = callbacks.update](std::size_t context_id, update_indicator update)
+                {
+                    callback(context_id, std::move(update));
+                }
+            })
+        );
+    }
 }
 
-template<typename Source, typename FrameProcessor, typename InterframeProcessor, typename Sink>
-void file_to_file<Source, FrameProcessor, InterframeProcessor, Sink>::stage_initialized(std::size_t context_id, std::size_t stage_id)
+template<typename Stage>
+void file_to_file<Stage>::stage_initialized(std::size_t context_id, std::size_t stage_id)
 {
     m_stages_initialized[context_id].push_back(stage_id);
 
-    if (m_stages_initialized[context_id].size() == 4)
+    if (m_stages_initialized[context_id].size() == m_stages.size())
     {
-        (*m_sink).start(context_id);
-        (*m_interframe_processor).start(context_id);
-        (*m_frame_processor).start(context_id);
-        (*m_source).start(context_id);
+        // start all stages in reverse order
+        for (auto & stage : boost::adaptors::reverse(m_stages))
+        {
+            (*stage).start(context_id);
+        }
     }
 }
 
 // manual instantation of file_to_file<> for some types
-template class file_to_file<any_stage<image_gray_8bit>, any_stage<image_gray_8bit>, any_stage<image_gray_8bit>, any_stage<image_gray_8bit> >;
-template class file_to_file<any_stage<image_rgb_8bit>, any_stage<image_rgb_8bit>, any_stage<image_rgb_8bit>, any_stage<image_rgb_8bit> >;
+template class file_to_file<any_stage<image_gray_8bit> >;
+template class file_to_file<any_stage<image_rgb_8bit> >;
 
 } // cvpg::videoproc::pipelines

@@ -9,18 +9,6 @@
 
 namespace cvpg::videoproc::pipelines::parameters {
 
-struct uris
-{
-    std::string input;
-    std::string output;
-};
-
-struct scripts
-{
-    std::string frame;
-    std::string interframe;
-};
-
 struct callbacks
 {
     std::function<void()> finished;

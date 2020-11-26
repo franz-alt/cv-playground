@@ -27,15 +27,15 @@
 
 namespace cvpg::videoproc::pipelines {
 
-template<typename Source, typename FrameProcessor, typename InterframeProcessor, typename Sink>
+template<typename Stage>
 class file_to_file : public boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>
 {
 public:
-    file_to_file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
-                 Source source,
-                 FrameProcessor frame_processor,
-                 InterframeProcessor interframe_processor,
-                 Sink sink);
+    template<typename... Stages>
+    file_to_file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler, Stages... stages)
+        : boost::asynchronous::trackable_servant<imageproc::scripting::diagnostics::servant_job, imageproc::scripting::diagnostics::servant_job>(scheduler)
+        , m_stages({ std::forward<Stages>(stages)... })
+    {}
 
     file_to_file(file_to_file const &) = delete;
     file_to_file(file_to_file &&) = delete;
@@ -45,26 +45,21 @@ public:
 
     virtual ~file_to_file() = default;
 
-    void start(parameters::uris uris, parameters::scripts scripts, parameters::callbacks callbacks);
+    void start(std::vector<std::string> stage_parameters, parameters::callbacks callbacks);
 
 private:
     void stage_initialized(std::size_t context_id, std::size_t stage_id);
 
-    Source m_source;
+    std::vector<Stage> m_stages;
 
-    FrameProcessor m_frame_processor;
-    InterframeProcessor m_interframe_processor;
-
-    Sink m_sink;
-
-    std::size_t m_context_counter;
+    std::size_t m_context_counter = 0;
 
     std::map<std::size_t, std::vector<std::size_t> > m_stages_initialized;
 };
 
 // suppress automatic instantiation of file_to_file<> for some types
-extern template class file_to_file<any_stage<image_gray_8bit>, any_stage<image_gray_8bit>, any_stage<image_gray_8bit>, any_stage<image_gray_8bit> >;
-extern template class file_to_file<any_stage<image_rgb_8bit>, any_stage<image_rgb_8bit>, any_stage<image_rgb_8bit>, any_stage<image_rgb_8bit> >;
+extern template class file_to_file<any_stage<image_gray_8bit> >;
+extern template class file_to_file<any_stage<image_rgb_8bit> >;
 
 //
 // Hint: Boost.Asynchronous does not support templated proxies. Becaues the servant itself could
@@ -73,12 +68,7 @@ extern template class file_to_file<any_stage<image_rgb_8bit>, any_stage<image_rg
 
 struct image_gray_8bit_file_to_file_proxy : public boost::asynchronous::servant_proxy<
                                                        image_gray_8bit_file_to_file_proxy,
-                                                       file_to_file<
-                                                           cvpg::videoproc::any_stage<cvpg::image_gray_8bit>,
-                                                           cvpg::videoproc::any_stage<cvpg::image_gray_8bit>,
-                                                           cvpg::videoproc::any_stage<cvpg::image_gray_8bit>,
-                                                           cvpg::videoproc::any_stage<cvpg::image_gray_8bit>
-                                                       >,
+                                                       file_to_file<cvpg::videoproc::any_stage<cvpg::image_gray_8bit> >,
                                                        imageproc::scripting::diagnostics::servant_job
                                                    >
 {
@@ -86,12 +76,7 @@ struct image_gray_8bit_file_to_file_proxy : public boost::asynchronous::servant_
    image_gray_8bit_file_to_file_proxy(Args... args)
        : boost::asynchronous::servant_proxy<
              image_gray_8bit_file_to_file_proxy,
-             file_to_file<
-                 cvpg::videoproc::any_stage<cvpg::image_gray_8bit>,
-                 cvpg::videoproc::any_stage<cvpg::image_gray_8bit>,
-                 cvpg::videoproc::any_stage<cvpg::image_gray_8bit>,
-                 cvpg::videoproc::any_stage<cvpg::image_gray_8bit>
-             >,
+             file_to_file<cvpg::videoproc::any_stage<cvpg::image_gray_8bit> >,
              imageproc::scripting::diagnostics::servant_job
          >(std::forward<Args>(args)...)
    {}
@@ -101,12 +86,7 @@ struct image_gray_8bit_file_to_file_proxy : public boost::asynchronous::servant_
 
 struct image_rgb_8bit_file_to_file_proxy : public boost::asynchronous::servant_proxy<
                                                       image_rgb_8bit_file_to_file_proxy,
-                                                      file_to_file<
-                                                          cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>,
-                                                          cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>,
-                                                          cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>,
-                                                          cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>
-                                                      >,
+                                                      file_to_file<cvpg::videoproc::any_stage<cvpg::image_rgb_8bit> >,
                                                       imageproc::scripting::diagnostics::servant_job
                                                   >
 {
@@ -114,12 +94,7 @@ struct image_rgb_8bit_file_to_file_proxy : public boost::asynchronous::servant_p
    image_rgb_8bit_file_to_file_proxy(Args... args)
        : boost::asynchronous::servant_proxy<
              image_rgb_8bit_file_to_file_proxy,
-             file_to_file<
-                 cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>,
-                 cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>,
-                 cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>,
-                 cvpg::videoproc::any_stage<cvpg::image_rgb_8bit>
-             >,
+             file_to_file<cvpg::videoproc::any_stage<cvpg::image_rgb_8bit> >,
              imageproc::scripting::diagnostics::servant_job
          >(std::forward<Args>(args)...)
    {}
