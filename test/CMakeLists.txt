@@ -14,6 +14,8 @@ set(sources
     imageproc/scripting/multiply_add.cpp
     imageproc/scripting/scharr.cpp
     imageproc/scripting/sobel.cpp
+    videoproc/packet.cpp
+    videoproc/stage_data_handler.cpp
 )
 
 add_executable(${target} ${sources})
@@ -22,6 +24,7 @@ target_link_libraries(${target}
     PRIVATE
         ${DEFAULT_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT}
+        ${FFMPEG_LIBRARIES}
         ${Boost_LIBRARIES}
         gtest_main
         libcvpg

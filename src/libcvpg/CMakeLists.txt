@@ -2,12 +2,17 @@ set(target libcvpg)
 
 message(STATUS "Library '${target}'")
 
+find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL)
+
+include_directories(${FFMPEG_INCLUDE_DIRS})
+
 set(headers
     core/exception.hpp
     core/histogram.hpp
     core/image.hpp
     imageproc/algorithms/border_mode.hpp
     imageproc/algorithms/convert_to_gray.hpp
+    imageproc/algorithms/convert_to_rgb.hpp
     imageproc/algorithms/histogram_equalization.hpp
     imageproc/algorithms/tiling.hpp
     imageproc/algorithms/tiling/convert_to_gray.hpp
@@ -23,8 +28,10 @@ set(headers
     imageproc/scripting/algorithm_set.hpp
     imageproc/scripting/image_processor.hpp
     imageproc/scripting/item.hpp
+    imageproc/scripting/processing_context.hpp
     imageproc/scripting/algorithms/base.hpp
     imageproc/scripting/algorithms/convert_to_gray.hpp
+    imageproc/scripting/algorithms/convert_to_rgb.hpp
     imageproc/scripting/algorithms/diff.hpp
     imageproc/scripting/algorithms/histogram_equalization.hpp
     imageproc/scripting/algorithms/input.hpp
@@ -45,6 +52,22 @@ set(headers
     imageproc/scripting/detail/single_node.hpp
     imageproc/scripting/diagnostics/markdown_formatter.hpp
     imageproc/scripting/diagnostics/typedefs.hpp
+    videoproc/any_stage.hpp
+    videoproc/frame.hpp
+    videoproc/packet.hpp
+    videoproc/stage_data_handler.hpp
+    videoproc/stage_fsm.hpp
+    videoproc/stage_parameters.hpp
+    videoproc/update_indicator.hpp
+    videoproc/pipelines/any_pipeline.hpp
+    videoproc/pipelines/file_to_file.hpp
+    videoproc/pipelines/parameters.hpp
+    videoproc/pipelines/rtsp_to_file.hpp
+    videoproc/processors/frame.hpp
+    videoproc/processors/interframe.hpp
+    videoproc/sinks/file.hpp
+    videoproc/sources/file.hpp
+    videoproc/sources/rtsp.hpp
 )
 
 set(sources
@@ -53,6 +76,7 @@ set(sources
     core/image.cpp
     imageproc/algorithms/border_mode.cpp
     imageproc/algorithms/convert_to_gray.cpp
+    imageproc/algorithms/convert_to_rgb.cpp
     imageproc/algorithms/histogram_equalization.cpp
     imageproc/algorithms/tiling/convert_to_gray.cpp
     imageproc/algorithms/tiling/diff.cpp
@@ -64,7 +88,9 @@ set(sources
     imageproc/scripting/algorithm_set.cpp
     imageproc/scripting/image_processor.cpp
     imageproc/scripting/item.cpp
+    imageproc/scripting/processing_context.cpp
     imageproc/scripting/algorithms/convert_to_gray.cpp
+    imageproc/scripting/algorithms/convert_to_rgb.cpp
     imageproc/scripting/algorithms/diff.cpp
     imageproc/scripting/algorithms/histogram_equalization.cpp
     imageproc/scripting/algorithms/input.cpp
@@ -82,6 +108,18 @@ set(sources
     imageproc/scripting/detail/parser.cpp
     imageproc/scripting/detail/sequence_node.cpp
     imageproc/scripting/detail/single_node.cpp
+    videoproc/frame.cpp
+    videoproc/packet.cpp
+    videoproc/stage_data_handler.cpp
+    videoproc/stage_fsm.cpp
+    videoproc/update_indicator.cpp
+    videoproc/pipelines/file_to_file.cpp
+    videoproc/pipelines/rtsp_to_file.cpp
+    videoproc/processors/frame.cpp
+    videoproc/processors/interframe.cpp
+    videoproc/sinks/file.cpp
+    videoproc/sources/file.cpp
+    videoproc/sources/rtsp.cpp
 )
 
 add_library(${target} ${sources} ${headers})

@@ -12,6 +12,7 @@ target_link_libraries(${target}
     PRIVATE
         ${DEFAULT_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT}
+        ${FFMPEG_LIBRARIES}
         ${Boost_LIBRARIES}
         libcvpg
         png

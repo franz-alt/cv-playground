@@ -17,28 +17,11 @@ class image
 public:
     using pixel_type = pixel;
 
-    static constexpr std::uint8_t channels_size = channels;
-
     using channel_array_type = std::array<std::shared_ptr<pixel_type>, channels>;
 
-    image(std::uint32_t width = 0, std::uint32_t height = 0, std::uint32_t padding = 0)
-        : m_width(width)
-        , m_height(height)
-        , m_padding(padding)
-        , m_data()
-    {
-        for (std::uint8_t c = 0; c < channels; ++c)
-        {
-            m_data[c] = std::shared_ptr<pixel_type>(static_cast<pixel_type *>(malloc((m_width + m_padding) * m_height * sizeof(pixel_type))), [](pixel_type * ptr){ free(ptr); });
-        }
-    }
+    image(std::uint32_t width = 0, std::uint32_t height = 0, std::uint32_t padding = 0);
 
-    image(std::uint32_t width, std::uint32_t height, std::uint32_t padding, channel_array_type data)
-        : m_width(width)
-        , m_height(height)
-        , m_padding(padding)
-        , m_data(std::move(data))
-    {}
+    image(std::uint32_t width, std::uint32_t height, std::uint32_t padding, channel_array_type data);
 
     image(image const &) = default;
     image(image &&) = default;
@@ -46,25 +29,13 @@ public:
     image & operator=(image const &) = default;
     image & operator=(image &&) = default;
 
-    std::uint32_t width() const
-    {
-        return m_width;
-    }
+    std::uint32_t width() const;
 
-    std::uint32_t height() const
-    {
-        return m_height;
-    }
+    std::uint32_t height() const;
 
-    std::uint32_t padding() const
-    {
-        return m_padding;
-    }
+    std::uint32_t padding() const;
 
-    std::shared_ptr<pixel_type> data(std::uint8_t channel) const
-    {
-        return m_data[channel];
-    }
+    std::shared_ptr<pixel_type> data(std::uint8_t channel) const;
 
 private:
     std::uint32_t m_width = 0;

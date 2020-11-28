@@ -8,6 +8,45 @@
 
 namespace cvpg {
 
+template<class pixel, std::uint8_t channels> image<pixel, channels>::image(std::uint32_t width, std::uint32_t height, std::uint32_t padding)
+    : m_width(width)
+    , m_height(height)
+    , m_padding(padding)
+    , m_data()
+{
+    for (std::uint8_t c = 0; c < channels; ++c)
+    {
+        m_data[c] = std::shared_ptr<pixel_type>(static_cast<pixel_type *>(malloc((m_width + m_padding) * m_height * sizeof(pixel_type))), [](pixel_type * ptr){ free(ptr); });
+    }
+}
+
+template<class pixel, std::uint8_t channels> image<pixel, channels>::image(std::uint32_t width, std::uint32_t height, std::uint32_t padding, channel_array_type data)
+    : m_width(width)
+    , m_height(height)
+    , m_padding(padding)
+    , m_data(std::move(data))
+{}
+
+template<class pixel, std::uint8_t channels> std::uint32_t image<pixel, channels>::width() const
+{
+    return m_width;
+}
+
+template<class pixel, std::uint8_t channels> std::uint32_t image<pixel, channels>::height() const
+{
+    return m_height;
+}
+
+template<class pixel, std::uint8_t channels> std::uint32_t image<pixel, channels>::padding() const
+{
+    return m_padding;
+}
+
+template<class pixel, std::uint8_t channels> std::shared_ptr<typename image<pixel, channels>::pixel_type> image<pixel, channels>::data(std::uint8_t channel) const
+{
+    return m_data[channel];
+}
+
 image_gray_8bit read_gray_8bit_png(std::string const & filename)
 {
     int width = 0;

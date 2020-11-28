@@ -8,16 +8,17 @@
 
 namespace cvpg { namespace imageproc { namespace scripting {
 
-class image_processor;
+class processing_context;
 
 namespace detail {
 
 class handler
 {
 public:
-    using result_type = boost::asynchronous::detail::callback_continuation<std::shared_ptr<image_processor> >;
-    using argument_type = std::shared_ptr<image_processor>;
-    using callback_type = std::function<result_type(argument_type, std::size_t)>;
+    using context_type  = cvpg::imageproc::scripting::processing_context;
+    using argument_type = std::shared_ptr<context_type>;
+    using result_type   = boost::asynchronous::detail::callback_continuation<argument_type>;
+    using callback_type = std::function<result_type(argument_type)>;
 
     // create an invalid handler
     handler();
@@ -32,7 +33,7 @@ public:
 
     bool is_valid() const;
 
-    result_type operator()(argument_type argument, std::size_t context_id);
+    result_type operator()(argument_type argument);
 
 private:
     callback_type m_callback;

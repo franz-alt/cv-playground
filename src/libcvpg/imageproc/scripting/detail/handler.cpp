@@ -17,9 +17,9 @@ bool handler::is_valid() const
     return !!m_callback;
 }
 
-handler::result_type handler::operator()(argument_type argument, std::size_t context_id)
+handler::result_type handler::operator()(argument_type argument)
 {
-    return m_callback(std::move(argument), context_id);
+    return m_callback(std::move(argument));
 }
 
 }}}} // namespace cvpg::imageproc::scripting::detail

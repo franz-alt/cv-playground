@@ -20,6 +20,8 @@
 
 namespace cvpg { namespace imageproc { namespace scripting {
 
+class processing_context;
+
 class image_processor : public boost::asynchronous::trackable_servant<diagnostics::servant_job, diagnostics::servant_job>
                       , public std::enable_shared_from_this<image_processor>
 {
@@ -43,24 +45,23 @@ public:
     void evaluate(std::size_t compile_id, cvpg::image_gray_8bit image, std::function<void(item)> callback);
     void evaluate(std::size_t compile_id, cvpg::image_rgb_8bit image, std::function<void(item)> callback);
 
+    // evaluate an input image and convert the result if it is not the same as the input type
+    void evaluate_convert_if(std::size_t compile_id, cvpg::image_gray_8bit image, std::function<void(cvpg::image_gray_8bit)> callback, std::function<void(std::size_t, std::string)> failed_callback);
+    void evaluate_convert_if(std::size_t compile_id, cvpg::image_rgb_8bit image, std::function<void(cvpg::image_rgb_8bit)> callback, std::function<void(std::size_t, std::string)> failed_callback);
+
     // evaluate two input images
     void evaluate(std::size_t compile_id, cvpg::image_gray_8bit image1, cvpg::image_gray_8bit image2, std::function<void(item)> callback);
+    void evaluate(std::size_t compile_id, cvpg::image_rgb_8bit image1, cvpg::image_rgb_8bit image2, std::function<void(item)> callback);
 
-    // store an image
-    void store(std::size_t context_id, std::uint32_t image_id, cvpg::image_gray_8bit image, std::chrono::microseconds duration = std::chrono::microseconds());
-    void store(std::size_t context_id, std::uint32_t image_id, cvpg::image_rgb_8bit image, std::chrono::microseconds duration = std::chrono::microseconds());
-
-    // load an item with a specific ID
-    item load(std::size_t context_id, std::uint32_t image_id) const;
-
-    // load last stored item
-    item load(std::size_t context_id) const;
+    // evaluate two input images and convert the result if it is not the same as the input type
+    void evaluate_convert_if(std::size_t compile_id, cvpg::image_gray_8bit image1, cvpg::image_gray_8bit image2, std::function<void(cvpg::image_gray_8bit)> callback, std::function<void(std::size_t, std::string)> failed_callback);
+    void evaluate_convert_if(std::size_t compile_id, cvpg::image_rgb_8bit image1, cvpg::image_rgb_8bit image2, std::function<void(cvpg::image_rgb_8bit)> callback, std::function<void(std::size_t, std::string)> failed_callback);
 
     // add a parameter for filters
     void add_param(std::string key, std::any value);
 
     // get all parameters
-    parameters_type parameters() const;
+    void parameters(std::function<void(parameters_type)> callback) const;
 
 private:
     algorithm_set m_algorithms;
@@ -68,8 +69,7 @@ private:
     std::map<std::size_t, detail::compiler::result> m_compiled;
     std::map<std::size_t, std::size_t> m_compiled_hashes;
 
-    struct evaluation_context;
-    std::map<std::size_t, std::shared_ptr<evaluation_context> > m_context;
+    std::map<std::size_t, std::shared_ptr<processing_context> > m_context;
 
     std::size_t m_context_counter;
 
@@ -78,19 +78,18 @@ private:
 
 struct image_processor_proxy : public boost::asynchronous::servant_proxy<image_processor_proxy, image_processor, diagnostics::servant_job>
 {
-   template<typename... Args>
-   image_processor_proxy(Args... args)
-       : boost::asynchronous::servant_proxy<image_processor_proxy, image_processor, diagnostics::servant_job>(args...)
-   {}
+    template<typename... Args>
+    image_processor_proxy(Args... args)
+        : boost::asynchronous::servant_proxy<image_processor_proxy, image_processor, diagnostics::servant_job>(std::forward<Args>(args)...)
+    {}
 
-   BOOST_ASYNC_POST_MEMBER_LOG(compile, "compile", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(compile, "compile", 1)
 
-   BOOST_ASYNC_POST_MEMBER_LOG(evaluate, "evaluate", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(evaluate, "evaluate", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(evaluate_convert_if, "evaluate_convert_if", 1)
 
-   BOOST_ASYNC_FUTURE_MEMBER_LOG(load, "load", 1)
-
-   BOOST_ASYNC_POST_MEMBER_LOG(add_param, "add_param", 1)
-   BOOST_ASYNC_POST_MEMBER_LOG(parameters, "parameters", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(add_param, "add_param", 1)
+    BOOST_ASYNC_POST_MEMBER_LOG(parameters, "parameters", 1)
 };
 
 }}} // namespace cvpg::imageproc::scripting
