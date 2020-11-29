@@ -23,6 +23,7 @@ set(headers
     imageproc/algorithms/tiling/parameters.hpp
     imageproc/algorithms/tiling/scharr.hpp
     imageproc/algorithms/tiling/sobel.hpp
+    imageproc/algorithms/tiling/threshold.hpp
     imageproc/algorithms/tiling/functors/histogram.hpp
     imageproc/algorithms/tiling/functors/image.hpp
     imageproc/scripting/algorithm_set.hpp
@@ -41,6 +42,7 @@ set(headers
     imageproc/scripting/algorithms/parameter_set.hpp
     imageproc/scripting/algorithms/scharr.hpp
     imageproc/scripting/algorithms/sobel.hpp
+    imageproc/scripting/algorithms/threshold.hpp
     imageproc/scripting/detail/compiler.hpp
     imageproc/scripting/detail/container_node.hpp
     imageproc/scripting/detail/graph.hpp
@@ -85,6 +87,7 @@ set(sources
     imageproc/algorithms/tiling/multiply_add.cpp
     imageproc/algorithms/tiling/scharr.cpp
     imageproc/algorithms/tiling/sobel.cpp
+    imageproc/algorithms/tiling/threshold.cpp
     imageproc/scripting/algorithm_set.cpp
     imageproc/scripting/image_processor.cpp
     imageproc/scripting/item.cpp
@@ -100,6 +103,7 @@ set(sources
     imageproc/scripting/algorithms/parameter_set.cpp
     imageproc/scripting/algorithms/scharr.cpp
     imageproc/scripting/algorithms/sobel.cpp
+    imageproc/scripting/algorithms/threshold.cpp
     imageproc/scripting/detail/compiler.cpp
     imageproc/scripting/detail/container_node.cpp
     imageproc/scripting/detail/graph.cpp

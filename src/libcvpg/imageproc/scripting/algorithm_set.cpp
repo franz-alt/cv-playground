@@ -12,6 +12,7 @@
 #include <libcvpg/imageproc/scripting/algorithms/multiply_add.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/scharr.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/sobel.hpp>
+#include <libcvpg/imageproc/scripting/algorithms/threshold.hpp>
 
 namespace cvpg { namespace imageproc { namespace scripting {
 
@@ -27,6 +28,7 @@ algorithm_set::algorithm_set()
     register_algorithm(std::make_shared<algorithms::multiply_add>());
     register_algorithm(std::make_shared<algorithms::scharr>());
     register_algorithm(std::make_shared<algorithms::sobel>());
+    register_algorithm(std::make_shared<algorithms::threshold>());
 }
 
 std::shared_ptr<algorithms::base> algorithm_set::find(std::string name) const
