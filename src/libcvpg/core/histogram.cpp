@@ -24,7 +24,7 @@ histogram & histogram::operator=(std::vector<std::size_t> data)
     return *this;
 }
 
-std::size_t histogram::bins() const
+std::size_t histogram::bins() const noexcept
 {
     return m_data.size();
 }

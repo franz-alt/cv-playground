@@ -29,7 +29,7 @@ public:
 
     histogram & operator=(std::vector<value_type> data);
 
-    std::size_t bins() const;
+    std::size_t bins() const noexcept;
 
     iterator_type begin() noexcept;
     iterator_type end() noexcept;
