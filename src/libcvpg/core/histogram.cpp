@@ -1,14 +1,19 @@
 #include <libcvpg/core/histogram.hpp>
 
 #include <algorithm>
+#include <stdexcept>
 
 namespace cvpg {
 
 histogram::histogram()
-    : m_data(256)
+    : histogram(256)
 {}
 
-histogram::histogram(std::vector<std::size_t> data)
+histogram::histogram(std::size_t bins)
+    : m_data(bins)
+{}
+
+histogram::histogram(std::vector<value_type> data)
     : m_data(std::move(data))
 {}
 
@@ -24,24 +29,42 @@ std::size_t histogram::bins() const
     return m_data.size();
 }
 
-std::vector<std::size_t>::const_iterator histogram::begin() const
+histogram::iterator_type histogram::begin() noexcept
 {
     return m_data.begin();
 }
 
-std::vector<std::size_t>::const_iterator histogram::end() const
+histogram::iterator_type histogram::end() noexcept
 {
     return m_data.end();
 }
 
-std::size_t histogram::at(std::size_t i) const
+histogram::const_iterator_type histogram::cbegin() const noexcept
+{
+    return m_data.cbegin();
+}
+
+histogram::const_iterator_type histogram::cend() const noexcept
+{
+    return m_data.cend();
+}
+
+histogram::reference_type histogram::at(std::size_t i)
+{
+    return m_data.at(i);
+}
+
+histogram::const_reference_type histogram::at(std::size_t i) const
 {
     return m_data.at(i);
 }
 
 histogram histogram::operator+(histogram const & rhs) const
 {
-    // TODO error handling
+    if (bins() != rhs.bins())
+    {
+        throw std::runtime_error("different bin sizes");
+    }
 
     std::vector<std::size_t> h(m_data.size());
 
@@ -59,7 +82,10 @@ histogram histogram::operator+(histogram const & rhs) const
 
 histogram & histogram::operator+=(histogram const & rhs)
 {
-    // TODO error handling
+    if (bins() != rhs.bins())
+    {
+        throw std::runtime_error("different bin sizes");
+    }
 
     std::vector<std::size_t> h(m_data.size());
 
@@ -77,14 +103,14 @@ histogram & histogram::operator+=(histogram const & rhs)
     return *this;
 }
 
-histogram::iterator_type begin(histogram const & h)
+histogram::const_iterator_type begin(histogram const & h) noexcept
 {
-    return h.begin();
+    return h.cbegin();
 }
 
-histogram::iterator_type end(histogram const & h)
+histogram::const_iterator_type end(histogram const & h) noexcept
 {
-    return h.end();
+    return h.cend();
 }
 
 std::ostream & operator<<(std::ostream & out, histogram const & h)
