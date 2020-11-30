@@ -4,6 +4,7 @@ message(STATUS "Test application '${target}'")
 
 set(sources
     main.cpp
+    core/histogram.cpp
     core/image.cpp
     imageproc/algorithms/histogram_equalization.cpp
     imageproc/scripting/convert_to_gray.cpp
