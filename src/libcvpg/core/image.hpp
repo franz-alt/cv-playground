@@ -11,6 +11,8 @@
 
 namespace cvpg {
 
+class metadata;
+
 template<class pixel = std::uint8_t, std::uint8_t channels = 1>
 class image
 {
@@ -37,6 +39,12 @@ public:
 
     std::shared_ptr<pixel_type> data(std::uint8_t channel) const;
 
+    void set_metadata(std::shared_ptr<cvpg::metadata> metadata);
+
+    std::shared_ptr<metadata> get_metadata() const noexcept;
+
+    bool has_metadata() const noexcept;
+
 private:
     std::uint32_t m_width = 0;
     std::uint32_t m_height = 0;
@@ -44,6 +52,8 @@ private:
     std::uint32_t m_padding = 0;
 
     channel_array_type m_data;
+
+    std::shared_ptr<cvpg::metadata> m_metadata;
 };
 
 using image_gray_8bit = image<std::uint8_t, 1>;
