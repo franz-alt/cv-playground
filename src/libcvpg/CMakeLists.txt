@@ -23,6 +23,7 @@ set(headers
     imageproc/algorithms/tiling/mean.hpp
     imageproc/algorithms/tiling/multiply_add.hpp
     imageproc/algorithms/tiling/parameters.hpp
+    imageproc/algorithms/tiling/resize.hpp
     imageproc/algorithms/tiling/scharr.hpp
     imageproc/algorithms/tiling/sobel.hpp
     imageproc/algorithms/tiling/threshold.hpp
@@ -43,6 +44,7 @@ set(headers
     imageproc/scripting/algorithms/multiply_add.hpp
     imageproc/scripting/algorithms/parameter.hpp
     imageproc/scripting/algorithms/parameter_set.hpp
+    imageproc/scripting/algorithms/resize.hpp
     imageproc/scripting/algorithms/scharr.hpp
     imageproc/scripting/algorithms/sobel.hpp
     imageproc/scripting/algorithms/threshold.hpp
@@ -90,6 +92,7 @@ set(sources
     imageproc/algorithms/tiling/histogram.cpp
     imageproc/algorithms/tiling/mean.cpp
     imageproc/algorithms/tiling/multiply_add.cpp
+    imageproc/algorithms/tiling/resize.cpp
     imageproc/algorithms/tiling/scharr.cpp
     imageproc/algorithms/tiling/sobel.cpp
     imageproc/algorithms/tiling/threshold.cpp
@@ -107,6 +110,7 @@ set(sources
     imageproc/scripting/algorithms/multiply_add.cpp
     imageproc/scripting/algorithms/parameter.cpp
     imageproc/scripting/algorithms/parameter_set.cpp
+    imageproc/scripting/algorithms/resize.cpp
     imageproc/scripting/algorithms/scharr.cpp
     imageproc/scripting/algorithms/sobel.cpp
     imageproc/scripting/algorithms/threshold.cpp
