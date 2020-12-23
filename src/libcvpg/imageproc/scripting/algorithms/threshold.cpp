@@ -286,7 +286,7 @@ void threshold::on_parse(std::shared_ptr<detail::parser> parser) const
                 {
                     detail::parser::item result_item
                     {
-                        "multiply_add",
+                        "threshold",
                         {
                             scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
                             scripting::item(scripting::item::types::signed_integer, threshold),
