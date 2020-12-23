@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include <libcvpg/imageproc/scripting/algorithms/base.hpp>
+#include <libcvpg/imageproc/scripting/algorithms/binary_threshold.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/convert_to_gray.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/convert_to_rgb.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/diff.hpp>
@@ -21,6 +22,7 @@ namespace cvpg { namespace imageproc { namespace scripting {
 algorithm_set::algorithm_set()
     : m_specifications()
 {
+    register_algorithm(std::make_shared<algorithms::binary_threshold>());
     register_algorithm(std::make_shared<algorithms::convert_to_gray>());
     register_algorithm(std::make_shared<algorithms::convert_to_rgb>());
     register_algorithm(std::make_shared<algorithms::diff>());
