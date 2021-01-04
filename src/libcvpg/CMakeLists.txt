@@ -16,6 +16,7 @@ set(headers
     imageproc/algorithms/convert_to_rgb.hpp
     imageproc/algorithms/histogram_equalization.hpp
     imageproc/algorithms/hog.hpp
+    imageproc/algorithms/k_means.hpp
     imageproc/algorithms/otsu_threshold.hpp
     imageproc/algorithms/tiling.hpp
     imageproc/algorithms/tiling/convert_to_gray.hpp
@@ -42,6 +43,7 @@ set(headers
     imageproc/scripting/algorithms/histogram_equalization.hpp
     imageproc/scripting/algorithms/hog_image.hpp
     imageproc/scripting/algorithms/input.hpp
+    imageproc/scripting/algorithms/k_means.hpp
     imageproc/scripting/algorithms/mean.hpp
     imageproc/scripting/algorithms/multiply_add.hpp
     imageproc/scripting/algorithms/parameter.hpp
@@ -89,6 +91,7 @@ set(sources
     imageproc/algorithms/convert_to_rgb.cpp
     imageproc/algorithms/histogram_equalization.cpp
     imageproc/algorithms/hog.cpp
+    imageproc/algorithms/k_means.cpp
     imageproc/algorithms/otsu_threshold.cpp
     imageproc/algorithms/tiling/convert_to_gray.cpp
     imageproc/algorithms/tiling/diff.cpp
@@ -110,6 +113,7 @@ set(sources
     imageproc/scripting/algorithms/histogram_equalization.cpp
     imageproc/scripting/algorithms/hog_image.cpp
     imageproc/scripting/algorithms/input.cpp
+    imageproc/scripting/algorithms/k_means.cpp
     imageproc/scripting/algorithms/mean.cpp
     imageproc/scripting/algorithms/multiply_add.cpp
     imageproc/scripting/algorithms/parameter.cpp

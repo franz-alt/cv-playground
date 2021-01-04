@@ -10,6 +10,7 @@
 #include <libcvpg/imageproc/scripting/algorithms/histogram_equalization.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/hog_image.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/input.hpp>
+#include <libcvpg/imageproc/scripting/algorithms/k_means.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/mean.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/multiply_add.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/resize.hpp>
@@ -29,6 +30,7 @@ algorithm_set::algorithm_set()
     register_algorithm(std::make_shared<algorithms::histogram_equalization>());
     register_algorithm(std::make_shared<algorithms::hog_image>());
     register_algorithm(std::make_shared<algorithms::input>());
+    register_algorithm(std::make_shared<algorithms::k_means>());
     register_algorithm(std::make_shared<algorithms::mean>());
     register_algorithm(std::make_shared<algorithms::multiply_add>());
     register_algorithm(std::make_shared<algorithms::resize>());
