@@ -19,6 +19,7 @@ set(headers
     imageproc/algorithms/k_means.hpp
     imageproc/algorithms/otsu_threshold.hpp
     imageproc/algorithms/tiling.hpp
+    imageproc/algorithms/tiling/and.hpp
     imageproc/algorithms/tiling/convert_to_gray.hpp
     imageproc/algorithms/tiling/diff.hpp
     imageproc/algorithms/tiling/histogram.hpp
@@ -35,6 +36,7 @@ set(headers
     imageproc/scripting/image_processor.hpp
     imageproc/scripting/item.hpp
     imageproc/scripting/processing_context.hpp
+    imageproc/scripting/algorithms/and.hpp
     imageproc/scripting/algorithms/base.hpp
     imageproc/scripting/algorithms/binary_threshold.hpp
     imageproc/scripting/algorithms/convert_to_gray.hpp
@@ -93,6 +95,7 @@ set(sources
     imageproc/algorithms/hog.cpp
     imageproc/algorithms/k_means.cpp
     imageproc/algorithms/otsu_threshold.cpp
+    imageproc/algorithms/tiling/and.cpp
     imageproc/algorithms/tiling/convert_to_gray.cpp
     imageproc/algorithms/tiling/diff.cpp
     imageproc/algorithms/tiling/histogram.cpp
@@ -106,6 +109,7 @@ set(sources
     imageproc/scripting/image_processor.cpp
     imageproc/scripting/item.cpp
     imageproc/scripting/processing_context.cpp
+    imageproc/scripting/algorithms/and.cpp
     imageproc/scripting/algorithms/binary_threshold.cpp
     imageproc/scripting/algorithms/convert_to_gray.cpp
     imageproc/scripting/algorithms/convert_to_rgb.cpp
