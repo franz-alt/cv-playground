@@ -226,8 +226,8 @@ void diff::on_parse(std::shared_ptr<detail::parser> parser) const
                 auto input2_type = image2.arguments.front().type();
 
                 // check parameters
-                if (!(input1_type == scripting::item::types::grayscale_8_bit_image && input2_type == scripting::item::types::grayscale_8_bit_image) ||
-                     (input1_type == scripting::item::types::rgb_8_bit_image && input2_type == scripting::item::types::rgb_8_bit_image))
+                if (!((input1_type == scripting::item::types::grayscale_8_bit_image && input2_type == scripting::item::types::grayscale_8_bit_image) ||
+                      (input1_type == scripting::item::types::rgb_8_bit_image && input2_type == scripting::item::types::rgb_8_bit_image)))
                 {
                     throw cvpg::invalid_parameter_exception("invalid input type");
                 }
