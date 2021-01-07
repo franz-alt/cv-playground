@@ -1486,11 +1486,11 @@ void sobel_gray_8bit_kernel_5x5_mirror_border(std::uint8_t * src, std::uint8_t *
 
         for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::int32_t offset_ym2 = y > 1 ? (image_width * (y - 2)) : (image_width * (image_height - (2 - y)));  // offset previous previous line
-            const std::int32_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));       // offset previous line
-            const std::int32_t offset_y0  = image_width * y;                                                             // offset current line
-            const std::int32_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                       // offset next line
-            const std::int32_t offset_yp2 = y < (image_height - 2) ? (image_width * (y + 2)) : (2 - y);                  // offset next next line
+            const std::int32_t offset_ym2 = y > 1 ? (image_width * (y - 2)) : (image_width * (image_height - (2 - y)));                     // offset previous previous line
+            const std::int32_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));                          // offset previous line
+            const std::int32_t offset_y0  = image_width * y;                                                                                // offset current line
+            const std::int32_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                                          // offset next line
+            const std::int32_t offset_yp2 = y < (image_height - 2) ? (image_width * (y + 2)) : (image_width * (2 - (image_height - y)));    // offset next next line
 
             src_line_m2 = src + offset_ym2;
             src_line_m1 = src + offset_ym1;
@@ -1502,30 +1502,30 @@ void sobel_gray_8bit_kernel_5x5_mirror_border(std::uint8_t * src, std::uint8_t *
 
             for (std::int32_t x = from_x; x < to_x; ++x)
             {
-                const std::int16_t d00 = src_line_m2[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's00' * 2
+                const std::int16_t d00 = src_line_m2[x > 1 ? (x - 2) : (image_width - (2 - x))] << 1; // 's00' * 2
                 const std::int16_t d01 = src_line_m2[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d03 = src_line_m2[x != (image_width - 1) ? (x + 1) : 0];
-                const std::int16_t d04 = src_line_m2[x < (image_width - 2) ? (x + 2) : (2 - y)] << 1; // 's04' * 2
+                const std::int16_t d04 = src_line_m2[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 1; // 's04' * 2
 
-                const std::int16_t d10 = src_line_m1[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's10' * 2
+                const std::int16_t d10 = src_line_m1[x > 1 ? (x - 2) : (image_width - (2 - x))] << 1; // 's10' * 2
                 const std::int16_t d11 = src_line_m1[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d13 = src_line_m1[x != (image_width - 1) ? (x + 1) : 0];
-                const std::int16_t d14 = src_line_m1[x < (image_width - 2) ? (x + 2) : (2 - y)] << 1; // 's14' * 2
+                const std::int16_t d14 = src_line_m1[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 1; // 's14' * 2
 
-                const std::int16_t d20 = src_line[x > 1 ? (x - 2) : (image_width - (2 - y))] << 2; // 's20' * 4
+                const std::int16_t d20 = src_line[x > 1 ? (x - 2) : (image_width - (2 - x))] << 2; // 's20' * 4
                 const std::int16_t d21 = src_line[x != 0 ? (x - 1) : (image_width - 1)] << 1; // 's21' * 2
                 const std::int16_t d23 = src_line[x != (image_width - 1) ? (x + 1) : 0] << 1; // 's23' * 2
-                const std::int16_t d24 = src_line[x < (image_width - 2) ? (x + 2) : (2 - y)] << 2; // 's24' * 4
+                const std::int16_t d24 = src_line[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 2; // 's24' * 4
 
-                const std::int16_t d30 = src_line_p1[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's30' * 2
+                const std::int16_t d30 = src_line_p1[x > 1 ? (x - 2) : (image_width - (2 - x))] << 1; // 's30' * 2
                 const std::int16_t d31 = src_line_p1[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d33 = src_line_p1[x != (image_width - 1) ? (x + 1) : 0];
-                const std::int16_t d34 = src_line_p1[x < (image_width - 2) ? (x + 2) : (2 - y)] << 1; // 's34' * 2
+                const std::int16_t d34 = src_line_p1[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 1; // 's34' * 2
 
-                const std::int16_t d40 = src_line_p2[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's40' * 2
+                const std::int16_t d40 = src_line_p2[x > 1 ? (x - 2) : (image_width - (2 - x))] << 1; // 's40' * 2
                 const std::int16_t d41 = src_line_p2[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d43 = src_line_p2[x != (image_width - 1) ? (x + 1) : 0];
-                const std::int16_t d44 = src_line_p2[x < (image_width - 2) ? (x + 2) : (2 - y)] << 1; // 's44' * 2
+                const std::int16_t d44 = src_line_p2[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 1; // 's44' * 2
 
                 const std::int16_t res = d00 + d01 - d03 - d04 +
                                          d10 + d11 - d13 - d14 +
@@ -1568,11 +1568,11 @@ void sobel_gray_8bit_kernel_5x5_mirror_border(std::uint8_t * src, std::uint8_t *
 
         for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::int32_t offset_ym2 = y > 1 ? (image_width * (y - 2)) : (image_width * (image_height - (2 - y)));  // offset previous previous line
-            const std::int32_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));       // offset previous line
-            const std::int32_t offset_y0  = image_width * y;                                                             // offset current line
-            const std::int32_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                       // offset next line
-            const std::int32_t offset_yp2 = y < (image_height - 2) ? (image_width * (y + 2)) : (2 - y);                  // offset next next line
+            const std::int32_t offset_ym2 = y > 1 ? (image_width * (y - 2)) : (image_width * (image_height - (2 - y)));                     // offset previous previous line
+            const std::int32_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));                          // offset previous line
+            const std::int32_t offset_y0  = image_width * y;                                                                                // offset current line
+            const std::int32_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                                          // offset next line
+            const std::int32_t offset_yp2 = y < (image_height - 2) ? (image_width * (y + 2)) : (image_width * (2 - (image_height - y)));    // offset next next line
 
             src_line_m2 = src + offset_ym2;
             src_line_m1 = src + offset_ym1;
@@ -1584,29 +1584,29 @@ void sobel_gray_8bit_kernel_5x5_mirror_border(std::uint8_t * src, std::uint8_t *
 
             for (std::int32_t x = from_x; x < to_x; ++x)
             {
-                const std::int16_t d00 = src_line_m2[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's00' * 2
+                const std::int16_t d00 = src_line_m2[x > 1 ? (x - 2) : (image_width - (2 - x))] << 1; // 's00' * 2
                 const std::int16_t d01 = src_line_m2[x != 0 ? (x - 1) : (image_width - 1)] << 1; // 's01' * 2
                 const std::int16_t d02 = src_line_m2[x] << 2; // 's02' * 4
                 const std::int16_t d03 = src_line_m2[x + 1] << 1; // 's03' * 2
-                const std::int16_t d04 = src_line_m2[x < (image_width - 2) ? (x + 2) : (2 - y)] << 1; // 's04' * 2
+                const std::int16_t d04 = src_line_m2[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 1; // 's04' * 2
 
-                const std::int16_t d10 = src_line_m1[x > 1 ? (x - 2) : (image_width - (2 - y))];
+                const std::int16_t d10 = src_line_m1[x > 1 ? (x - 2) : (image_width - (2 - x))];
                 const std::int16_t d11 = src_line_m1[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d12 = src_line_m1[x] << 1; // 's12' * 2
                 const std::int16_t d13 = src_line_m1[x != (image_width - 1) ? (x + 1) : 0];
-                const std::int16_t d14 = src_line_m1[x < (image_width - 2) ? (x + 2) : (2 - y)];
+                const std::int16_t d14 = src_line_m1[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))];
 
-                const std::int16_t d30 = src_line_p1[x > 1 ? (x - 2) : (image_width - (2 - y))];
+                const std::int16_t d30 = src_line_p1[x > 1 ? (x - 2) : (image_width - (2 - x))];
                 const std::int16_t d31 = src_line_p1[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d32 = src_line_p1[x] << 1; // 's32' * 2
                 const std::int16_t d33 = src_line_p1[x != (image_width - 1) ? (x + 1) : 0];
-                const std::int16_t d34 = src_line_p1[x < (image_width - 2) ? (x + 2) : (2 - y)];
+                const std::int16_t d34 = src_line_p1[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))];
 
-                const std::int16_t d40 = src_line_p2[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's40' * 2
+                const std::int16_t d40 = src_line_p2[x > 1 ? (x - 2) : (image_width - (2 - x))] << 1; // 's40' * 2
                 const std::int16_t d41 = src_line_p2[x != 0 ? (x - 1) : (image_width - 1)] << 1; // 's41' * 2
                 const std::int16_t d42 = src_line_p2[x] << 2; // 's42' * 4
                 const std::int16_t d43 = src_line_p2[x != (image_width - 1) ? (x + 1) : 0] << 1; // 's43' * 2
-                const std::int16_t d44 = src_line_p2[x < (image_width - 2) ? (x + 2) : (2 - y)] << 1; // 's44' * 2
+                const std::int16_t d44 = src_line_p2[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 1; // 's44' * 2
 
                 const std::int16_t res = d00 + d01 + d02 + d03 + d04 +
                                          d10 + d11 + d12 + d13 + d14 -
@@ -1654,11 +1654,11 @@ void sobel_gray_8bit_kernel_5x5_mirror_border(std::uint8_t * src, std::uint8_t *
 
         for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::int32_t offset_ym2 = y > 1 ? (image_width * (y - 2)) : (image_width * (image_height - (2 - y)));  // offset previous previous line
-            const std::int32_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));       // offset previous line
-            const std::int32_t offset_y0  = image_width * y;                                                             // offset current line
-            const std::int32_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                       // offset next line
-            const std::int32_t offset_yp2 = y < (image_height - 2) ? (image_width * (y + 2)) : (2 - y);                  // offset next next line
+            const std::int32_t offset_ym2 = y > 1 ? (image_width * (y - 2)) : (image_width * (image_height - (2 - y)));                     // offset previous previous line
+            const std::int32_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));                          // offset previous line
+            const std::int32_t offset_y0  = image_width * y;                                                                                // offset current line
+            const std::int32_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                                          // offset next line
+            const std::int32_t offset_yp2 = y < (image_height - 2) ? (image_width * (y + 2)) : (image_width * (2 - (image_height - y)));    // offset next next line
 
             src_line_m2 = src + offset_ym2;
             src_line_m1 = src + offset_ym1;
@@ -1670,34 +1670,34 @@ void sobel_gray_8bit_kernel_5x5_mirror_border(std::uint8_t * src, std::uint8_t *
 
             for (std::int32_t x = from_x; x < to_x; ++x)
             {
-                const std::int16_t d00 = src_line_m2[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's00' * 2
+                const std::int16_t d00 = src_line_m2[x > 1 ? (x - 2) : (image_width - (2 - x))] << 1; // 's00' * 2
                 const std::int16_t d01 = src_line_m2[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d02 = src_line_m2[x] << 2; // 's02' * 4
                 const std::int16_t d03 = src_line_m2[x != (image_width - 1) ? (x + 1) : 0];
-                const std::int16_t d04 = src_line_m2[x < (image_width - 2) ? (x + 2) : (2 - y)] << 1; // 's04' * 2
+                const std::int16_t d04 = src_line_m2[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 1; // 's04' * 2
 
-                const std::int16_t d10 = src_line_m1[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's10' * 2
+                const std::int16_t d10 = src_line_m1[x > 1 ? (x - 2) : (image_width - (2 - x))] << 1; // 's10' * 2
                 const std::int16_t d11 = src_line_m1[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d12 = src_line_m1[x] << 1; // 's12' * 2
                 const std::int16_t d13 = src_line_m1[x != (image_width - 1) ? (x + 1) : 0];
-                const std::int16_t d14 = src_line_m1[x < (image_width - 2) ? (x + 2) : (2 - y)] << 1; // 's14' * 2
+                const std::int16_t d14 = src_line_m1[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 1; // 's14' * 2
 
-                const std::int16_t d20 = src_line[x > 1 ? (x - 2) : (image_width - (2 - y))] << 2; // 's20' * 4
+                const std::int16_t d20 = src_line[x > 1 ? (x - 2) : (image_width - (2 - x))] << 2; // 's20' * 4
                 const std::int16_t d21 = src_line[x != 0 ? (x - 1) : (image_width - 1)] << 1; // 's21' * 2
                 const std::int16_t d23 = src_line[x != (image_width - 1) ? (x + 1) : 0] << 1; // 's23' * 2
-                const std::int16_t d24 = src_line[x < (image_width - 2) ? (x + 2) : (2 - y)] << 2; // 's24' * 4
+                const std::int16_t d24 = src_line[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 2; // 's24' * 4
 
-                const std::int16_t d30 = src_line_p1[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's30' * 2
+                const std::int16_t d30 = src_line_p1[x > 1 ? (x - 2) : (image_width - (2 - x))] << 1; // 's30' * 2
                 const std::int16_t d31 = src_line_p1[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d32 = src_line_p1[x] << 1; // 's32' * 2
                 const std::int16_t d33 = src_line_p1[x != (image_width - 1) ? (x + 1) : 0];
-                const std::int16_t d34 = src_line_p1[x < (image_width - 2) ? (x + 2) : (2 - y)] << 1; // 's34' * 2
+                const std::int16_t d34 = src_line_p1[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 1; // 's34' * 2
 
-                const std::int16_t d40 = src_line_p2[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's40' * 2
+                const std::int16_t d40 = src_line_p2[x > 1 ? (x - 2) : (image_width - (2 - x))] << 1; // 's40' * 2
                 const std::int16_t d41 = src_line_p2[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d42 = src_line_p2[x] << 2; // 's42' * 4
                 const std::int16_t d43 = src_line_p2[x != (image_width - 1) ? (x + 1) : 0];
-                const std::int16_t d44 = src_line_p2[x < (image_width - 2) ? (x + 2) : (2 - y)] << 1; // 's44' * 2
+                const std::int16_t d44 = src_line_p2[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 1; // 's44' * 2
 
                 const std::int16_t res_hor = d00 + d01 - d03 - d04 +
                                              d10 + d11 - d13 - d14 +
@@ -1753,11 +1753,11 @@ void sobel_gray_8bit_kernel_5x5_mirror_border(std::uint8_t * src, std::uint8_t *
 
         for (std::int32_t y = from_y; y < to_y; ++y)
         {
-            const std::int32_t offset_ym2 = y > 1 ? (image_width * (y - 2)) : (image_width * (image_height - (2 - y)));  // offset previous previous line
-            const std::int32_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));       // offset previous line
-            const std::int32_t offset_y0  = image_width * y;                                                             // offset current line
-            const std::int32_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                       // offset next line
-            const std::int32_t offset_yp2 = y < (image_height - 2) ? (image_width * (y + 2)) : (2 - y);                  // offset next next line
+            const std::int32_t offset_ym2 = y > 1 ? (image_width * (y - 2)) : (image_width * (image_height - (2 - y)));                     // offset previous previous line
+            const std::int32_t offset_ym1 = y != 0 ? (image_width * (y - 1)) : (image_width * (image_height - 1));                          // offset previous line
+            const std::int32_t offset_y0  = image_width * y;                                                                                // offset current line
+            const std::int32_t offset_yp1 = y != (image_height - 1) ? (image_width * (y + 1)) : 0;                                          // offset next line
+            const std::int32_t offset_yp2 = y < (image_height - 2) ? (image_width * (y + 2)) : (image_width * (2 - (image_height - y)));    // offset next next line
 
             src_line_m2 = src + offset_ym2;
             src_line_m1 = src + offset_ym1;
@@ -1769,34 +1769,34 @@ void sobel_gray_8bit_kernel_5x5_mirror_border(std::uint8_t * src, std::uint8_t *
 
             for (std::int32_t x = from_x; x < to_x; ++x)
             {
-                const std::int16_t d00 = src_line_m2[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's00' * 2
+                const std::int16_t d00 = src_line_m2[x > 1 ? (x - 2) : (image_width - (2 - x))] << 1; // 's00' * 2
                 const std::int16_t d01 = src_line_m2[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d02 = src_line_m2[x] << 2; // 's02' * 4
                 const std::int16_t d03 = src_line_m2[x != (image_width - 1) ? (x + 1) : 0];
-                const std::int16_t d04 = src_line_m2[x < (image_width - 2) ? (x + 2) : (2 - y)] << 1; // 's04' * 2
+                const std::int16_t d04 = src_line_m2[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 1; // 's04' * 2
 
-                const std::int16_t d10 = src_line_m1[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's10' * 2
+                const std::int16_t d10 = src_line_m1[x > 1 ? (x - 2) : (image_width - (2 - x))] << 1; // 's10' * 2
                 const std::int16_t d11 = src_line_m1[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d12 = src_line_m1[x] << 1; // 's12' * 2
                 const std::int16_t d13 = src_line_m1[x != (image_width - 1) ? (x + 1) : 0];
-                const std::int16_t d14 = src_line_m1[x < (image_width - 2) ? (x + 2) : (2 - y)] << 1; // 's14' * 2
+                const std::int16_t d14 = src_line_m1[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 1; // 's14' * 2
 
-                const std::int16_t d20 = src_line[x > 1 ? (x - 2) : (image_width - (2 - y))] << 2; // 's20' * 4
+                const std::int16_t d20 = src_line[x > 1 ? (x - 2) : (image_width - (2 - x))] << 2; // 's20' * 4
                 const std::int16_t d21 = src_line[x != 0 ? (x - 1) : (image_width - 1)] << 1; // 's21' * 2
                 const std::int16_t d23 = src_line[x != (image_width - 1) ? (x + 1) : 0] << 1; // 's23' * 2
-                const std::int16_t d24 = src_line[x < (image_width - 2) ? (x + 2) : (2 - y)] << 2; // 's24' * 4
+                const std::int16_t d24 = src_line[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 2; // 's24' * 4
 
-                const std::int16_t d30 = src_line_p1[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's30' * 2
+                const std::int16_t d30 = src_line_p1[x > 1 ? (x - 2) : (image_width - (2 - x))] << 1; // 's30' * 2
                 const std::int16_t d31 = src_line_p1[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d32 = src_line_p1[x] << 1; // 's32' * 2
                 const std::int16_t d33 = src_line_p1[x != (image_width - 1) ? (x + 1) : 0];
-                const std::int16_t d34 = src_line_p1[x < (image_width - 2) ? (x + 2) : (2 - y)] << 1; // 's34' * 2
+                const std::int16_t d34 = src_line_p1[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 1; // 's34' * 2
 
-                const std::int16_t d40 = src_line_p2[x > 1 ? (x - 2) : (image_width - (2 - y))] << 1; // 's40' * 2
+                const std::int16_t d40 = src_line_p2[x > 1 ? (x - 2) : (image_width - (2 - x))] << 1; // 's40' * 2
                 const std::int16_t d41 = src_line_p2[x != 0 ? (x - 1) : (image_width - 1)];
                 const std::int16_t d42 = src_line_p2[x] << 2; // 's42' * 4
                 const std::int16_t d43 = src_line_p2[x != (image_width - 1) ? (x + 1) : 0];
-                const std::int16_t d44 = src_line_p2[x < (image_width - 2) ? (x + 2) : (2 - y)] << 1; // 's44' * 2
+                const std::int16_t d44 = src_line_p2[x < (image_width - 2) ? (x + 2) : (2 - (image_width - x))] << 1; // 's44' * 2
 
                 const std::int16_t res_hor = d00 + d01 - d03 - d04 +
                                              d10 + d11 - d13 - d14 +
