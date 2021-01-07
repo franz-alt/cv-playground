@@ -71,6 +71,14 @@ struct sobel_task :  public boost::asynchronous::continuation_task<std::shared_p
             {
                 mode = cvpg::imageproc::algorithms::sobel_operation_mode::vertical;
             }
+            else if (mode_str == "sum_sqrt")
+            {
+                mode = cvpg::imageproc::algorithms::sobel_operation_mode::sum_sqrt;
+            }
+            else if (mode_str == "sum_abs")
+            {
+                mode = cvpg::imageproc::algorithms::sobel_operation_mode::sum_abs;
+            }
             else
             {
                 // TODO error handling
@@ -219,7 +227,7 @@ parameter_set sobel::parameters() const
            ({
                parameter("image", "input image", "", { scripting::item::types::grayscale_8_bit_image, scripting::item::types::rgb_8_bit_image }),
                parameter("size", "size of filter mask", "", scripting::item::types::signed_integer, static_cast<std::int32_t>(3), static_cast<std::int32_t>(5), static_cast<std::int32_t>(2)),
-               parameter("mode", "operation mode", "", scripting::item::types::characters, { "hor"s, "vert"s }),
+               parameter("mode", "operation mode", "", scripting::item::types::characters, { "hor"s, "vert"s, "sum_sqrt"s, "sum_abs"s }),
                parameter("border_mode", "border mode", "", scripting::item::types::characters, { "ignore"s, "constant"s, "mirror"s })
            });
 }
