@@ -32,6 +32,7 @@ struct k_means_task :  public boost::asynchronous::continuation_task<std::shared
             auto id = std::any_cast<std::uint32_t>(m_item.arguments.at(0).value());
             auto k = std::any_cast<std::int32_t>(m_item.arguments.at(1).value());
             auto max_iterations = std::any_cast<std::int32_t>(m_item.arguments.at(2).value());
+            auto eps = std::any_cast<std::int32_t>(m_item.arguments.at(3).value());
 
             auto input = m_context->load(id);
             auto parameters = m_context->parameters();
@@ -80,7 +81,7 @@ struct k_means_task :  public boost::asynchronous::continuation_task<std::shared
                         }
 
                     },
-                    cvpg::imageproc::algorithms::k_means(std::move(image), k, max_iterations)
+                    cvpg::imageproc::algorithms::k_means(std::move(image), k, max_iterations, eps)
                 );
             }
             else if (input.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image)
@@ -106,7 +107,7 @@ struct k_means_task :  public boost::asynchronous::continuation_task<std::shared
                         }
 
                     },
-                    cvpg::imageproc::algorithms::k_means(std::move(image), k, max_iterations)
+                    cvpg::imageproc::algorithms::k_means(std::move(image), k, max_iterations, eps)
                 );
             }
             else
@@ -163,14 +164,15 @@ parameter_set k_means::parameters() const
            ({
                parameter("image", "input image", "", { scripting::item::types::grayscale_8_bit_image, scripting::item::types::rgb_8_bit_image }),
                parameter("k", "amount of clusters", "", scripting::item::types::signed_integer, static_cast<std::int32_t>(1), static_cast<std::int32_t>(255), static_cast<std::int32_t>(1)),
-               parameter("max_iterations", "maximum amount of iterations", "", scripting::item::types::signed_integer, static_cast<std::int32_t>(1), static_cast<std::int32_t>(std::numeric_limits<std::int32_t>::max()), static_cast<std::int32_t>(1))
+               parameter("max_iterations", "maximum amount of iterations", "", scripting::item::types::signed_integer, static_cast<std::int32_t>(1), static_cast<std::int32_t>(std::numeric_limits<std::int32_t>::max()), static_cast<std::int32_t>(1)),
+               parameter("eps", "minimum distance in color space to mark two values as equal", "", scripting::item::types::signed_integer, static_cast<std::int32_t>(1), static_cast<std::int32_t>(441), static_cast<std::int32_t>(1))
            });
 }
 
 void k_means::on_parse(std::shared_ptr<detail::parser> parser) const
 {
-    std::function<std::uint32_t(std::uint32_t, std::int32_t, std::int32_t)> fct =
-        [parser, parameters = this->parameters()](std::uint32_t image_id, std::int32_t k, std::int32_t max_iterations)
+    std::function<std::uint32_t(std::uint32_t, std::int32_t, std::int32_t, std::int32_t)> fct =
+        [parser, parameters = this->parameters()](std::uint32_t image_id, std::int32_t k, std::int32_t max_iterations, std::int32_t eps)
         {
             // find image
             if (!parser)
@@ -203,6 +205,11 @@ void k_means::on_parse(std::shared_ptr<detail::parser> parser) const
                 throw cvpg::invalid_parameter_exception("invalid amount of maximum iterations");
             }
 
+            if (!parameters.is_valid("eps", eps))
+            {
+                throw cvpg::invalid_parameter_exception("invalid epsilon");
+            }
+
             std::uint32_t result_id = 0;
 
             switch (input_type)
@@ -215,7 +222,8 @@ void k_means::on_parse(std::shared_ptr<detail::parser> parser) const
                         {
                             scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
                             scripting::item(scripting::item::types::signed_integer, k),
-                            scripting::item(scripting::item::types::signed_integer, max_iterations)
+                            scripting::item(scripting::item::types::signed_integer, max_iterations),
+                            scripting::item(scripting::item::types::signed_integer, eps)
                         }
                     };
 
@@ -232,7 +240,8 @@ void k_means::on_parse(std::shared_ptr<detail::parser> parser) const
                         {
                             scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
                             scripting::item(scripting::item::types::signed_integer, k),
-                            scripting::item(scripting::item::types::signed_integer, max_iterations)
+                            scripting::item(scripting::item::types::signed_integer, max_iterations),
+                            scripting::item(scripting::item::types::signed_integer, eps)
                         }
                     };
 

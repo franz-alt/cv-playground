@@ -681,13 +681,14 @@ boost::asynchronous::detail::callback_continuation<image_type> create_result_ima
 template<class image_type>
 struct k_means_iteration_task : public boost::asynchronous::continuation_task<image_type>
 {
-    k_means_iteration_task(std::shared_ptr<image_type> image, std::vector<point> centers, std::size_t k, std::size_t iteration, std::size_t max_iterations)
+    k_means_iteration_task(std::shared_ptr<image_type> image, std::vector<point> centers, std::size_t k, std::size_t iteration, std::size_t max_iterations, std::uint8_t eps)
         : boost::asynchronous::continuation_task<image_type>(std::string("k_means_task::k_means_iteration_task#iteration").append(std::to_string(iteration)))
         , m_image(std::move(image))
         , m_centers(std::move(centers))
         , m_k(k)
         , m_iteration(iteration)
         , m_max_iterations(max_iterations)
+        , m_eps(eps)
     {}
 
     void operator()()
@@ -695,7 +696,7 @@ struct k_means_iteration_task : public boost::asynchronous::continuation_task<im
         auto old_centers = m_centers;
 
         boost::asynchronous::create_callback_continuation(
-            [result = this->this_task_result(), old_centers = std::move(old_centers), iteration = m_iteration, max_iterations = m_max_iterations, image = m_image, k = m_k](auto cont_res) mutable
+            [result = this->this_task_result(), old_centers = std::move(old_centers), iteration = m_iteration, max_iterations = m_max_iterations, image = m_image, k = m_k, eps = m_eps](auto cont_res) mutable
             {
                 try
                 {
@@ -724,9 +725,9 @@ struct k_means_iteration_task : public boost::asynchronous::continuation_task<im
                     // check if all distances are not moving (moving below threshold)
                     const bool all_centers_steady = std::all_of(distances.begin(),
                                                                 distances.end(),
-                                                                [](auto const & distance)
+                                                                [eps](auto const & distance)
                                                                 {
-                                                                    return distance < 5; // TODO define a parameter for this !!!
+                                                                    return distance < eps; // TODO define a parameter for this !!!
                                                                 });
 
                     // check if no further iterations are needed
@@ -761,7 +762,7 @@ struct k_means_iteration_task : public boost::asynchronous::continuation_task<im
                                     result.set_exception(std::current_exception());
                                 }
                             },
-                            k_means_iteration_task(image, std::move(new_centers), k, iteration + 1, max_iterations)
+                            k_means_iteration_task(image, std::move(new_centers), k, iteration + 1, max_iterations, eps)
                         );
                     }
                 }
@@ -789,16 +790,19 @@ private:
 
     std::size_t m_iteration;
     std::size_t m_max_iterations;
+
+    std::uint8_t m_eps;
 };
 
 template<class image_type>
 struct k_means_task : public boost::asynchronous::continuation_task<image_type>
 {
-    k_means_task(image_type image, std::size_t k, std::size_t max_iterations)
+    k_means_task(image_type image, std::size_t k, std::size_t max_iterations, std::uint8_t eps)
         : boost::asynchronous::continuation_task<image_type>("k_means_task")
         , m_image(std::make_shared<image_type>(std::move(image)))
         , m_k(k)
         , m_max_iterations(max_iterations)
+        , m_eps(eps)
     {}
 
     void operator()()
@@ -828,7 +832,7 @@ struct k_means_task : public boost::asynchronous::continuation_task<image_type>
                     result.set_exception(std::current_exception());
                 }
             },
-            k_means_iteration_task(m_image, std::move(centers), m_k, 0, m_max_iterations)
+            k_means_iteration_task(m_image, std::move(centers), m_k, 0, m_max_iterations, m_eps)
         );
     }
 
@@ -838,23 +842,25 @@ private:
     std::size_t m_k;
 
     std::size_t m_max_iterations;
+
+    std::uint8_t m_eps;
 };
 
 }
 
 namespace cvpg::imageproc::algorithms {
 
-boost::asynchronous::detail::callback_continuation<image_gray_8bit> k_means(image_gray_8bit image, std::size_t k, std::size_t max_iterations)
+boost::asynchronous::detail::callback_continuation<image_gray_8bit> k_means(image_gray_8bit image, std::size_t k, std::size_t max_iterations, std::uint8_t eps)
 {
     return boost::asynchronous::top_level_callback_continuation<image_gray_8bit>(
-               k_means_task(std::move(image), k, max_iterations)
+               k_means_task(std::move(image), k, max_iterations, eps)
            );
 }
 
-boost::asynchronous::detail::callback_continuation<image_rgb_8bit> k_means(image_rgb_8bit image, std::size_t k, std::size_t max_iterations)
+boost::asynchronous::detail::callback_continuation<image_rgb_8bit> k_means(image_rgb_8bit image, std::size_t k, std::size_t max_iterations, std::uint8_t eps)
 {
     return boost::asynchronous::top_level_callback_continuation<image_rgb_8bit>(
-               k_means_task(std::move(image), k, max_iterations)
+               k_means_task(std::move(image), k, max_iterations, eps)
            );
 }
 
