@@ -119,8 +119,8 @@ parameter_set convert_to_rgb::parameters() const
 
 void convert_to_rgb::on_parse(std::shared_ptr<detail::parser> parser) const
 {
-    std::function<std::uint32_t(std::uint32_t, std::string)> fct =
-        [parser, parameters = this->parameters()](std::uint32_t image_id, std::string mode)
+    std::function<std::uint32_t(std::uint32_t)> fct =
+        [parser, parameters = this->parameters()](std::uint32_t image_id)
         {
             // find image
             if (!parser)
