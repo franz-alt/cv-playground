@@ -171,101 +171,292 @@ parameter_set k_means::parameters() const
 
 void k_means::on_parse(std::shared_ptr<detail::parser> parser) const
 {
-    std::function<std::uint32_t(std::uint32_t, std::int32_t, std::int32_t, std::int32_t)> fct =
-        [parser, parameters = this->parameters()](std::uint32_t image_id, std::int32_t k, std::int32_t max_iterations, std::int32_t eps)
-        {
-            // find image
-            if (!parser)
+    // all parameters
+    {
+        std::function<std::uint32_t(std::uint32_t, std::int32_t, std::int32_t, std::int32_t)> fct =
+            [parser, parameters = this->parameters()](std::uint32_t image_id, std::int32_t k, std::int32_t max_iterations, std::int32_t eps)
             {
-                throw cvpg::invalid_parameter_exception("invalid parser");
-            }
-
-            auto image = parser->find_item(image_id);
-
-            if (image.arguments.empty())
-            {
-                throw cvpg::invalid_parameter_exception("invalid input ID");
-            }
-
-            auto input_type = image.arguments.front().type();
-
-            // check parameters
-            if (!(input_type == scripting::item::types::grayscale_8_bit_image || input_type == scripting::item::types::rgb_8_bit_image))
-            {
-                throw cvpg::invalid_parameter_exception("invalid input");
-            }
-
-            if (!parameters.is_valid("k", k))
-            {
-                throw cvpg::invalid_parameter_exception("invalid amount of clusters");
-            }
-
-            if (!parameters.is_valid("max_iterations", max_iterations))
-            {
-                throw cvpg::invalid_parameter_exception("invalid amount of maximum iterations");
-            }
-
-            if (!parameters.is_valid("eps", eps))
-            {
-                throw cvpg::invalid_parameter_exception("invalid epsilon");
-            }
-
-            std::uint32_t result_id = 0;
-
-            switch (input_type)
-            {
-                case scripting::item::types::grayscale_8_bit_image:
+                // find image
+                if (!parser)
                 {
-                    detail::parser::item result_item
+                    throw cvpg::invalid_parameter_exception("invalid parser");
+                }
+
+                auto image = parser->find_item(image_id);
+
+                if (image.arguments.empty())
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input ID");
+                }
+
+                auto input_type = image.arguments.front().type();
+
+                // check parameters
+                if (!(input_type == scripting::item::types::grayscale_8_bit_image || input_type == scripting::item::types::rgb_8_bit_image))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input");
+                }
+
+                if (!parameters.is_valid("k", k))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid amount of clusters");
+                }
+
+                if (!parameters.is_valid("max_iterations", max_iterations))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid amount of maximum iterations");
+                }
+
+                if (!parameters.is_valid("eps", eps))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid epsilon");
+                }
+
+                std::uint32_t result_id = 0;
+
+                switch (input_type)
+                {
+                    case scripting::item::types::grayscale_8_bit_image:
                     {
-                        "k_means",
+                        detail::parser::item result_item
                         {
-                            scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
-                            scripting::item(scripting::item::types::signed_integer, k),
-                            scripting::item(scripting::item::types::signed_integer, max_iterations),
-                            scripting::item(scripting::item::types::signed_integer, eps)
-                        }
-                    };
+                            "k_means",
+                            {
+                                scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::signed_integer, k),
+                                scripting::item(scripting::item::types::signed_integer, max_iterations),
+                                scripting::item(scripting::item::types::signed_integer, eps)
+                            }
+                        };
 
-                    result_id = parser->register_item(std::move(result_item));
+                        result_id = parser->register_item(std::move(result_item));
 
-                    break;
-                }
+                        break;
+                    }
 
-                case scripting::item::types::rgb_8_bit_image:
-                {
-                    detail::parser::item result_item
+                    case scripting::item::types::rgb_8_bit_image:
                     {
-                        "k_means",
+                        detail::parser::item result_item
                         {
-                            scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
-                            scripting::item(scripting::item::types::signed_integer, k),
-                            scripting::item(scripting::item::types::signed_integer, max_iterations),
-                            scripting::item(scripting::item::types::signed_integer, eps)
-                        }
-                    };
+                            "k_means",
+                            {
+                                scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::signed_integer, k),
+                                scripting::item(scripting::item::types::signed_integer, max_iterations),
+                                scripting::item(scripting::item::types::signed_integer, eps)
+                            }
+                        };
 
-                    result_id = parser->register_item(std::move(result_item));
+                        result_id = parser->register_item(std::move(result_item));
 
-                    break;
+                        break;
+                    }
+
+                    default:
+                    {
+                        // to make the compiler happy ; other input types are not allowed and should be handled above
+                        break;
+                    }
                 }
 
-                default:
+                if (result_id != 0)
                 {
-                    // to make the compiler happy ; other input types are not allowed and should be handled above
-                    break;
+                    parser->register_link(image_id, result_id);
                 }
-            }
 
-            if (result_id != 0)
+                return result_id;
+            };
+
+        parser->register_specification(name(), std::move(fct));
+    }
+
+    // default for 'eps' (minimum distance of two values in color space)
+    {
+        std::function<std::uint32_t(std::uint32_t, std::int32_t, std::int32_t)> fct =
+            [parser, parameters = this->parameters()](std::uint32_t image_id, std::int32_t k, std::int32_t max_iterations)
             {
-                parser->register_link(image_id, result_id);
-            }
+                // find image
+                if (!parser)
+                {
+                    throw cvpg::invalid_parameter_exception("invalid parser");
+                }
 
-            return result_id;
-        };
+                auto image = parser->find_item(image_id);
 
-    parser->register_specification(name(), std::move(fct));
+                if (image.arguments.empty())
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input ID");
+                }
+
+                auto input_type = image.arguments.front().type();
+
+                // check parameters
+                if (!(input_type == scripting::item::types::grayscale_8_bit_image || input_type == scripting::item::types::rgb_8_bit_image))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input");
+                }
+
+                if (!parameters.is_valid("k", k))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid amount of clusters");
+                }
+
+                if (!parameters.is_valid("max_iterations", max_iterations))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid amount of maximum iterations");
+                }
+
+                std::uint32_t result_id = 0;
+
+                const std::int32_t eps = 5;
+
+                switch (input_type)
+                {
+                    case scripting::item::types::grayscale_8_bit_image:
+                    {
+                        detail::parser::item result_item
+                        {
+                            "k_means",
+                            {
+                                scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::signed_integer, k),
+                                scripting::item(scripting::item::types::signed_integer, max_iterations),
+                                scripting::item(scripting::item::types::signed_integer, eps)
+                            }
+                        };
+
+                        result_id = parser->register_item(std::move(result_item));
+
+                        break;
+                    }
+
+                    case scripting::item::types::rgb_8_bit_image:
+                    {
+                        detail::parser::item result_item
+                        {
+                            "k_means",
+                            {
+                                scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::signed_integer, k),
+                                scripting::item(scripting::item::types::signed_integer, max_iterations),
+                                scripting::item(scripting::item::types::signed_integer, eps)
+                            }
+                        };
+
+                        result_id = parser->register_item(std::move(result_item));
+
+                        break;
+                    }
+
+                    default:
+                    {
+                        // to make the compiler happy ; other input types are not allowed and should be handled above
+                        break;
+                    }
+                }
+
+                if (result_id != 0)
+                {
+                    parser->register_link(image_id, result_id);
+                }
+
+                return result_id;
+            };
+
+        parser->register_specification(name(), std::move(fct));
+    }
+
+    // default for 'max_iterations'
+    {
+        std::function<std::uint32_t(std::uint32_t, std::int32_t)> fct =
+            [parser, parameters = this->parameters()](std::uint32_t image_id, std::int32_t k)
+            {
+                // find image
+                if (!parser)
+                {
+                    throw cvpg::invalid_parameter_exception("invalid parser");
+                }
+
+                auto image = parser->find_item(image_id);
+
+                if (image.arguments.empty())
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input ID");
+                }
+
+                auto input_type = image.arguments.front().type();
+
+                // check parameters
+                if (!(input_type == scripting::item::types::grayscale_8_bit_image || input_type == scripting::item::types::rgb_8_bit_image))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid input");
+                }
+
+                if (!parameters.is_valid("k", k))
+                {
+                    throw cvpg::invalid_parameter_exception("invalid amount of clusters");
+                }
+
+                std::uint32_t result_id = 0;
+
+                const std::int32_t max_iterations = 10;
+                const std::int32_t eps = 5;
+
+                switch (input_type)
+                {
+                    case scripting::item::types::grayscale_8_bit_image:
+                    {
+                        detail::parser::item result_item
+                        {
+                            "k_means",
+                            {
+                                scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::signed_integer, k),
+                                scripting::item(scripting::item::types::signed_integer, max_iterations),
+                                scripting::item(scripting::item::types::signed_integer, eps)
+                            }
+                        };
+
+                        result_id = parser->register_item(std::move(result_item));
+
+                        break;
+                    }
+
+                    case scripting::item::types::rgb_8_bit_image:
+                    {
+                        detail::parser::item result_item
+                        {
+                            "k_means",
+                            {
+                                scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
+                                scripting::item(scripting::item::types::signed_integer, k),
+                                scripting::item(scripting::item::types::signed_integer, max_iterations),
+                                scripting::item(scripting::item::types::signed_integer, eps)
+                            }
+                        };
+
+                        result_id = parser->register_item(std::move(result_item));
+
+                        break;
+                    }
+
+                    default:
+                    {
+                        // to make the compiler happy ; other input types are not allowed and should be handled above
+                        break;
+                    }
+                }
+
+                if (result_id != 0)
+                {
+                    parser->register_link(image_id, result_id);
+                }
+
+                return result_id;
+            };
+
+        parser->register_specification(name(), std::move(fct));
+    }
 }
 
 void k_means::on_compile(std::uint32_t item_id, std::shared_ptr<detail::compiler> compiler) const
