@@ -27,6 +27,7 @@ set(headers
     imageproc/algorithms/tiling/multiply_add.hpp
     imageproc/algorithms/tiling/or.hpp
     imageproc/algorithms/tiling/parameters.hpp
+    imageproc/algorithms/tiling/pooling.hpp
     imageproc/algorithms/tiling/resize.hpp
     imageproc/algorithms/tiling/scharr.hpp
     imageproc/algorithms/tiling/sobel.hpp
@@ -52,6 +53,7 @@ set(headers
     imageproc/scripting/algorithms/or.hpp
     imageproc/scripting/algorithms/parameter.hpp
     imageproc/scripting/algorithms/parameter_set.hpp
+    imageproc/scripting/algorithms/pooling.hpp
     imageproc/scripting/algorithms/resize.hpp
     imageproc/scripting/algorithms/scharr.hpp
     imageproc/scripting/algorithms/sobel.hpp
@@ -104,6 +106,7 @@ set(sources
     imageproc/algorithms/tiling/mean.cpp
     imageproc/algorithms/tiling/multiply_add.cpp
     imageproc/algorithms/tiling/or.cpp
+    imageproc/algorithms/tiling/pooling.cpp
     imageproc/algorithms/tiling/resize.cpp
     imageproc/algorithms/tiling/scharr.cpp
     imageproc/algorithms/tiling/sobel.cpp
@@ -126,6 +129,7 @@ set(sources
     imageproc/scripting/algorithms/or.cpp
     imageproc/scripting/algorithms/parameter.cpp
     imageproc/scripting/algorithms/parameter_set.cpp
+    imageproc/scripting/algorithms/pooling.cpp
     imageproc/scripting/algorithms/resize.cpp
     imageproc/scripting/algorithms/scharr.cpp
     imageproc/scripting/algorithms/sobel.cpp
