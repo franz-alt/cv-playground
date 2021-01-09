@@ -31,8 +31,43 @@ struct resize_task :  public boost::asynchronous::continuation_task<std::shared_
         try
         {
             auto id = std::any_cast<std::uint32_t>(m_item.arguments.at(0).value());
-            auto width = std::any_cast<std::int32_t>(m_item.arguments.at(1).value());
-            auto height = std::any_cast<std::int32_t>(m_item.arguments.at(2).value());
+
+            std::int32_t width = 0;
+            std::int32_t height = 0;
+
+            // determine width and height
+            if (m_item.arguments.size() == 3)
+            {
+                // width and height from parameters
+                width = std::any_cast<std::int32_t>(m_item.arguments.at(1).value());
+                height = std::any_cast<std::int32_t>(m_item.arguments.at(2).value());
+            }
+            else
+            {
+                // width and height from destination image
+                auto destination_id = std::any_cast<std::uint32_t>(m_item.arguments.at(1).value());
+
+                auto destination = m_context->load(destination_id);
+
+                if (destination.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image)
+                {
+                    auto destination_image = std::any_cast<cvpg::image_gray_8bit>(destination.value());
+
+                    width = destination_image.width();
+                    height = destination_image.height();
+                }
+                else if (destination.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image)
+                {
+                    auto destination_image = std::any_cast<cvpg::image_rgb_8bit>(destination.value());
+
+                    width = destination_image.width();
+                    height = destination_image.height();
+                }
+                else
+                {
+                    throw cvpg::invalid_parameter_exception("invalid type of destination image");
+                }
+            }
 
             auto input = m_context->load(id);
             auto parameters = m_context->parameters();
@@ -288,6 +323,143 @@ void resize::on_parse(std::shared_ptr<detail::parser> parser) const
 }
 
 void resize::on_compile(std::uint32_t item_id, std::shared_ptr<detail::compiler> compiler) const
+{
+    auto handler =
+        detail::handler(
+            [result_id = item_id, item = compiler->get_item(item_id)](std::shared_ptr<processing_context> context)
+            {
+                return ::detail::resize(context, result_id, std::move(item));
+            });
+
+    compiler->register_handler(item_id, name(), std::move(handler));
+}
+
+// ------------------------------------------------------------------------------------------------
+
+std::string resize_to::name() const
+{
+    return "resize_to";
+}
+
+std::string resize_to::category() const
+{
+    return "filters/geometric_transformation";
+}
+
+std::vector<scripting::item::types> resize_to::result() const
+{
+    return
+    {
+        scripting::item::types::grayscale_8_bit_image,
+        scripting::item::types::rgb_8_bit_image
+    };
+}
+
+parameter_set resize_to::parameters() const
+{
+    return parameter_set
+           ({
+               parameter("image", "input image", "", { scripting::item::types::grayscale_8_bit_image, scripting::item::types::rgb_8_bit_image }),
+               parameter("destination", "destination image", "", { scripting::item::types::grayscale_8_bit_image, scripting::item::types::rgb_8_bit_image })
+           });
+}
+
+void resize_to::on_parse(std::shared_ptr<detail::parser> parser) const
+{
+    std::function<std::uint32_t(std::uint32_t, std::uint32_t)> fct =
+        [parser, parameters = this->parameters()](std::uint32_t image_id, std::uint32_t destination_id)
+        {
+            // find image
+            if (!parser)
+            {
+                throw cvpg::invalid_parameter_exception("invalid parser");
+            }
+
+            auto image = parser->find_item(image_id);
+
+            if (image.arguments.empty())
+            {
+                throw cvpg::invalid_parameter_exception("invalid input ID");
+            }
+
+            auto input_type = image.arguments.front().type();
+
+            // check parameters
+            if (!(input_type == scripting::item::types::grayscale_8_bit_image || input_type == scripting::item::types::rgb_8_bit_image))
+            {
+                throw cvpg::invalid_parameter_exception("invalid input");
+            }
+
+            auto destination = parser->find_item(destination_id);
+
+            if (destination.arguments.empty())
+            {
+                throw cvpg::invalid_parameter_exception("invalid destination ID");
+            }
+
+            auto destination_type = destination.arguments.front().type();
+
+            // check parameters
+            if (!(destination_type == scripting::item::types::grayscale_8_bit_image || destination_type == scripting::item::types::rgb_8_bit_image))
+            {
+                throw cvpg::invalid_parameter_exception("invalid destination");
+            }
+
+            std::uint32_t result_id = 0;
+
+            switch (input_type)
+            {
+                case scripting::item::types::grayscale_8_bit_image:
+                {
+                    detail::parser::item result_item
+                    {
+                        "resize_to",
+                        {
+                            scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
+                            scripting::item(scripting::item::types::grayscale_8_bit_image, destination_id)
+                        }
+                    };
+
+                    result_id = parser->register_item(std::move(result_item));
+
+                    break;
+                }
+
+                case scripting::item::types::rgb_8_bit_image:
+                {
+                    detail::parser::item result_item
+                    {
+                        "resize_to",
+                        {
+                            scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
+                            scripting::item(scripting::item::types::rgb_8_bit_image, destination_id)
+                        }
+                    };
+
+                    result_id = parser->register_item(std::move(result_item));
+
+                    break;
+                }
+
+                default:
+                {
+                    // to make the compiler happy ; other input types are not allowed and should be handled above
+                    break;
+                }
+            }
+
+            if (result_id != 0)
+            {
+                parser->register_link(image_id, result_id);
+            }
+
+            return result_id;
+        };
+
+    parser->register_specification(name(), std::move(fct));
+}
+
+void resize_to::on_compile(std::uint32_t item_id, std::shared_ptr<detail::compiler> compiler) const
 {
     auto handler =
         detail::handler(

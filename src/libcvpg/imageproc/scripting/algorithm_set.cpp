@@ -40,6 +40,7 @@ algorithm_set::algorithm_set()
     register_algorithm(std::make_shared<algorithms::or_>());
     register_algorithm(std::make_shared<algorithms::pooling>());
     register_algorithm(std::make_shared<algorithms::resize>());
+    register_algorithm(std::make_shared<algorithms::resize_to>());
     register_algorithm(std::make_shared<algorithms::scharr>());
     register_algorithm(std::make_shared<algorithms::sobel>());
     register_algorithm(std::make_shared<algorithms::threshold>());
