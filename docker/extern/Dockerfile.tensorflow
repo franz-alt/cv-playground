@@ -148,5 +148,8 @@ RUN cp -r ${TENSORFLOW_SOURCE}/bazel-bin/tensorflow/* ${TENSORFLOW_CC_LIB_DESTIN
 
 WORKDIR ${TENSORFLOW_CC_LIB_DESTINATION}
 
-RUN ln -s libtensorflow_cc.so.${TENSORFLOW_VERSION} libtensorflow_cc.so && \
+# create additinal symbolic links for libtensorflow.so and libtensorflow_cc.so
+RUN ln -s libtensorflow.so.${TENSORFLOW_VERSION} libtensorflow.so && \
+    ln -s libtensorflow.so.${TENSORFLOW_VERSION} libtensorflow.so.2 && \
+    ln -s libtensorflow_cc.so.${TENSORFLOW_VERSION} libtensorflow_cc.so && \
     ln -s libtensorflow_cc.so.${TENSORFLOW_VERSION} libtensorflow_cc.so.2
