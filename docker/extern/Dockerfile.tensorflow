@@ -14,7 +14,7 @@
 #
 # 2. Create and execute a Docker container to store the TensorFlow C++ library inside the volume
 #
-#    docker run -v tensorflow-cc:/opt/tensorflow/lib -it tensorflow-cc:1.0 /bin/bash
+#    docker run -v tensorflow-cc:/opt/tensorflow/lib tensorflow-cc:1.0
 #
 # 3. List Docker volumes
 #
