@@ -122,12 +122,33 @@ set(sources
     videoproc/sources/rtsp.cpp
 )
 
+if(USE_TENSORFLOW_SEGMENTATION)
+    list(APPEND headers
+        imageproc/algorithms/tfpredict.hpp
+        imageproc/scripting/algorithms/tfpredict.hpp
+    )
+
+    list(APPEND sources
+        imageproc/algorithms/tfpredict.cpp
+        imageproc/scripting/algorithms/tfpredict.cpp
+    )
+endif()
+
 add_library(${target} ${sources} ${headers})
 
-target_include_directories(${target}
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-)
+if(USE_TENSORFLOW_SEGMENTATION)
+    target_include_directories(${target}
+        PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+            $<BUILD_INTERFACE:${TensorFlowCC_INCLUDE_DIRS}>
+            $<BUILD_INTERFACE:${TensorFlowCC_INCLUDE_DIRS}/src>
+    )
+else()
+    target_include_directories(${target}
+        PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+    )
+endif()
 
 target_compile_definitions(${target}
     PUBLIC
