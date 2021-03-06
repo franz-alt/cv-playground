@@ -1,0 +1,40 @@
+#
+# Docker image used for development.
+#
+# Example Usage
+# -------------
+#
+#     docker run --user $(id -u):$(id -g) -v /<host-directory to cv-playground repository>:/usr/src/cv-playground --rm -it cv-playground/dev:1.0 /bin/bash
+#
+
+FROM ubuntu:20.04
+
+# The following environment variable is necessary to install 'tzdata' package automatically.
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get -y update && apt-get install -y
+
+RUN apt-get -y install -y --no-install-recommends \
+  g++ \
+  clang \
+  gdb \
+  make \
+  pkg-config \
+  cmake \
+  cmake-curses-gui \
+  libboost-all-dev \
+  libpng-dev \
+  ffmpeg \
+  libavcodec-dev \
+  libavdevice-dev \
+  libavfilter-dev \
+  libavformat-dev \
+  libavutil-dev \
+  libpostproc-dev \
+  libswresample-dev \
+  libswscale-dev \
+  git \
+  git-flow \
+  mc
+
+WORKDIR /usr/src
