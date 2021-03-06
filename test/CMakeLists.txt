@@ -20,17 +20,32 @@ set(sources
 
 add_executable(${target} ${sources})
 
-target_link_libraries(${target}
-    PRIVATE
-        ${DEFAULT_LIBRARIES}
-        ${CMAKE_THREAD_LIBS_INIT}
-        ${FFMPEG_LIBRARIES}
-        ${Boost_LIBRARIES}
-        gtest_main
-        libcvpg
-        png
-        dl
-)
+if(USE_TENSORFLOW_SEGMENTATION)
+    target_link_libraries(${target}
+        PRIVATE
+            ${DEFAULT_LIBRARIES}
+            ${CMAKE_THREAD_LIBS_INIT}
+            libcvpg
+            ${TensorFlowCC_LIBS}
+            ${FFMPEG_LIBRARIES}
+            ${Boost_LIBRARIES}
+            gtest_main
+            png
+            dl
+    )
+else()
+    target_link_libraries(${target}
+        PRIVATE
+            ${DEFAULT_LIBRARIES}
+            ${CMAKE_THREAD_LIBS_INIT}
+            libcvpg
+            ${FFMPEG_LIBRARIES}
+            ${Boost_LIBRARIES}
+            gtest_main
+            png
+            dl
+    )
+endif()
 
 if(LIST_OF_SANITIZERS)
     if(NOT "${LIST_OF_SANITIZERS}" STREQUAL "")
