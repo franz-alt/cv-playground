@@ -47,4 +47,6 @@ set_target_properties(${target}
         ${BUILDTYPE}_POSTFIX "${TARGET_PREFIX}"
 )
 
+add_dependencies(${target} libcvpg)
+
 add_test(NAME image COMMAND image)

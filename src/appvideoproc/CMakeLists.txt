@@ -44,5 +44,7 @@ set_target_properties(${target}
         ${BUILDTYPE}_POSTFIX "${TARGET_PREFIX}"
 )
 
+add_dependencies(${target} libcvpg)
+
 # install application
 install(TARGETS ${target} DESTINATION bin)
