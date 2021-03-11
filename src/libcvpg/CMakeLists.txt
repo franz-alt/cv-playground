@@ -10,6 +10,7 @@ set(headers
     core/exception.hpp
     core/histogram.hpp
     core/image.hpp
+    core/meta_data.hpp
     imageproc/algorithms/border_mode.hpp
     imageproc/algorithms/convert_to_gray.hpp
     imageproc/algorithms/convert_to_rgb.hpp
@@ -74,6 +75,7 @@ set(sources
     core/exception.cpp
     core/histogram.cpp
     core/image.cpp
+    core/meta_data.cpp
     imageproc/algorithms/border_mode.cpp
     imageproc/algorithms/convert_to_gray.cpp
     imageproc/algorithms/convert_to_rgb.cpp
