@@ -11,6 +11,7 @@ set(headers
     core/histogram.hpp
     core/image.hpp
     core/meta_data.hpp
+    core/multi_array.hpp
     imageproc/algorithms/border_mode.hpp
     imageproc/algorithms/convert_to_gray.hpp
     imageproc/algorithms/convert_to_rgb.hpp
@@ -76,6 +77,7 @@ set(sources
     core/histogram.cpp
     core/image.cpp
     core/meta_data.cpp
+    core/multi_array.cpp
     imageproc/algorithms/border_mode.cpp
     imageproc/algorithms/convert_to_gray.cpp
     imageproc/algorithms/convert_to_rgb.cpp

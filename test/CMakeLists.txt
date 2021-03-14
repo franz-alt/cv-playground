@@ -6,6 +6,7 @@ set(sources
     main.cpp
     core/image.cpp
     core/meta_data.cpp
+    core/multi_array.cpp
     imageproc/algorithms/histogram_equalization.cpp
     imageproc/scripting/convert_to_gray.cpp
     imageproc/scripting/diff.cpp
