@@ -24,8 +24,8 @@ public:
 
     void load_model(std::string path, std::uint32_t outputs, std::string extract_outputs, std::function<void(bool)> callback);
 
-    void process(cvpg::image_gray_8bit image, std::function<void(bool, std::string)> callback);
-    void process(cvpg::image_rgb_8bit image, std::function<void(bool, std::string)> callback);
+    void process(cvpg::image_gray_8bit image, std::function<void(bool, std::string, cvpg::image_gray_8bit)> callback);
+    void process(cvpg::image_rgb_8bit image, std::function<void(bool, std::string, cvpg::image_rgb_8bit)> callback);
 
 private:
     std::unique_ptr<tensorflow::SavedModelBundleLite> m_model_bundle;

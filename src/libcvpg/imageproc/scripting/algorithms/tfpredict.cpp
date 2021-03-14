@@ -48,7 +48,7 @@ struct tfpredict_task :  public boost::asynchronous::continuation_task<std::shar
 
                     tfpredict_processor->process(
                         std::move(image),
-                        [result = this->this_task_result(), context = m_context, result_id = m_result_id, start](bool status, std::string message)
+                        [result = this->this_task_result(), context = m_context, result_id = m_result_id, start](bool status, std::string message, cvpg::image_gray_8bit image)
                         {
                             auto stop = std::chrono::system_clock::now();
 
@@ -57,7 +57,7 @@ struct tfpredict_task :  public boost::asynchronous::continuation_task<std::shar
                                 throw std::runtime_error(std::move(message));
                             }
 
-//                            context->store(result_id, std::get<0>(cont_res).get(), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
+                            context->store(result_id, std::move(image), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
 
                             result.set_value(context);
                         }
@@ -71,7 +71,7 @@ struct tfpredict_task :  public boost::asynchronous::continuation_task<std::shar
 
                     tfpredict_processor->process(
                         std::move(image),
-                        [result = this->this_task_result(), context = m_context, result_id = m_result_id, start](bool status, std::string message)
+                        [result = this->this_task_result(), context = m_context, result_id = m_result_id, start](bool status, std::string message, cvpg::image_rgb_8bit image)
                         {
                             auto stop = std::chrono::system_clock::now();
 
@@ -80,7 +80,7 @@ struct tfpredict_task :  public boost::asynchronous::continuation_task<std::shar
                                 throw std::runtime_error(std::move(message));
                             }
 
-//                            context->store(result_id, std::get<0>(cont_res).get(), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
+                            context->store(result_id, std::move(image), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
 
                             result.set_value(context);
                         }
