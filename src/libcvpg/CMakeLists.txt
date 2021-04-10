@@ -16,6 +16,7 @@ set(headers
     imageproc/algorithms/convert_to_gray.hpp
     imageproc/algorithms/convert_to_rgb.hpp
     imageproc/algorithms/histogram_equalization.hpp
+    imageproc/algorithms/paint_meta.hpp
     imageproc/algorithms/tiling.hpp
     imageproc/algorithms/tiling/convert_to_gray.hpp
     imageproc/algorithms/tiling/diff.hpp
@@ -39,6 +40,7 @@ set(headers
     imageproc/scripting/algorithms/input.hpp
     imageproc/scripting/algorithms/mean.hpp
     imageproc/scripting/algorithms/multiply_add.hpp
+    imageproc/scripting/algorithms/paint_meta.hpp
     imageproc/scripting/algorithms/parameter.hpp
     imageproc/scripting/algorithms/parameter_set.hpp
     imageproc/scripting/algorithms/scharr.hpp
@@ -82,6 +84,7 @@ set(sources
     imageproc/algorithms/convert_to_gray.cpp
     imageproc/algorithms/convert_to_rgb.cpp
     imageproc/algorithms/histogram_equalization.cpp
+    imageproc/algorithms/paint_meta.cpp
     imageproc/algorithms/tiling/convert_to_gray.cpp
     imageproc/algorithms/tiling/diff.cpp
     imageproc/algorithms/tiling/histogram.cpp
@@ -100,6 +103,7 @@ set(sources
     imageproc/scripting/algorithms/input.cpp
     imageproc/scripting/algorithms/mean.cpp
     imageproc/scripting/algorithms/multiply_add.cpp
+    imageproc/scripting/algorithms/paint_meta.cpp
     imageproc/scripting/algorithms/parameter.cpp
     imageproc/scripting/algorithms/parameter_set.cpp
     imageproc/scripting/algorithms/scharr.cpp
