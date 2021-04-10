@@ -2,6 +2,7 @@
 #define LIBCVPG_CORE_MULTI_ARRAY_HPP
 
 #include <cstdint>
+#include <functional>
 #include <initializer_list>
 #include <numeric>
 #include <type_traits>
