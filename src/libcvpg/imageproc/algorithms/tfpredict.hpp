@@ -22,7 +22,7 @@ class tfpredict_processor : public boost::asynchronous::trackable_servant<script
 public:
     tfpredict_processor(boost::asynchronous::any_weak_scheduler<scripting::diagnostics::servant_job> scheduler);
 
-    void load_model(std::string path, std::uint32_t outputs, std::string extract_outputs, std::function<void(bool)> callback);
+    void load_model(std::string path, std::string input_layer, std::string output_layers, std::string extract_outputs, std::function<void(bool)> callback);
 
     void process(cvpg::image_gray_8bit image, std::function<void(bool, std::string, cvpg::image_gray_8bit)> callback);
     void process(cvpg::image_rgb_8bit image, std::function<void(bool, std::string, cvpg::image_rgb_8bit)> callback);
@@ -30,7 +30,8 @@ public:
 private:
     std::unique_ptr<tensorflow::SavedModelBundleLite> m_model_bundle;
 
-    std::uint32_t m_outputs = 0;
+    std::string m_input_layer;
+    std::string m_output_layers;
 
     std::string m_extract_outputs;
 };

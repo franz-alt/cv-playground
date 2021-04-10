@@ -17,7 +17,7 @@ tfpredict_processor::tfpredict_processor(boost::asynchronous::any_weak_scheduler
     : boost::asynchronous::trackable_servant<scripting::diagnostics::servant_job, scripting::diagnostics::servant_job>(scheduler)
 {}
 
-void tfpredict_processor::load_model(std::string path, uint32_t outputs, std::string extract_outputs, std::function<void(bool)> callback)
+void tfpredict_processor::load_model(std::string path, std::string input_layer, std::string output_layers, std::string extract_outputs, std::function<void(bool)> callback)
 {
     m_model_bundle = std::make_unique<tensorflow::SavedModelBundleLite>();
     tensorflow::SessionOptions session_options = tensorflow::SessionOptions();
@@ -30,7 +30,8 @@ void tfpredict_processor::load_model(std::string path, uint32_t outputs, std::st
         std::cout << status.ToString() << std::endl;
     }
 
-    m_outputs = outputs;
+    m_input_layer = std::move(input_layer);
+    m_output_layers = std::move(output_layers);
     m_extract_outputs = std::move(extract_outputs);
 
     callback(status.ok());

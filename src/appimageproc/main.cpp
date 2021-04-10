@@ -260,6 +260,7 @@ int main(int argc, char * argv[])
 
     tfpredict_processor->load_model(
         tensorflow_model_path,
+        tensorflow_model_input,
         tensorflow_model_outputs,
         tensorflow_extract_outputs,
         [promise_tfmodel_load](bool status)
