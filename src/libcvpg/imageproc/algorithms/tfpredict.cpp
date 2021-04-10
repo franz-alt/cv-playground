@@ -48,7 +48,7 @@ void tfpredict_processor::process(cvpg::image_rgb_8bit image, std::function<void
 {
     auto session = m_model_bundle->GetSession();
 
-    tensorflow::Tensor input_tensor(tensorflow::DT_UINT8, tensorflow::TensorShape({ 1, image.width(), image.height(), 3 }));
+    tensorflow::Tensor input_tensor(tensorflow::DT_UINT8, tensorflow::TensorShape({ 1, image.height(), image.width(), 3 }));
 
     // copy image data to tensor
     auto input_tensor_mapped = input_tensor.tensor<std::uint8_t, 4>();
@@ -62,19 +62,19 @@ void tfpredict_processor::process(cvpg::image_rgb_8bit image, std::function<void
         for (auto x = 0; x < image.width(); ++x)
         {
             // TODO is there a way to copy via memcpy !?!?
-            input_tensor_mapped(0, x, y, 0) = data_r[x + y * image.width()];
-            input_tensor_mapped(0, x, y, 1) = data_g[x + y * image.width()];
-            input_tensor_mapped(0, x, y, 2) = data_b[x + y * image.width()];
+            input_tensor_mapped(0, y, x, 0) = data_r[x + y * image.width()];
+            input_tensor_mapped(0, y, x, 1) = data_g[x + y * image.width()];
+            input_tensor_mapped(0, y, x, 2) = data_b[x + y * image.width()];
         }
     }
 
-    std::vector<std::string> output_layers(m_outputs);
-    std::generate(output_layers.begin(), output_layers.end(), [n = 0]() mutable { return std::string("StatefulPartitionedCall:").append(std::to_string(n++)); });
+    std::vector<std::string> output_layers;
+    boost::split(output_layers, m_output_layers, boost::is_any_of(","));
 
     std::vector<tensorflow::Tensor> outputs;
-    outputs.resize(8);
+    outputs.resize(output_layers.size());
 
-    auto status = session->Run({{ "serving_default_input_tensor:0", input_tensor }}, output_layers, {}, &outputs);
+    auto status = session->Run({{ m_input_layer, input_tensor }}, output_layers, {}, &outputs);
 
     if (!status.ok())
     {
@@ -104,8 +104,8 @@ void tfpredict_processor::process(cvpg::image_rgb_8bit image, std::function<void
 
     for (std::size_t i = 0; i < output_layers.size(); ++i)
     {
-        // because definitions are stored at a map, we have to extract names depending on the right type 'StatefulPartitionedCall:...'
-        auto definition_name = std::string("StatefulPartitionedCall:").append(std::to_string(i));
+        // because definitions are stored at a map, we have to extract names depending on their order at 'output_layers'
+        auto definition_name = output_layers.at(i);
 
         auto it = std::find_if(definition.outputs().cbegin(),
                                definition.outputs().cend(),
@@ -172,9 +172,6 @@ void tfpredict_processor::process(cvpg::image_rgb_8bit image, std::function<void
                 dimensions.push_back(s.size);
             }
 
-            // we store dimensions in reverse order
-            std::reverse(dimensions.begin(), dimensions.end());
-
             const std::size_t entries = std::accumulate(dimensions.cbegin(), dimensions.cend(), 1, std::multiplies<int>());
 
             std::vector<float> data;
@@ -197,7 +194,7 @@ void tfpredict_processor::process(cvpg::image_rgb_8bit image, std::function<void
                 {
                     for (int j = 0; j < dimensions[1]; ++j)
                     {
-                        data.push_back(output_tensor(j, i));
+                        data.push_back(output_tensor(i, j));
                     }
                 }
             }
@@ -211,7 +208,7 @@ void tfpredict_processor::process(cvpg::image_rgb_8bit image, std::function<void
                     {
                         for (int k = 0; k < dimensions[2]; ++k)
                         {
-                            data.push_back(output_tensor(k, j, i));
+                            data.push_back(output_tensor(i, j, k));
                         }
                     }
                 }
@@ -226,6 +223,7 @@ void tfpredict_processor::process(cvpg::image_rgb_8bit image, std::function<void
 
             metadata.push(std::string(output_names.at(index)).append(".data"), std::move(array));
             metadata.push(std::string(output_names.at(index)).append(".dims"), std::move(dimensions));
+            metadata.push(std::string(output_names.at(index)).append(".type"), std::string("float"));
         }
     }
 
