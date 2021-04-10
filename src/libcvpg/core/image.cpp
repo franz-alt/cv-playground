@@ -575,12 +575,22 @@ std::ostream & operator<<(std::ostream & out, image_gray_8bit const & i)
 {
     out << "width=" << i.width() << ",height=" << i.height() << ",channels=1";
 
+    if (i.has_metadata())
+    {
+        out << ",metadata=" << i.get_metadata()->size();
+    }
+
     return out;
 }
 
 std::ostream & operator<<(std::ostream & out, image_rgb_8bit const & i)
 {
     out << "width=" << i.width() << ",height=" << i.height() << ",channels=3";
+
+    if (i.has_metadata())
+    {
+        out << ",metadata=" << i.get_metadata()->size();
+    }
 
     return out;
 }
