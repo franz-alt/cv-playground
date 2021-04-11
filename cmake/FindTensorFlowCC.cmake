@@ -1,6 +1,6 @@
 #
 # Try to find the TensorFlow C++ libraries. Set the variable 'TensorFlowCC_ROOT' to your root
-# diretory of TensorFlow.
+# directory of TensorFlow.
 #
 # Hint: TensorFlow has to be built with it's C++ libraries. For further informations see the
 #       official homepage of TensorFlow.
@@ -56,7 +56,6 @@ find_library(TensorFlowFRAMEWORK_LIB
     REQUIRED
 )
 
-#set(TensorFlowCC_LIBS "${TensorFlow_LIB};${TensorFlowCC_LIB};${TensorFlowFRAMEWORK_LIB}")
 list(APPEND TensorFlowCC_LIBS ${TensorFlow_LIB})
 list(APPEND TensorFlowCC_LIBS ${TensorFlowCC_LIB})
 list(APPEND TensorFlowCC_LIBS ${TensorFlowFRAMEWORK_LIB})
