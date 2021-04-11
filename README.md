@@ -24,6 +24,14 @@ At the moment only some easy algorithms at different categories are implemented.
 
 * Histogram Equalization
 
+### Miscellaneous
+
+* Paint Primitives
+
+### Object Detection
+
+* TensorFlow Inferencing (see section *Options*)
+
 ### Smoothing
 
 * Mean
@@ -48,6 +56,7 @@ An application used to apply multiple filters stored at script files to all fram
 
 * C++ 17 compiler
 * CMake 3.12 or later
+* TensorFlow 2 or later (see section *Options*)
 
 ### Options
 
@@ -62,6 +71,12 @@ Advanced debugging could be achived with so called [sanitizers](https://hpc-wiki
     option(BUILD_WITH_SANITIZER_ADDRESS "Build all libraries and applications with address sanitizer." OFF)
     option(BUILD_WITH_SANITIZER_MEMORY "Build all libraries and applications with memory sanitizer." OFF)
     option(BUILD_WITH_SANITIZER_UNDEFINED_BEHAVIOUR "Build all libraries and applications with undefined behaviour sanitizer." OFF)
+
+Object detection with TensorFlow could be performed with the *tfpredict* algorithm. To enable this feature you have to edit the following option
+
+    option(USE_TENSORFLOW_SEGMENTATION "Use Google TensorFlow for image segmentation." OFF)
+
+and set the environment variable *TensorFlowCC_ROOT*.
 
 ### Example
 
