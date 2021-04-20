@@ -1,5 +1,6 @@
 #include <libcvpg/imageproc/algorithms/paint_meta.hpp>
 
+#include <initializer_list>
 #include <type_traits>
 
 #include <libcvpg/core/meta_data.hpp>
@@ -10,12 +11,13 @@ namespace {
 template<class input_image>
 struct paint_meta_task : public boost::asynchronous::continuation_task<input_image>
 {
-    paint_meta_task(input_image image, std::string key, std::string scores, std::string mode)
+    paint_meta_task(input_image image, std::string key, std::string scores, std::string mode, std::initializer_list<std::uint8_t> colors)
         : boost::asynchronous::continuation_task<input_image>("paint_meta_task")
         , m_image(std::move(image))
         , m_key(std::move(key))
         , m_scores(std::move(scores))
         , m_mode(std::move(mode))
+        , m_colors(std::move(colors))
     {}
 
     void operator()()
@@ -92,13 +94,20 @@ struct paint_meta_task : public boost::asynchronous::continuation_task<input_ima
 
                                 if (x2 > x1 && y2 > y1 && score > 0.1)
                                 {
-                                    memset((void*)(new_image.data(0).get() + y1 * new_image.width() + x1), 255, x2 - x1);
-                                    memset((void*)(new_image.data(0).get() + y2 * new_image.width() + x1), 255, x2 - x1);
+                                    std::size_t i = 0;
 
-                                    for (std::size_t y = y1 + 1; y < y2; ++y)
+                                    for (auto const & color : m_colors)
                                     {
-                                        memset((void*)(new_image.data(0).get() + y * new_image.width() + x1), 255, 1);
-                                        memset((void*)(new_image.data(0).get() + y * new_image.width() + x2 - 1), 255, 1);
+                                        memset((void*)(new_image.data(i).get() + y1 * new_image.width() + x1), color, x2 - x1);
+                                        memset((void*)(new_image.data(i).get() + y2 * new_image.width() + x1), color, x2 - x1);
+
+                                        for (std::size_t y = y1 + 1; y < y2; ++y)
+                                        {
+                                            memset((void*)(new_image.data(i).get() + y * new_image.width() + x1), color, 1);
+                                            memset((void*)(new_image.data(i).get() + y * new_image.width() + x2 - 1), color, 1);
+                                        }
+
+                                        ++i;
                                     }
                                 }
                             }
@@ -134,23 +143,25 @@ private:
     std::string m_scores;
 
     std::string m_mode;
+
+    std::initializer_list<std::uint8_t> m_colors;
 };
 
 }
 
 namespace cvpg::imageproc::algorithms {
 
-boost::asynchronous::detail::callback_continuation<image_gray_8bit> paint_meta(image_gray_8bit image, std::string key, std::string scores, std::string mode)
+boost::asynchronous::detail::callback_continuation<image_gray_8bit> paint_meta(image_gray_8bit image, std::string key, std::string scores, std::string mode, std::uint8_t gray)
 {
     return boost::asynchronous::top_level_callback_continuation<image_gray_8bit>(
-               paint_meta_task(std::move(image), std::move(key), std::move(scores), std::move(mode))
+               paint_meta_task(std::move(image), std::move(key), std::move(scores), std::move(mode), { gray })
            );
 }
 
-boost::asynchronous::detail::callback_continuation<image_rgb_8bit> paint_meta(image_rgb_8bit image, std::string key, std::string scores, std::string mode)
+boost::asynchronous::detail::callback_continuation<image_rgb_8bit> paint_meta(image_rgb_8bit image, std::string key, std::string scores, std::string mode, std::uint8_t red, std::uint8_t green, std::uint8_t blue)
 {
     return boost::asynchronous::top_level_callback_continuation<image_rgb_8bit>(
-               paint_meta_task(std::move(image), std::move(key), std::move(scores), std::move(mode))
+               paint_meta_task(std::move(image), std::move(key), std::move(scores), std::move(mode), { red, green, blue })
            );
 }
 

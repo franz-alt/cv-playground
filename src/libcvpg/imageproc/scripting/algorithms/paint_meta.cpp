@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <functional>
+#include <regex>
 #include <string>
 
 #include <boost/asynchronous/continuation_task.hpp>
@@ -61,10 +62,40 @@ struct paint_meta_task :  public boost::asynchronous::continuation_task<std::sha
 
             if (input.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image)
             {
-                // TOTO implement me
+                // extract color values from arguments
+                auto gray = static_cast<std::uint8_t>(std::any_cast<std::int32_t>(m_item.arguments.at(4).value()));
+
+                auto image = std::any_cast<cvpg::image_gray_8bit>(input.value());
+
+                auto start = std::chrono::system_clock::now();
+
+                boost::asynchronous::create_callback_continuation(
+                    [result = this->this_task_result(), context = m_context, result_id = m_result_id, start](auto cont_res) mutable
+                    {
+                        auto stop = std::chrono::system_clock::now();
+
+                        try
+                        {
+                            context->store(result_id, std::get<0>(cont_res).get(), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
+
+                            result.set_value(context);
+                        }
+                        catch (...)
+                        {
+                            result.set_exception(std::current_exception());
+                        }
+
+                    },
+                    cvpg::imageproc::algorithms::paint_meta(std::move(image), std::move(key_str), std::move(scores_str), std::move(mode_str), gray)
+                );
             }
             else if (input.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image)
             {
+                // extract color values from arguments
+                auto red = static_cast<std::uint8_t>(std::any_cast<std::int32_t>(m_item.arguments.at(4).value()));
+                auto green = static_cast<std::uint8_t>(std::any_cast<std::int32_t>(m_item.arguments.at(5).value()));
+                auto blue = static_cast<std::uint8_t>(std::any_cast<std::int32_t>(m_item.arguments.at(6).value()));
+
                 auto image = std::any_cast<cvpg::image_rgb_8bit>(input.value());
 
                 auto start = std::chrono::system_clock::now();
@@ -86,7 +117,7 @@ struct paint_meta_task :  public boost::asynchronous::continuation_task<std::sha
                         }
 
                     },
-                    cvpg::imageproc::algorithms::paint_meta(std::move(image), std::move(key_str), std::move(scores_str), std::move(mode_str))
+                    cvpg::imageproc::algorithms::paint_meta(std::move(image), std::move(key_str), std::move(scores_str), std::move(mode_str), red, green, blue)
                 );
             }
             else
@@ -147,14 +178,15 @@ parameter_set paint_meta::parameters() const
                parameter("image", "input image", "", { scripting::item::types::grayscale_8_bit_image, scripting::item::types::rgb_8_bit_image }),
                parameter("key", "key of metadata that should be painted", "", scripting::item::types::characters),
                parameter("scores", "key of scores of metadata that should be painted", "", scripting::item::types::characters),
-               parameter("mode", "paint mode", "", scripting::item::types::characters, "rectangle"s)
+               parameter("mode", "paint mode", "", scripting::item::types::characters, "rectangle"s),
+               parameter("color", "hexdecimal color code", "", scripting::item::types::characters)
            });
 }
 
 void paint_meta::on_parse(std::shared_ptr<detail::parser> parser) const
 {
-    std::function<std::uint32_t(std::uint32_t, std::string, std::string, std::string)> fct =
-        [parser, parameters = this->parameters()](std::uint32_t image_id, std::string key, std::string scores, std::string mode)
+    std::function<std::uint32_t(std::uint32_t, std::string, std::string, std::string, std::string)> fct =
+        [parser, parameters = this->parameters()](std::uint32_t image_id, std::string key, std::string scores, std::string mode, std::string color)
         {
             // find image
             if (!parser)
@@ -188,6 +220,18 @@ void paint_meta::on_parse(std::shared_ptr<detail::parser> parser) const
             {
                 case scripting::item::types::grayscale_8_bit_image:
                 {
+                    // check if given color string matches the correct regular expression
+                    const std::regex base_regex("^\\#(([a-fA-F]|[0-9]){2})$");
+                    std::smatch base_match;
+
+                    if (!std::regex_match(color, base_match, base_regex))
+                    {
+                        throw cvpg::invalid_parameter_exception("invalid grayscale color");
+                    }
+
+                    // extract color values from color string
+                    const std::uint8_t gray = std::stol (color.substr(1, 2), nullptr, 16);;
+
                     detail::parser::item result_item
                     {
                         "paint_meta",
@@ -195,7 +239,8 @@ void paint_meta::on_parse(std::shared_ptr<detail::parser> parser) const
                             scripting::item(scripting::item::types::grayscale_8_bit_image, image_id),
                             scripting::item(scripting::item::types::characters, key),
                             scripting::item(scripting::item::types::characters, scores),
-                            scripting::item(scripting::item::types::characters, mode)
+                            scripting::item(scripting::item::types::characters, mode),
+                            scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(gray))
                         }
                     };
 
@@ -206,6 +251,20 @@ void paint_meta::on_parse(std::shared_ptr<detail::parser> parser) const
 
                 case scripting::item::types::rgb_8_bit_image:
                 {
+                    // check if given color string matches the correct regular expression
+                    const std::regex base_regex("^\\#(([a-fA-F]|[0-9]){6})$");
+                    std::smatch base_match;
+
+                    if (!std::regex_match(color, base_match, base_regex))
+                    {
+                        throw cvpg::invalid_parameter_exception("invalid RGB color");
+                    }
+
+                    // extract color values from color string
+                    const std::uint8_t red = std::stol (color.substr(1, 2), nullptr, 16);;
+                    const std::uint8_t green = std::stol (color.substr(3, 2), nullptr, 16);;
+                    const std::uint8_t blue = std::stol (color.substr(5, 2), nullptr, 16);;
+
                     detail::parser::item result_item
                     {
                         "paint_meta",
@@ -213,7 +272,10 @@ void paint_meta::on_parse(std::shared_ptr<detail::parser> parser) const
                             scripting::item(scripting::item::types::rgb_8_bit_image, image_id),
                             scripting::item(scripting::item::types::characters, key),
                             scripting::item(scripting::item::types::characters, scores),
-                            scripting::item(scripting::item::types::characters, mode)
+                            scripting::item(scripting::item::types::characters, mode),
+                            scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(red)),
+                            scripting::item(scripting::item::types::signed_integer,static_cast<std::int32_t>( green)),
+                            scripting::item(scripting::item::types::signed_integer, static_cast<std::int32_t>(blue))
                         }
                     };
 
