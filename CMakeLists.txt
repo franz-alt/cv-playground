@@ -30,9 +30,9 @@ option(BUILD_APPS "Build applications." ON)
 option(BUILD_SHARED_LIBS "Build shared instead of static libraries." ON)
 option(BUILD_TESTS "Build module tests." ON)
 
-option(USE_TENSORFLOW_SEGMENTATION "Use Google TensorFlow for image segmentation." OFF)
+option(BUILD_WITH_TENSORFLOW_SEGMENTATION "Build with enabled Google TensorFlow C++ support for image segmentation and enable 'tfpredict' algorithm." OFF)
 
-if(USE_TENSORFLOW_SEGMENTATION)
+if(BUILD_WITH_TENSORFLOW_SEGMENTATION)
     find_package(TensorFlowCC REQUIRED)
 
     if(TensorFlowCC_FOUND)

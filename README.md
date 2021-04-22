@@ -74,7 +74,7 @@ Advanced debugging could be achived with so called [sanitizers](https://hpc-wiki
 
 Object detection with TensorFlow could be performed with the *tfpredict* algorithm. To enable this feature you have to edit the following option
 
-    option(USE_TENSORFLOW_SEGMENTATION "Use Google TensorFlow for image segmentation." OFF)
+    option(BUILD_WITH_TENSORFLOW_SEGMENTATION "Build with enabled Google TensorFlow C++ support for image segmentation and enable 'tfpredict' algorithm." OFF)
 
 and set the environment variable *TensorFlowCC_ROOT*.
 

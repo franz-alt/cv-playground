@@ -22,7 +22,7 @@ set(sources
 
 add_executable(${target} ${sources})
 
-if(USE_TENSORFLOW_SEGMENTATION)
+if(BUILD_WITH_TENSORFLOW_SEGMENTATION)
     target_link_libraries(${target}
         PRIVATE
             ${DEFAULT_LIBRARIES}

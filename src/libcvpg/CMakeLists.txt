@@ -130,7 +130,7 @@ set(sources
     videoproc/sources/rtsp.cpp
 )
 
-if(USE_TENSORFLOW_SEGMENTATION)
+if(BUILD_WITH_TENSORFLOW_SEGMENTATION)
     list(APPEND headers
         imageproc/algorithms/tfpredict.hpp
         imageproc/scripting/algorithms/tfpredict.hpp
@@ -144,7 +144,7 @@ endif()
 
 add_library(${target} ${sources} ${headers})
 
-if(USE_TENSORFLOW_SEGMENTATION)
+if(BUILD_WITH_TENSORFLOW_SEGMENTATION)
     target_include_directories(${target}
         PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
