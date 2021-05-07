@@ -5,6 +5,7 @@
 #include <png.h>
 
 #include <libcvpg/core/exception.hpp>
+#include <libcvpg/core/meta_data.hpp>
 
 namespace cvpg {
 
@@ -45,6 +46,21 @@ template<class pixel, std::uint8_t channels> std::uint32_t image<pixel, channels
 template<class pixel, std::uint8_t channels> std::shared_ptr<typename image<pixel, channels>::pixel_type> image<pixel, channels>::data(std::uint8_t channel) const
 {
     return m_data[channel];
+}
+
+template<class pixel, std::uint8_t channels> void image<pixel, channels>::set_metadata(std::shared_ptr<cvpg::meta_data> metadata)
+{
+    m_metadata = std::move(metadata);
+}
+
+template<class pixel, std::uint8_t channels> std::shared_ptr<cvpg::meta_data> image<pixel, channels>::get_metadata() const noexcept
+{
+    return m_metadata;
+}
+
+template<class pixel, std::uint8_t channels> bool image<pixel, channels>::has_metadata() const noexcept
+{
+    return !!m_metadata;
 }
 
 image_gray_8bit read_gray_8bit_png(std::string const & filename)
@@ -559,12 +575,22 @@ std::ostream & operator<<(std::ostream & out, image_gray_8bit const & i)
 {
     out << "width=" << i.width() << ",height=" << i.height() << ",channels=1";
 
+    if (i.has_metadata())
+    {
+        out << ",metadata=" << i.get_metadata()->size();
+    }
+
     return out;
 }
 
 std::ostream & operator<<(std::ostream & out, image_rgb_8bit const & i)
 {
     out << "width=" << i.width() << ",height=" << i.height() << ",channels=3";
+
+    if (i.has_metadata())
+    {
+        out << ",metadata=" << i.get_metadata()->size();
+    }
 
     return out;
 }

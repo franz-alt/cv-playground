@@ -30,6 +30,18 @@ option(BUILD_APPS "Build applications." ON)
 option(BUILD_SHARED_LIBS "Build shared instead of static libraries." ON)
 option(BUILD_TESTS "Build module tests." ON)
 
+option(BUILD_WITH_TENSORFLOW_SEGMENTATION "Build with enabled Google TensorFlow C++ support for image segmentation and enable 'tfpredict' algorithm." OFF)
+
+if(BUILD_WITH_TENSORFLOW_SEGMENTATION)
+    find_package(TensorFlowCC REQUIRED)
+
+    if(TensorFlowCC_FOUND)
+        add_definitions(-DUSE_TENSORFLOW_CC)
+    elseif()
+        message(FATAL_ERROR "TensorFlow C++ libraries required, but not found!")
+    endif()
+endif()
+
 # sanitizer handling
 include(cmake/sanitizers.cmake)
 

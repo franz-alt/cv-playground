@@ -10,8 +10,13 @@
 #include <libcvpg/imageproc/scripting/algorithms/input.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/mean.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/multiply_add.hpp>
+#include <libcvpg/imageproc/scripting/algorithms/paint_meta.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/scharr.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/sobel.hpp>
+
+#ifdef USE_TENSORFLOW_CC
+#include <libcvpg/imageproc/scripting/algorithms/tfpredict.hpp>
+#endif
 
 namespace cvpg { namespace imageproc { namespace scripting {
 
@@ -25,8 +30,13 @@ algorithm_set::algorithm_set()
     register_algorithm(std::make_shared<algorithms::input>());
     register_algorithm(std::make_shared<algorithms::mean>());
     register_algorithm(std::make_shared<algorithms::multiply_add>());
+    register_algorithm(std::make_shared<algorithms::paint_meta>());
     register_algorithm(std::make_shared<algorithms::scharr>());
     register_algorithm(std::make_shared<algorithms::sobel>());
+
+#ifdef USE_TENSORFLOW_CC
+    register_algorithm(std::make_shared<algorithms::tfpredict>());
+#endif
 }
 
 std::shared_ptr<algorithms::base> algorithm_set::find(std::string name) const

@@ -10,10 +10,13 @@ set(headers
     core/exception.hpp
     core/histogram.hpp
     core/image.hpp
+    core/meta_data.hpp
+    core/multi_array.hpp
     imageproc/algorithms/border_mode.hpp
     imageproc/algorithms/convert_to_gray.hpp
     imageproc/algorithms/convert_to_rgb.hpp
     imageproc/algorithms/histogram_equalization.hpp
+    imageproc/algorithms/paint_meta.hpp
     imageproc/algorithms/tiling.hpp
     imageproc/algorithms/tiling/convert_to_gray.hpp
     imageproc/algorithms/tiling/diff.hpp
@@ -37,6 +40,7 @@ set(headers
     imageproc/scripting/algorithms/input.hpp
     imageproc/scripting/algorithms/mean.hpp
     imageproc/scripting/algorithms/multiply_add.hpp
+    imageproc/scripting/algorithms/paint_meta.hpp
     imageproc/scripting/algorithms/parameter.hpp
     imageproc/scripting/algorithms/parameter_set.hpp
     imageproc/scripting/algorithms/scharr.hpp
@@ -74,10 +78,13 @@ set(sources
     core/exception.cpp
     core/histogram.cpp
     core/image.cpp
+    core/meta_data.cpp
+    core/multi_array.cpp
     imageproc/algorithms/border_mode.cpp
     imageproc/algorithms/convert_to_gray.cpp
     imageproc/algorithms/convert_to_rgb.cpp
     imageproc/algorithms/histogram_equalization.cpp
+    imageproc/algorithms/paint_meta.cpp
     imageproc/algorithms/tiling/convert_to_gray.cpp
     imageproc/algorithms/tiling/diff.cpp
     imageproc/algorithms/tiling/histogram.cpp
@@ -96,6 +103,7 @@ set(sources
     imageproc/scripting/algorithms/input.cpp
     imageproc/scripting/algorithms/mean.cpp
     imageproc/scripting/algorithms/multiply_add.cpp
+    imageproc/scripting/algorithms/paint_meta.cpp
     imageproc/scripting/algorithms/parameter.cpp
     imageproc/scripting/algorithms/parameter_set.cpp
     imageproc/scripting/algorithms/scharr.cpp
@@ -122,12 +130,33 @@ set(sources
     videoproc/sources/rtsp.cpp
 )
 
+if(BUILD_WITH_TENSORFLOW_SEGMENTATION)
+    list(APPEND headers
+        imageproc/algorithms/tfpredict.hpp
+        imageproc/scripting/algorithms/tfpredict.hpp
+    )
+
+    list(APPEND sources
+        imageproc/algorithms/tfpredict.cpp
+        imageproc/scripting/algorithms/tfpredict.cpp
+    )
+endif()
+
 add_library(${target} ${sources} ${headers})
 
-target_include_directories(${target}
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-)
+if(BUILD_WITH_TENSORFLOW_SEGMENTATION)
+    target_include_directories(${target}
+        PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+            $<BUILD_INTERFACE:${TensorFlowCC_INCLUDE_DIRS}>
+            $<BUILD_INTERFACE:${TensorFlowCC_INCLUDE_DIRS}/src>
+    )
+else()
+    target_include_directories(${target}
+        PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+    )
+endif()
 
 target_compile_definitions(${target}
     PUBLIC
