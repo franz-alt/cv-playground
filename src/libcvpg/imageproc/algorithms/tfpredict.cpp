@@ -37,6 +37,11 @@ void tfpredict_processor::load_model(std::string path, std::string input_layer, 
     callback(status.ok());
 }
 
+void tfpredict_processor::set_labels(tfpredict_processor::labels_type labels)
+{
+    m_labels = std::move(labels);
+}
+
 void tfpredict_processor::process(cvpg::image_gray_8bit image, std::function<void(bool, std::string, cvpg::image_gray_8bit)> callback)
 {
     // TODO
@@ -225,6 +230,11 @@ void tfpredict_processor::process(cvpg::image_rgb_8bit image, std::function<void
             metadata.push(std::string(output_names.at(index)).append(".dims"), std::move(dimensions));
             metadata.push(std::string(output_names.at(index)).append(".type"), std::string("float"));
         }
+    }
+
+    if (!m_labels.empty())
+    {
+        metadata.push(std::string("labels"), m_labels);
     }
 
     image.set_metadata(std::make_shared<cvpg::meta_data>(std::move(metadata)));
