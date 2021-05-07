@@ -12,9 +12,11 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <boost/asynchronous/servant_proxy.hpp>
 #include <boost/asynchronous/trackable_servant.hpp>
@@ -56,6 +58,7 @@ int main(int argc, char * argv[])
     std::string tensorflow_model_input;
     std::string tensorflow_model_outputs;
     std::string tensorflow_extract_outputs;
+    std::string tensorflow_label_file;
 #endif
 
     // performance options
@@ -93,6 +96,7 @@ int main(int argc, char * argv[])
         ("tfinput", po::value<std::string>(&tensorflow_model_input), "name of input layer")
         ("tfoutputs", po::value<std::string>(&tensorflow_model_outputs), "comma separated list of output layers")
         ("tfextract", po::value<std::string>(&tensorflow_extract_outputs)->default_value("*"), "comma separated list of output descriptions to extract or '*' to extract all")
+        ("tflabels", po::value<std::string>(&tensorflow_label_file), "file containing labels of detection classes")
 #endif
         ;
 
@@ -295,6 +299,75 @@ int main(int argc, char * argv[])
         if (!quiet)
         {
             std::cout << "Using TensorFlow model from directory '" << tensorflow_model_path << "' for 'tfpredict' algorithm" << std::endl;
+        }
+    }
+
+    // load label files
+    std::unordered_map<std::size_t, std::string> labels;
+
+    if (variables.count("tflabels"))
+    {
+        // read label file
+        std::ifstream file(tensorflow_label_file);
+        std::string labels_pbtxt { std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
+        file.close();
+
+        if (!file.good())
+        {
+            std::cerr << "Error while loading label file '" << tensorflow_label_file << "'." << std::endl;
+            return 1;
+        }
+
+        if (!quiet)
+        {
+            std::cout << "Loaded label file '" << tensorflow_label_file << "'" << std::endl;
+        }
+
+        // extract IDs and names from label string
+        // TODO This is quite a hack for the moment! Replace this with a more robust implementation!
+        try
+        {
+            std::vector<std::string> lines;
+            boost::split(lines, labels_pbtxt, [](char c){ return c == '\n'; });
+
+            for (std::size_t i = 0; i < (lines.size() - 5); i += 5)
+            {
+                // extract ID
+                std::size_t pos = lines[i + 2].find_first_of(":");
+                std::size_t id = std::stoi(lines[i + 2].substr(pos + 2));
+
+                // extract name
+                pos = lines[i + 3].find_first_of(":");
+                std::string name = lines[i + 3].substr(pos + 2);
+                boost::algorithm::replace_first(name, "\"", "");
+                boost::algorithm::replace_last(name, "\"", "");
+
+                labels[id] = name;
+            }
+
+            if (!quiet)
+            {
+                std::cout << "Extracted " << labels.size() << " classes from label file" << std::endl;
+            }
+        }
+        catch (std::exception const & e)
+        {
+            std::cerr << "Error while parsing label file '" << tensorflow_label_file << "'. Error: " << e.what() << std::endl;
+            return 1;
+        }
+        catch (...)
+        {
+            std::cerr << "Unknown error while parsing label file '" << tensorflow_label_file << "'." << std::endl;
+            return 1;
+        }
+
+        tfpredict_processor->set_labels(std::move(labels));
+    }
+    else
+    {
+        if (!quiet)
+        {
+            std::cout << "No label file set. Ignore classes in case of using 'tfpredict' algorithm" << std::endl;
         }
     }
 #endif
