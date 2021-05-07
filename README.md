@@ -56,7 +56,7 @@ An application used to apply multiple filters stored at script files to all fram
 
 * C++ 17 compiler
 * CMake 3.12 or later
-* TensorFlow 2 or later (see section *Options*)
+* TensorFlow 2 or later (see section *Options* and TensorFlow Support at *doc* subdirectory)
 
 ### Options
 
@@ -72,17 +72,11 @@ Advanced debugging could be achived with so called [sanitizers](https://hpc-wiki
     option(BUILD_WITH_SANITIZER_MEMORY "Build all libraries and applications with memory sanitizer." OFF)
     option(BUILD_WITH_SANITIZER_UNDEFINED_BEHAVIOUR "Build all libraries and applications with undefined behaviour sanitizer." OFF)
 
-Object detection with TensorFlow could be performed with the *tfpredict* algorithm. To enable this feature you have to edit the following option
-
-    option(BUILD_WITH_TENSORFLOW_SEGMENTATION "Build with enabled Google TensorFlow C++ support for image segmentation and enable 'tfpredict' algorithm." OFF)
-
-and set the environment variable *TensorFlowCC_ROOT*.
-
 ### Example
 
 #### Build At Console
 
-To build the library on Unix/Linux try:
+To build the project on Unix/Linux try:
 
     mkdir build
     cd build
@@ -91,20 +85,26 @@ To build the library on Unix/Linux try:
 
 #### Build With Docker
 
-At the [docker](docker) subdirectory several Dockerfiles are available to build the library based on different Linux distributions.
+At the [docker](docker) subdirectory several Dockerfiles are available to build the project based on different Linux distributions.
 
-To build a Docker image based on Debian Buster type:
+For instance, to build a Docker image based on Debian Ubuntu 20.04 you have to execute
 
-    docker build -f Dockerfile.debian-buster --force-rm -t libcvpg:0.1 .
+    docker build -f Dockerfile.ubuntu-20.04 -t cv-playground/dev:1.0 .
 
 inside the [docker](docker) subdirectory.
 
-To create a Docker container and execute a bash script inside the container type:
+To build the project inside the Docker container you have to run the Docker image and mount your project root directory from host side to /usr/src/cv-playground or another directory with the command
 
-    docker run -it libcvpg:0.1 /bin/bash
+    docker run -v /home/user/cv-playground:/usr/src/cv-playground --rm -it cv-playground/dev:1.0 /bin/bash
+
+At this point your could build the project as described at 'Build At Console'.
+
+#### Build With Docker And TensorFlow Support
+
+To build the project with TensorFlow support read the [TensorFlow](./doc/TensorFlowSupport.md) section.
 
 ## License
 
-Copyright (c) 2020 Franz Alt
+Copyright (c) 2020-2021 Franz Alt
 
 This project is distributed under the [MIT License](https://opensource.org/licenses/MIT), see [LICENSE](./LICENSE) for more information.
