@@ -2,10 +2,6 @@ set(target libcvpg)
 
 message(STATUS "Library '${target}'")
 
-find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL)
-
-include_directories(${FFMPEG_INCLUDE_DIRS})
-
 set(headers
     core/exception.hpp
     core/histogram.hpp
@@ -16,35 +12,51 @@ set(headers
     imageproc/algorithms/convert_to_gray.hpp
     imageproc/algorithms/convert_to_rgb.hpp
     imageproc/algorithms/histogram_equalization.hpp
+    imageproc/algorithms/hog.hpp
+    imageproc/algorithms/k_means.hpp
+    imageproc/algorithms/otsu_threshold.hpp
     imageproc/algorithms/paint_meta.hpp
     imageproc/algorithms/tiling.hpp
+    imageproc/algorithms/tiling/and.hpp
     imageproc/algorithms/tiling/convert_to_gray.hpp
     imageproc/algorithms/tiling/diff.hpp
     imageproc/algorithms/tiling/histogram.hpp
     imageproc/algorithms/tiling/mean.hpp
     imageproc/algorithms/tiling/multiply_add.hpp
+    imageproc/algorithms/tiling/or.hpp
     imageproc/algorithms/tiling/parameters.hpp
+    imageproc/algorithms/tiling/pooling.hpp
+    imageproc/algorithms/tiling/resize.hpp
     imageproc/algorithms/tiling/scharr.hpp
     imageproc/algorithms/tiling/sobel.hpp
+    imageproc/algorithms/tiling/threshold.hpp
     imageproc/algorithms/tiling/functors/histogram.hpp
     imageproc/algorithms/tiling/functors/image.hpp
     imageproc/scripting/algorithm_set.hpp
     imageproc/scripting/image_processor.hpp
     imageproc/scripting/item.hpp
     imageproc/scripting/processing_context.hpp
+    imageproc/scripting/algorithms/and.hpp
     imageproc/scripting/algorithms/base.hpp
+    imageproc/scripting/algorithms/binary_threshold.hpp
     imageproc/scripting/algorithms/convert_to_gray.hpp
     imageproc/scripting/algorithms/convert_to_rgb.hpp
     imageproc/scripting/algorithms/diff.hpp
     imageproc/scripting/algorithms/histogram_equalization.hpp
+    imageproc/scripting/algorithms/hog_image.hpp
     imageproc/scripting/algorithms/input.hpp
+    imageproc/scripting/algorithms/k_means.hpp
     imageproc/scripting/algorithms/mean.hpp
     imageproc/scripting/algorithms/multiply_add.hpp
+    imageproc/scripting/algorithms/or.hpp
     imageproc/scripting/algorithms/paint_meta.hpp
     imageproc/scripting/algorithms/parameter.hpp
     imageproc/scripting/algorithms/parameter_set.hpp
+    imageproc/scripting/algorithms/pooling.hpp
+    imageproc/scripting/algorithms/resize.hpp
     imageproc/scripting/algorithms/scharr.hpp
     imageproc/scripting/algorithms/sobel.hpp
+    imageproc/scripting/algorithms/threshold.hpp
     imageproc/scripting/detail/compiler.hpp
     imageproc/scripting/detail/container_node.hpp
     imageproc/scripting/detail/graph.hpp
@@ -84,30 +96,46 @@ set(sources
     imageproc/algorithms/convert_to_gray.cpp
     imageproc/algorithms/convert_to_rgb.cpp
     imageproc/algorithms/histogram_equalization.cpp
+    imageproc/algorithms/hog.cpp
+    imageproc/algorithms/k_means.cpp
+    imageproc/algorithms/otsu_threshold.cpp
     imageproc/algorithms/paint_meta.cpp
+    imageproc/algorithms/tiling/and.cpp
     imageproc/algorithms/tiling/convert_to_gray.cpp
     imageproc/algorithms/tiling/diff.cpp
     imageproc/algorithms/tiling/histogram.cpp
     imageproc/algorithms/tiling/mean.cpp
     imageproc/algorithms/tiling/multiply_add.cpp
+    imageproc/algorithms/tiling/or.cpp
+    imageproc/algorithms/tiling/pooling.cpp
+    imageproc/algorithms/tiling/resize.cpp
     imageproc/algorithms/tiling/scharr.cpp
     imageproc/algorithms/tiling/sobel.cpp
+    imageproc/algorithms/tiling/threshold.cpp
     imageproc/scripting/algorithm_set.cpp
     imageproc/scripting/image_processor.cpp
     imageproc/scripting/item.cpp
     imageproc/scripting/processing_context.cpp
+    imageproc/scripting/algorithms/and.cpp
+    imageproc/scripting/algorithms/binary_threshold.cpp
     imageproc/scripting/algorithms/convert_to_gray.cpp
     imageproc/scripting/algorithms/convert_to_rgb.cpp
     imageproc/scripting/algorithms/diff.cpp
     imageproc/scripting/algorithms/histogram_equalization.cpp
+    imageproc/scripting/algorithms/hog_image.cpp
     imageproc/scripting/algorithms/input.cpp
+    imageproc/scripting/algorithms/k_means.cpp
     imageproc/scripting/algorithms/mean.cpp
     imageproc/scripting/algorithms/multiply_add.cpp
+    imageproc/scripting/algorithms/or.cpp
     imageproc/scripting/algorithms/paint_meta.cpp
     imageproc/scripting/algorithms/parameter.cpp
     imageproc/scripting/algorithms/parameter_set.cpp
+    imageproc/scripting/algorithms/pooling.cpp
+    imageproc/scripting/algorithms/resize.cpp
     imageproc/scripting/algorithms/scharr.cpp
     imageproc/scripting/algorithms/sobel.cpp
+    imageproc/scripting/algorithms/threshold.cpp
     imageproc/scripting/detail/compiler.cpp
     imageproc/scripting/detail/container_node.cpp
     imageproc/scripting/detail/graph.cpp
@@ -150,11 +178,13 @@ if(BUILD_WITH_TENSORFLOW_SEGMENTATION)
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
             $<BUILD_INTERFACE:${TensorFlowCC_INCLUDE_DIRS}>
             $<BUILD_INTERFACE:${TensorFlowCC_INCLUDE_DIRS}/src>
+            ${FFMPEG_INCLUDE_DIRS}
     )
 else()
     target_include_directories(${target}
         PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+            ${FFMPEG_INCLUDE_DIRS}
     )
 endif()
 

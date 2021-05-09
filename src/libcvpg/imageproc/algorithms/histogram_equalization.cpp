@@ -11,7 +11,7 @@
 
 namespace {
 
-void equalize_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters, std::shared_ptr<const cvpg::histogram> cdf, std::size_t min_cdf, std::size_t max_cdf)
+void equalize_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters, std::shared_ptr<const cvpg::histogram<std::size_t> > cdf, std::size_t min_cdf, std::size_t max_cdf)
 {
     const std::size_t image_width = parameters.image_width;
     const std::size_t image_height = parameters.image_height;
@@ -37,10 +37,10 @@ void equalize_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from
 
 struct equalize_image_task : public boost::asynchronous::continuation_task<cvpg::image_gray_8bit>
 {
-    equalize_image_task(cvpg::image_gray_8bit image, cvpg::histogram cdf, std::size_t min_cdf, std::size_t max_cdf)
+    equalize_image_task(cvpg::image_gray_8bit image, cvpg::histogram<std::size_t> cdf, std::size_t min_cdf, std::size_t max_cdf)
         : boost::asynchronous::continuation_task<cvpg::image_gray_8bit>("equalize_image_task")
         , m_image(std::move(image))
-        , m_cdf(std::make_shared<const cvpg::histogram>(std::move(cdf)))
+        , m_cdf(std::make_shared<const cvpg::histogram<std::size_t> >(std::move(cdf)))
         , m_min_cdf(min_cdf)
         , m_max_cdf(max_cdf)
     {}
@@ -80,24 +80,24 @@ struct equalize_image_task : public boost::asynchronous::continuation_task<cvpg:
 private:
     cvpg::image_gray_8bit m_image;
 
-    std::shared_ptr<const cvpg::histogram> m_cdf;
+    std::shared_ptr<const cvpg::histogram<std::size_t> > m_cdf;
 
     std::size_t m_min_cdf;
     std::size_t m_max_cdf;
 };
 
 boost::asynchronous::detail::callback_continuation<cvpg::image_gray_8bit>
-equalize_image(cvpg::image_gray_8bit image, cvpg::histogram cdf, std::size_t min_cdf, std::size_t max_cdf)
+equalize_image(cvpg::image_gray_8bit image, cvpg::histogram<std::size_t> cdf, std::size_t min_cdf, std::size_t max_cdf)
 {
     return boost::asynchronous::top_level_callback_continuation<cvpg::image_gray_8bit>(
                equalize_image_task(std::move(image), std::move(cdf), min_cdf, max_cdf)
            );
 }
 
-struct merge_histograms_task : public boost::asynchronous::continuation_task<std::shared_ptr<cvpg::histogram> >
+struct merge_histograms_task : public boost::asynchronous::continuation_task<std::shared_ptr<cvpg::histogram<std::size_t> > >
 {
-    merge_histograms_task(std::shared_ptr<cvpg::histogram> a, std::shared_ptr<cvpg::histogram> b)
-        : boost::asynchronous::continuation_task<std::shared_ptr<cvpg::histogram> >("merge_histograms")
+    merge_histograms_task(std::shared_ptr<cvpg::histogram<std::size_t> > a, std::shared_ptr<cvpg::histogram<std::size_t> > b)
+        : boost::asynchronous::continuation_task<std::shared_ptr<cvpg::histogram<std::size_t> > >("merge_histograms")
         , m_a(a)
         , m_b(b)
     {}
@@ -105,18 +105,18 @@ struct merge_histograms_task : public boost::asynchronous::continuation_task<std
     void operator()()
     {
         // TODO optimize this
-        this_task_result().set_value(std::make_shared<cvpg::histogram>(*m_a + *m_b));
+        this_task_result().set_value(std::make_shared<cvpg::histogram<std::size_t> >(*m_a + *m_b));
     }
 
 private:
-    std::shared_ptr<cvpg::histogram> m_a;
-    std::shared_ptr<cvpg::histogram> m_b;
+    std::shared_ptr<cvpg::histogram<std::size_t> > m_a;
+    std::shared_ptr<cvpg::histogram<std::size_t> > m_b;
 };
 
-boost::asynchronous::detail::callback_continuation<std::shared_ptr<cvpg::histogram> >
-merge_histograms(std::shared_ptr<cvpg::histogram> a, std::shared_ptr<cvpg::histogram> b)
+boost::asynchronous::detail::callback_continuation<std::shared_ptr<cvpg::histogram<std::size_t> > >
+merge_histograms(std::shared_ptr<cvpg::histogram<std::size_t> > a, std::shared_ptr<cvpg::histogram<std::size_t> > b)
 {
-    return boost::asynchronous::top_level_callback_continuation<std::shared_ptr<cvpg::histogram> >(
+    return boost::asynchronous::top_level_callback_continuation<std::shared_ptr<cvpg::histogram<std::size_t> > >(
                merge_histograms_task(a, b)
            );
 }
@@ -133,26 +133,26 @@ struct histogram_equalization_task : public boost::asynchronous::continuation_ta
         const auto width = m_image.width();
         const auto height = m_image.height();
 
-        auto tf = cvpg::imageproc::algorithms::tiling_functors::histogram<cvpg::image_gray_8bit, cvpg::histogram>({{ m_image }});
+        auto tf = cvpg::imageproc::algorithms::tiling_functors::histogram<cvpg::image_gray_8bit, cvpg::histogram<std::size_t> >({{ m_image }});
         tf.parameters.image_width = width;
         tf.parameters.image_height = height;
         tf.parameters.cutoff_x = 512;
         tf.parameters.cutoff_y = 512;
 
-        tf.tile_algorithm_task = [](std::shared_ptr<cvpg::image_gray_8bit> src1, std::shared_ptr<cvpg::image_gray_8bit> /*src2*/, std::shared_ptr<cvpg::histogram> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
+        tf.tile_algorithm_task = [](std::shared_ptr<cvpg::image_gray_8bit> src1, std::shared_ptr<cvpg::image_gray_8bit> /*src2*/, std::shared_ptr<cvpg::histogram<std::size_t> > dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
         {
             std::vector<std::size_t> h(256);
             cvpg::imageproc::algorithms::histogram_gray_8bit(src1->data(0).get(), &h, from_x, to_x, from_y, to_y, std::move(parameters));
 
-            *dst = cvpg::histogram(std::move(h));
+            *dst = cvpg::histogram<std::size_t> (std::move(h));
         };
 
-        tf.horizontal_merge_task = [](std::shared_ptr<cvpg::histogram> dst1, std::shared_ptr<cvpg::histogram> dst2, std::size_t /*from_x*/, std::size_t /*to_x*/, std::size_t /*from_y*/, std::size_t /*to_y*/, cvpg::imageproc::algorithms::tiling_parameters /*parameters*/)
+        tf.horizontal_merge_task = [](std::shared_ptr<cvpg::histogram<std::size_t> > dst1, std::shared_ptr<cvpg::histogram<std::size_t> > dst2, std::size_t /*from_x*/, std::size_t /*to_x*/, std::size_t /*from_y*/, std::size_t /*to_y*/, cvpg::imageproc::algorithms::tiling_parameters /*parameters*/)
         {
             return merge_histograms(dst1, dst2);
         };
 
-        tf.vertical_merge_task = [](std::shared_ptr<cvpg::histogram> dst1, std::shared_ptr<cvpg::histogram> dst2, std::size_t /*from_x*/, std::size_t /*to_x*/, std::size_t /*from_y*/, std::size_t /*to_y*/, cvpg::imageproc::algorithms::tiling_parameters /*parameters*/)
+        tf.vertical_merge_task = [](std::shared_ptr<cvpg::histogram<std::size_t> > dst1, std::shared_ptr<cvpg::histogram<std::size_t> > dst2, std::size_t /*from_x*/, std::size_t /*to_x*/, std::size_t /*from_y*/, std::size_t /*to_y*/, cvpg::imageproc::algorithms::tiling_parameters /*parameters*/)
         {
             return merge_histograms(dst1, dst2);
         };
@@ -208,7 +208,7 @@ struct histogram_equalization_task : public boost::asynchronous::continuation_ta
                             result.set_exception(std::current_exception());
                         }
                     },
-                    equalize_image(std::move(image), cvpg::histogram(std::move(cdf)), min_cdf, max_cdf)
+                    equalize_image(std::move(image), cvpg::histogram<std::size_t> (std::move(cdf)), min_cdf, max_cdf)
                 );
             },
             cvpg::imageproc::algorithms::tiling(std::move(tf))

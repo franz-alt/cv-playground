@@ -4,10 +4,12 @@ message(STATUS "Test application '${target}'")
 
 set(sources
     main.cpp
+    core/histogram.cpp
     core/image.cpp
     core/meta_data.cpp
     core/multi_array.cpp
     imageproc/algorithms/histogram_equalization.cpp
+    imageproc/algorithms/hog.cpp
     imageproc/scripting/convert_to_gray.cpp
     imageproc/scripting/diff.cpp
     imageproc/scripting/image_processor.cpp
@@ -25,9 +27,9 @@ add_executable(${target} ${sources})
 if(BUILD_WITH_TENSORFLOW_SEGMENTATION)
     target_link_libraries(${target}
         PRIVATE
+            libcvpg
             ${DEFAULT_LIBRARIES}
             ${CMAKE_THREAD_LIBS_INIT}
-            libcvpg
             ${TensorFlowCC_LIBS}
             ${FFMPEG_LIBRARIES}
             ${Boost_LIBRARIES}
@@ -38,9 +40,9 @@ if(BUILD_WITH_TENSORFLOW_SEGMENTATION)
 else()
     target_link_libraries(${target}
         PRIVATE
+            libcvpg
             ${DEFAULT_LIBRARIES}
             ${CMAKE_THREAD_LIBS_INIT}
-            libcvpg
             ${FFMPEG_LIBRARIES}
             ${Boost_LIBRARIES}
             gtest_main

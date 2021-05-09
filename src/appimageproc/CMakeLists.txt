@@ -11,9 +11,9 @@ add_executable(${target} ${sources} ${headers})
 if(BUILD_WITH_TENSORFLOW_SEGMENTATION)
     target_link_libraries(${target}
         PRIVATE
+            libcvpg
             ${DEFAULT_LIBRARIES}
             ${CMAKE_THREAD_LIBS_INIT}
-            libcvpg
             ${TensorFlowCC_LIBS}
             ${FFMPEG_LIBRARIES}
             ${Boost_LIBRARIES}
@@ -23,9 +23,9 @@ if(BUILD_WITH_TENSORFLOW_SEGMENTATION)
 else()
     target_link_libraries(${target}
         PRIVATE
+	    libcvpg
             ${DEFAULT_LIBRARIES}
             ${CMAKE_THREAD_LIBS_INIT}
-            libcvpg
             ${FFMPEG_LIBRARIES}
             ${Boost_LIBRARIES}
             png

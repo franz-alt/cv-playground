@@ -1,4 +1,4 @@
-#include <libcvpg/imageproc/scripting/algorithms/diff.hpp>
+#include <libcvpg/imageproc/scripting/algorithms/or.hpp>
 
 #include <chrono>
 #include <functional>
@@ -8,7 +8,7 @@
 #include <libcvpg/core/exception.hpp>
 #include <libcvpg/core/image.hpp>
 #include <libcvpg/imageproc/algorithms/tiling.hpp>
-#include <libcvpg/imageproc/algorithms/tiling/diff.hpp>
+#include <libcvpg/imageproc/algorithms/tiling/or.hpp>
 #include <libcvpg/imageproc/scripting/item.hpp>
 #include <libcvpg/imageproc/scripting/processing_context.hpp>
 #include <libcvpg/imageproc/scripting/detail/compiler.hpp>
@@ -17,22 +17,21 @@
 
 namespace detail {
 
-struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::processing_context> >
+struct or_task : public boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::processing_context> >
 {
-    diff_task(std::shared_ptr<cvpg::imageproc::scripting::processing_context> context, std::uint32_t result_id, cvpg::imageproc::scripting::detail::parser::item item)
-        : boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::processing_context> >("algorithms::diff_task")
+    or_task(std::shared_ptr<cvpg::imageproc::scripting::processing_context> context, std::uint32_t result_id, cvpg::imageproc::scripting::detail::parser::item item)
+        : boost::asynchronous::continuation_task<std::shared_ptr<cvpg::imageproc::scripting::processing_context> >("algorithms::or_task")
         , m_context(context)
         , m_result_id(result_id)
         , m_item(std::move(item))
     {}
 
     void operator()()
-    {        
+    {
         try
         {
             auto id1 = std::any_cast<std::uint32_t>(m_item.arguments.at(0).value());
             auto id2 = std::any_cast<std::uint32_t>(m_item.arguments.at(1).value());
-            auto offset = std::any_cast<std::int32_t>(m_item.arguments.at(2).value());
 
             auto input1 = m_context->load(id1);
             auto input2 = m_context->load(id2);
@@ -76,11 +75,10 @@ struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr
                 tf.parameters.image_height = height;
                 tf.parameters.cutoff_x = cutoff_x;
                 tf.parameters.cutoff_y = cutoff_y;
-                tf.parameters.signed_integer_numbers.push_back(offset);
 
                 tf.tile_algorithm_task = [](std::shared_ptr<cvpg::image_gray_8bit> src1, std::shared_ptr<cvpg::image_gray_8bit> src2, std::shared_ptr<cvpg::image_gray_8bit> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
                 {
-                    cvpg::imageproc::algorithms::diff_gray_8bit(src1->data(0).get(), src2->data(0).get(), dst->data(0).get(), from_x, to_x, from_y, to_y, std::move(parameters));
+                    cvpg::imageproc::algorithms::or_gray_8bit(src1->data(0).get(), src2->data(0).get(), dst->data(0).get(), from_x, to_x, from_y, to_y, std::move(parameters));
                 };
 
                 boost::asynchronous::create_callback_continuation(
@@ -118,13 +116,12 @@ struct diff_task : public boost::asynchronous::continuation_task<std::shared_ptr
                 tf.parameters.image_height = height;
                 tf.parameters.cutoff_x = cutoff_x;
                 tf.parameters.cutoff_y = cutoff_y;
-                tf.parameters.signed_integer_numbers.push_back(offset);
 
                 tf.tile_algorithm_task = [](std::shared_ptr<cvpg::image_rgb_8bit> src1, std::shared_ptr<cvpg::image_rgb_8bit> src2, std::shared_ptr<cvpg::image_rgb_8bit> dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
                 {
-                    cvpg::imageproc::algorithms::diff_gray_8bit(src1->data(0).get(), src2->data(0).get(), dst->data(0).get(), from_x, to_x, from_y, to_y, parameters);
-                    cvpg::imageproc::algorithms::diff_gray_8bit(src1->data(1).get(), src2->data(1).get(), dst->data(1).get(), from_x, to_x, from_y, to_y, parameters);
-                    cvpg::imageproc::algorithms::diff_gray_8bit(src1->data(2).get(), src2->data(2).get(), dst->data(2).get(), from_x, to_x, from_y, to_y, std::move(parameters));
+                    cvpg::imageproc::algorithms::or_gray_8bit(src1->data(0).get(), src2->data(0).get(), dst->data(0).get(), from_x, to_x, from_y, to_y, parameters);
+                    cvpg::imageproc::algorithms::or_gray_8bit(src1->data(1).get(), src2->data(1).get(), dst->data(1).get(), from_x, to_x, from_y, to_y, parameters);
+                    cvpg::imageproc::algorithms::or_gray_8bit(src1->data(2).get(), src2->data(2).get(), dst->data(2).get(), from_x, to_x, from_y, to_y, std::move(parameters));
                 };
 
                 boost::asynchronous::create_callback_continuation(
@@ -161,10 +158,10 @@ private:
     cvpg::imageproc::scripting::detail::parser::item m_item;
 };
 
-auto diff(std::shared_ptr<cvpg::imageproc::scripting::processing_context> context, std::uint32_t result_id, cvpg::imageproc::scripting::detail::parser::item item)
+auto or_(std::shared_ptr<cvpg::imageproc::scripting::processing_context> context, std::uint32_t result_id, cvpg::imageproc::scripting::detail::parser::item item)
 {
     return boost::asynchronous::top_level_callback_continuation<std::shared_ptr<cvpg::imageproc::scripting::processing_context> >(
-               diff_task(context, result_id, std::move(item))
+               or_task(context, result_id, std::move(item))
            );
 }
 
@@ -172,17 +169,17 @@ auto diff(std::shared_ptr<cvpg::imageproc::scripting::processing_context> contex
 
 namespace cvpg { namespace imageproc { namespace scripting { namespace algorithms {
 
-std::string diff::name() const
+std::string or_::name() const
 {
-    return "diff";
+    return "or";
 }
 
-std::string diff::category() const
+std::string or_::category() const
 {
     return "filters/arithmetic";
 }
 
-std::vector<scripting::item::types> diff::result() const
+std::vector<scripting::item::types> or_::result() const
 {
     return
     {
@@ -191,125 +188,73 @@ std::vector<scripting::item::types> diff::result() const
     };
 }
 
-parameter_set diff::parameters() const
+parameter_set or_::parameters() const
 {
     return parameter_set
            ({
                parameter("image1", "first input image", "", { scripting::item::types::grayscale_8_bit_image, scripting::item::types::rgb_8_bit_image }),
-               parameter("image2", "second input image", "", { scripting::item::types::grayscale_8_bit_image, scripting::item::types::rgb_8_bit_image }),
-               parameter("offset", "offset", "", scripting::item::types::signed_integer, static_cast<std::int32_t>(-255), static_cast<std::int32_t>(255), static_cast<std::int32_t>(1))
+               parameter("image2", "second input image", "", { scripting::item::types::grayscale_8_bit_image, scripting::item::types::rgb_8_bit_image })
            });
 }
 
-void diff::on_parse(std::shared_ptr<detail::parser> parser) const
+void or_::on_parse(std::shared_ptr<detail::parser> parser) const
 {
-    // all parameters
-    {
-        std::function<std::uint32_t(std::uint32_t, std::uint32_t, std::int32_t)> fct =
-            [parser, parameters = this->parameters()](std::uint32_t image1_id, std::uint32_t image2_id, std::int32_t offset)
+    std::function<std::uint32_t(std::uint32_t, std::uint32_t)> fct =
+        [parser, parameters = this->parameters()](std::uint32_t image1_id, std::uint32_t image2_id)
+        {
+            // find image
+            if (!parser)
             {
-                // find image
-                if (!parser)
+                throw cvpg::invalid_parameter_exception("invalid parser");
+            }
+
+            auto image1 = parser->find_item(image1_id);
+            auto image2 = parser->find_item(image2_id);
+
+            if (image1.arguments.empty() || image2.arguments.empty())
+            {
+                throw cvpg::invalid_parameter_exception("invalid input ID");
+            }
+
+            auto input1_type = image1.arguments.front().type();
+            auto input2_type = image2.arguments.front().type();
+
+            // check parameters
+            if (!((input1_type == scripting::item::types::grayscale_8_bit_image && input2_type == scripting::item::types::grayscale_8_bit_image) ||
+                  (input1_type == scripting::item::types::rgb_8_bit_image && input2_type == scripting::item::types::rgb_8_bit_image)))
+            {
+                throw cvpg::invalid_parameter_exception("invalid input type");
+            }
+
+            std::uint32_t result_id = 0;
+
+            detail::parser::item result_item
+            {
+                "or",
                 {
-                    throw cvpg::invalid_parameter_exception("invalid parser");
+                    scripting::item(image1.arguments.front().type(), image1_id),
+                    scripting::item(image2.arguments.front().type(), image2_id)
                 }
-
-                auto image1 = parser->find_item(image1_id);
-                auto image2 = parser->find_item(image2_id);
-
-                if (image1.arguments.empty() || image2.arguments.empty())
-                {
-                    throw cvpg::invalid_parameter_exception("invalid input ID");
-                }
-
-                auto input1_type = image1.arguments.front().type();
-                auto input2_type = image2.arguments.front().type();
-
-                // check parameters
-                if (!((input1_type == scripting::item::types::grayscale_8_bit_image && input2_type == scripting::item::types::grayscale_8_bit_image) ||
-                      (input1_type == scripting::item::types::rgb_8_bit_image && input2_type == scripting::item::types::rgb_8_bit_image)))
-                {
-                    throw cvpg::invalid_parameter_exception("invalid input type");
-                }
-
-                if (!parameters.is_valid("offset", offset))
-                {
-                    throw cvpg::invalid_parameter_exception("invalid offset");
-                }
-
-                std::uint32_t result_id = 0;
-
-                detail::parser::item result_item
-                {
-                    "diff",
-                    {
-                        scripting::item(image1.arguments.front().type(), image1_id),
-                        scripting::item(image2.arguments.front().type(), image2_id),
-                        scripting::item(scripting::item::types::signed_integer, offset)
-                    }
-                };
-
-                result_id = parser->register_item(std::move(result_item));
-
-                parser->register_link(image1_id, result_id);
-                parser->register_link(image2_id, result_id);
-
-                return result_id;
             };
 
-        parser->register_specification(name(), std::move(fct));
-    }
+            result_id = parser->register_item(std::move(result_item));
 
-    // default 0 for offset
-    {
-        std::function<std::uint32_t(std::uint32_t, std::uint32_t)> fct =
-            [parser](std::uint32_t image1_id, std::uint32_t image2_id)
-            {
-                std::uint32_t result_id = 0;
+            parser->register_link(image1_id, result_id);
+            parser->register_link(image2_id, result_id);
 
-                // find images
-                if (!!parser)
-                {
-                    auto image1 = parser->find_item(image1_id);
-                    auto image2 = parser->find_item(image2_id);
+            return result_id;
+        };
 
-                    if (image1.arguments.size() != 0 && image2.arguments.size() != 0 && image1.arguments.front().type() == image2.arguments.front().type())
-                    {
-                        detail::parser::item result_item
-                        {
-                            "diff",
-                            {
-                                scripting::item(image1.arguments.front().type(), image1_id),
-                                scripting::item(image2.arguments.front().type(), image2_id),
-                                scripting::item(scripting::item::types::signed_integer, 0)
-                            }
-                        };
-
-                        result_id = parser->register_item(std::move(result_item));
-
-                        parser->register_link(image1_id, result_id);
-                        parser->register_link(image2_id, result_id);
-                    }
-                    else
-                    {
-                        throw cvpg::invalid_parameter_exception("different image types");
-                    }
-                }
-
-                return result_id;
-            };
-
-        parser->register_specification(name(), std::move(fct));
-    }
+    parser->register_specification(name(), std::move(fct));
 }
 
-void diff::on_compile(std::uint32_t item_id, std::shared_ptr<detail::compiler> compiler) const
+void or_::on_compile(std::uint32_t item_id, std::shared_ptr<detail::compiler> compiler) const
 {
     auto handler =
         detail::handler(
             [result_id = item_id, item = compiler->get_item(item_id)](std::shared_ptr<processing_context> context)
             {
-                return ::detail::diff(context, result_id, std::move(item));
+                return ::detail::or_(context, result_id, std::move(item));
             });
 
     compiler->register_handler(item_id, name(), std::move(handler));

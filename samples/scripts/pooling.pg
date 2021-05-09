@@ -1,0 +1,19 @@
+var input = input("rgb", 8)
+
+// resize image to a defined size
+var scaled = resize(input, 1024, 768)
+
+// smooth resized image
+var smoothed = mean(scaled, 5, 5)
+
+// perform a subsequent pooling to reduce resolution
+var pooled = smoothed
+var pooling_mode = "max"
+
+for (var i = 1; i < 4; ++i)
+{
+  pooled = pooling(pooled, pooling_mode)
+}
+
+// resize last pooled image to same size as input image
+var input_pooled = resize_to(pooled, input)

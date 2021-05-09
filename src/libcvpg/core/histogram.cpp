@@ -1,49 +1,72 @@
 #include <libcvpg/core/histogram.hpp>
 
 #include <algorithm>
+#include <stdexcept>
 
 namespace cvpg {
 
-histogram::histogram()
-    : m_data(256)
+template<class value> histogram<value>::histogram()
+    : histogram(256)
 {}
 
-histogram::histogram(std::vector<std::size_t> data)
+template<class value> histogram<value>::histogram(std::size_t bins)
+    : m_data(bins)
+{}
+
+template<class value> histogram<value>::histogram(std::vector<value_type> data)
     : m_data(std::move(data))
 {}
 
-histogram & histogram::operator=(std::vector<std::size_t> data)
+template<class value> histogram<value> & histogram<value>::operator=(std::vector<value_type> data)
 {
     m_data = std::move(data);
 
     return *this;
 }
 
-std::size_t histogram::bins() const
+template<class value> std::size_t histogram<value>::bins() const noexcept
 {
     return m_data.size();
 }
 
-std::vector<std::size_t>::const_iterator histogram::begin() const
+template<class value> typename histogram<value>::iterator_type histogram<value>::begin() noexcept
 {
     return m_data.begin();
 }
 
-std::vector<std::size_t>::const_iterator histogram::end() const
+template<class value> typename histogram<value>::iterator_type histogram<value>::end() noexcept
 {
     return m_data.end();
 }
 
-std::size_t histogram::at(std::size_t i) const
+template<class value> typename histogram<value>::const_iterator_type histogram<value>::cbegin() const noexcept
+{
+    return m_data.cbegin();
+}
+
+template<class value> typename histogram<value>::const_iterator_type histogram<value>::cend() const noexcept
+{
+    return m_data.cend();
+}
+
+template<class value> typename histogram<value>::reference_type histogram<value>::at(std::size_t i)
 {
     return m_data.at(i);
 }
 
-histogram histogram::operator+(histogram const & rhs) const
+template<class value> typename histogram<value>::const_reference_type histogram<value>::at(std::size_t i) const
 {
-    // TODO error handling
+    return m_data.at(i);
+}
 
-    std::vector<std::size_t> h(m_data.size());
+template<class value> histogram<value> histogram<value>::operator+(histogram const & rhs) const
+{
+    if (bins() != rhs.bins())
+    {
+        throw std::runtime_error("different bin sizes");
+    }
+
+    std::vector<value_type> h(m_data.size());
 
     std::transform(m_data.begin(),
                    m_data.end(),
@@ -57,11 +80,14 @@ histogram histogram::operator+(histogram const & rhs) const
     return histogram(std::move(h));
 }
 
-histogram & histogram::operator+=(histogram const & rhs)
+template<class value> histogram<value> & histogram<value>::operator+=(histogram const & rhs)
 {
-    // TODO error handling
+    if (bins() != rhs.bins())
+    {
+        throw std::runtime_error("different bin sizes");
+    }
 
-    std::vector<std::size_t> h(m_data.size());
+    std::vector<value_type> h(m_data.size());
 
     std::transform(m_data.begin(),
                    m_data.end(),
@@ -77,17 +103,24 @@ histogram & histogram::operator+=(histogram const & rhs)
     return *this;
 }
 
-histogram::iterator_type begin(histogram const & h)
+// manual instantation of histogram<> for some types
+template class histogram<std::size_t>;
+template class histogram<double>;
+
+template<class value>
+typename histogram<value>::const_iterator_type begin(histogram<value> const & h) noexcept
 {
-    return h.begin();
+    return h.cbegin();
 }
 
-histogram::iterator_type end(histogram const & h)
+template<class value>
+typename histogram<value>::const_iterator_type end(histogram<value> const & h) noexcept
 {
-    return h.end();
+    return h.cend();
 }
 
-std::ostream & operator<<(std::ostream & out, histogram const & h)
+template<class value>
+std::ostream & operator<<(std::ostream & out, histogram<value> const & h)
 {
     out << "bins=" << h.bins();
 

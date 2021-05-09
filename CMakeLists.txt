@@ -19,6 +19,7 @@ find_package(Threads REQUIRED)
 find_package(PNG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options system thread)
 find_package(Git QUIET)
+find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL)
 
 # set output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})

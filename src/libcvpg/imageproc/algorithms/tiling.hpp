@@ -368,7 +368,10 @@ struct tiling_task : public boost::asynchronous::continuation_task<typename func
             // TODO implement me!
         }
 
-        auto output = std::make_shared<result_type>(std::move(m_func.create_output(image1->width(), image1->height())));
+        auto output =
+            (m_func.parameters.dst_image_width == 0 && m_func.parameters.dst_image_height == 0) ?
+            std::make_shared<result_type>(std::move(m_func.create_output(image1->width(), image1->height()))) :
+            std::make_shared<result_type>(std::move(m_func.create_output(m_func.parameters.dst_image_width, m_func.parameters.dst_image_height)));
 
         auto create_intermediate_outputs_fct = m_func.create_intermediate_outputs;
 

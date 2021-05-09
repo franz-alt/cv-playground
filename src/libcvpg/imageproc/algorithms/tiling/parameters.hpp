@@ -13,6 +13,9 @@ struct tiling_parameters
     std::size_t image_width = 0;
     std::size_t image_height = 0;
 
+    std::size_t dst_image_width = 0;
+    std::size_t dst_image_height = 0;
+
     std::size_t cutoff_x = 0; // horizontal cutoff
     std::size_t cutoff_y = 0; // vertical cutoff
 
