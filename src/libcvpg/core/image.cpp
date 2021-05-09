@@ -5,7 +5,7 @@
 #include <png.h>
 
 #include <libcvpg/core/exception.hpp>
-#include <libcvpg/core/metadata.hpp>
+#include <libcvpg/core/meta_data.hpp>
 
 namespace cvpg {
 
@@ -48,12 +48,12 @@ template<class pixel, std::uint8_t channels> std::shared_ptr<typename image<pixe
     return m_data[channel];
 }
 
-template<class pixel, std::uint8_t channels> void image<pixel, channels>::set_metadata(std::shared_ptr<cvpg::metadata> metadata)
+template<class pixel, std::uint8_t channels> void image<pixel, channels>::set_metadata(std::shared_ptr<cvpg::meta_data> metadata)
 {
     m_metadata = std::move(metadata);
 }
 
-template<class pixel, std::uint8_t channels> std::shared_ptr<cvpg::metadata> image<pixel, channels>::get_metadata() const noexcept
+template<class pixel, std::uint8_t channels> std::shared_ptr<cvpg::meta_data> image<pixel, channels>::get_metadata() const noexcept
 {
     return m_metadata;
 }

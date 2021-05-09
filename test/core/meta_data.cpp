@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include <libcvpg/core/metadata.hpp>
+#include <libcvpg/core/meta_data.hpp>
 
 TEST(test_metadata, default_creation)
 {
     // create an empty metadata object
-    cvpg::metadata data;
+    cvpg::meta_data data;
 
     // no entries
     ASSERT_EQ(data.size(), 0);
@@ -19,7 +19,7 @@ TEST(test_metadata, default_creation)
 
 TEST(test_metadata, filled_data)
 {
-    cvpg::metadata data;
+    cvpg::meta_data data;
 
     // add new entry with key 'foo' and value 42, converted to a std::any
     data.emplace("foo", 42);
@@ -39,7 +39,7 @@ TEST(test_metadata, filled_data)
 TEST(test_metadata, keys)
 {
     // create an empty metadata object
-    cvpg::metadata data;
+    cvpg::meta_data data;
 
     // no keys
     ASSERT_TRUE(data.keys().empty());

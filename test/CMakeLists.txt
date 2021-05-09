@@ -6,7 +6,7 @@ set(sources
     main.cpp
     core/histogram.cpp
     core/image.cpp
-    core/metadata.cpp
+    core/meta_data.cpp
     imageproc/algorithms/histogram_equalization.cpp
     imageproc/algorithms/hog.cpp
     imageproc/scripting/convert_to_gray.cpp

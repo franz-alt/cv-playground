@@ -1,5 +1,5 @@
-#ifndef LIBCVPG_CORE_METADATA_HPP
-#define LIBCVPG_CORE_METADATA_HPP
+#ifndef LIBCVPG_CORE_META_DATA_HPP
+#define LIBCVPG_CORE_META_DATA_HPP
 
 #include <any>
 #include <map>
@@ -8,7 +8,7 @@
 
 namespace cvpg {
 
-class metadata
+class meta_data
 {
 public:
     using key_type = std::string;
@@ -44,4 +44,4 @@ private:
 
 } // namespace cvpg
 
-#endif // LIBCVPG_CORE_METADATA_HPP
+#endif // LIBCVPG_CORE_META_DATA_HPP
