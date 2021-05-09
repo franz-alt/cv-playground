@@ -1,6 +1,9 @@
 if(BUILD_APPS)
     add_subdirectory(appimageproc)
-    add_subdirectory(appvideoproc)
+
+    if(BUILD_WITH_FFMPEG)
+        add_subdirectory(appvideoproc)
+    endif()
 endif()
 
 add_subdirectory(libcvpg)
