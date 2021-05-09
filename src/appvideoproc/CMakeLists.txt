@@ -2,10 +2,6 @@ set(target videoproc)
 
 message(STATUS "Application '${target}'")
 
-find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL)
-
-include_directories(${FFMPEG_INCLUDE_DIRS})
-
 set(headers
     progress_monitor.hpp
 )
@@ -19,11 +15,11 @@ add_executable(${target} ${sources} ${headers})
 
 target_link_libraries(${target}
     PRIVATE
+        libcvpg
         ${DEFAULT_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT}
         ${FFMPEG_LIBRARIES}
         ${Boost_LIBRARIES}
-        libcvpg
         png
         dl
 )

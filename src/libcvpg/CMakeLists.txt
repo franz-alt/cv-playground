@@ -2,10 +2,6 @@ set(target libcvpg)
 
 message(STATUS "Library '${target}'")
 
-find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL)
-
-include_directories(${FFMPEG_INCLUDE_DIRS})
-
 set(headers
     core/exception.hpp
     core/histogram.hpp
@@ -161,6 +157,7 @@ add_library(${target} ${sources} ${headers})
 target_include_directories(${target}
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+        ${FFMPEG_INCLUDE_DIRS}
 )
 
 target_compile_definitions(${target}
