@@ -12,8 +12,10 @@ At the moment only some easy algorithms at different categories are implemented.
 
 ### Arithmetic
 
+* And
 * Difference
 * Multiply Add (*Scaling*)
+* Or
 
 ### Edge Detection
 
@@ -24,13 +26,26 @@ At the moment only some easy algorithms at different categories are implemented.
 
 * Histogram Equalization
 
+### Geometric Transformations
+
+* Pooling
+* Resize
+* Resize To Target
+
 ### Miscellaneous
 
 * Paint Primitives
 
 ### Object Detection
 
-* TensorFlow Inferencing (see section *Options*)
+* Histogram Of Oriented Gradients [Experimental]
+* TensorFlow Inferencing (see section *Options*) [Experimental]
+
+### Segmentation
+
+* Binary Threshold
+* K-Means [Experimental]
+* Threshold
 
 ### Smoothing
 
@@ -46,9 +61,11 @@ An application used to apply multiple filters stored at a script file to an imag
 
 An application used to apply multiple filters stored at script files to all frames and inter-frames of a MP4 video file or a RTSP video stream.
 
+Hint: This application is only available if FFmpeg support is enabled.
+
 ## Planned
 
-* Vectorized (AVX 2) algorithms
+* Vectorized (AVX-2) algorithms
 
 ## Building
 
@@ -56,6 +73,7 @@ An application used to apply multiple filters stored at script files to all fram
 
 * C++ 17 compiler
 * CMake 3.12 or later
+* FFmpeg 4.x or later
 * TensorFlow 2 or later (see section *Options* and TensorFlow Support at *doc* subdirectory)
 
 ### Options
@@ -65,6 +83,7 @@ The following options could be used to build the library, sample applications an
     option(BUILD_APPS "Build applications." ON)
     option(BUILD_SHARED_LIBS "Build shared instead of static libraries." ON)
     option(BUILD_TESTS "Build module tests." ON)
+    option(BUILD_WITH_FFMPEG "Build with enabled FFmpeg support for video processing." ON)
 
 Advanced debugging could be achived with so called [sanitizers](https://hpc-wiki.info/hpc/Compiler_Sanitizers) built inside modern compilers.
     
