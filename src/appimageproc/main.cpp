@@ -257,117 +257,125 @@ int main(int argc, char * argv[])
                             boost::asynchronous::single_thread_scheduler<
                                 boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("tfpredict_processor"));
 
-    auto tfpredict_processor = std::make_shared<cvpg::imageproc::algorithms::tfpredict_processor_proxy>(tf_scheduler);
+    std::shared_ptr<cvpg::imageproc::algorithms::tfpredict_processor_proxy> tfpredict_processor;
 
-    auto promise_tfmodel_load = std::make_shared<std::promise<bool> >();
-    auto future_tfmodel_load = promise_tfmodel_load->get_future();
-
-    tfpredict_processor->load_model(
-        tensorflow_model_path,
-        tensorflow_model_input,
-        tensorflow_model_outputs,
-        tensorflow_extract_outputs,
-        [promise_tfmodel_load](bool status)
-        {
-            promise_tfmodel_load->set_value(status);
-        }
-    );
-
-    // wait until TensorFlow model is loaded
+    if (variables.count("tfmodel"))
     {
-        auto status = future_tfmodel_load.wait_for(std::chrono::seconds(10)); // TODO make a parameter for timeout
+        tfpredict_processor = std::make_shared<cvpg::imageproc::algorithms::tfpredict_processor_proxy>(tf_scheduler);
 
-        if (status == std::future_status::deferred)
-        {
-            std::cerr << "TensorFlow C++ model loading ended in deferred state. Abort" << std::endl;
-            return 1;
-        }
-        else if (status == std::future_status::timeout)
-        {
-            std::cerr << "TensorFlow C++ model loading timed out. Abort" << std::endl;
-            return 1;
-        }
+        auto promise_tfmodel_load = std::make_shared<std::promise<bool> >();
+        auto future_tfmodel_load = promise_tfmodel_load->get_future();
 
-        auto tfmodel_load_result = future_tfmodel_load.get();
-
-        if (!tfmodel_load_result)
-        {
-            std::cerr << "Error while loading TensorFlow model from directory '" << tensorflow_model_path << "'." << std::endl;
-            return 1;
-        }
-
-        if (!quiet)
-        {
-            std::cout << "Using TensorFlow model from directory '" << tensorflow_model_path << "' for 'tfpredict' algorithm" << std::endl;
-        }
-    }
-
-    // load label files
-    std::unordered_map<std::size_t, std::string> labels;
-
-    if (variables.count("tflabels"))
-    {
-        // read label file
-        std::ifstream file(tensorflow_label_file);
-        std::string labels_pbtxt { std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
-        file.close();
-
-        if (!file.good())
-        {
-            std::cerr << "Error while loading label file '" << tensorflow_label_file << "'." << std::endl;
-            return 1;
-        }
-
-        if (!quiet)
-        {
-            std::cout << "Loaded label file '" << tensorflow_label_file << "'" << std::endl;
-        }
-
-        // extract IDs and names from label string
-        // TODO This is quite a hack for the moment! Replace this with a more robust implementation!
-        try
-        {
-            std::vector<std::string> lines;
-            boost::split(lines, labels_pbtxt, [](char c){ return c == '\n'; });
-
-            for (std::size_t i = 0; i < (lines.size() - 5); i += 5)
+        tfpredict_processor->load_model(
+            tensorflow_model_path,
+            tensorflow_model_input,
+            tensorflow_model_outputs,
+            tensorflow_extract_outputs,
+            [promise_tfmodel_load](bool status)
             {
-                // extract ID
-                std::size_t pos = lines[i + 2].find_first_of(":");
-                std::size_t id = std::stoi(lines[i + 2].substr(pos + 2));
+                promise_tfmodel_load->set_value(status);
+            }
+        );
 
-                // extract name
-                pos = lines[i + 3].find_first_of(":");
-                std::string name = lines[i + 3].substr(pos + 2);
-                boost::algorithm::replace_first(name, "\"", "");
-                boost::algorithm::replace_last(name, "\"", "");
+        // wait until TensorFlow model is loaded
+        {
+            auto status = future_tfmodel_load.wait_for(std::chrono::seconds(10)); // TODO make a parameter for timeout
 
-                labels[id] = name;
+            if (status == std::future_status::deferred)
+            {
+                std::cerr << "TensorFlow C++ model loading ended in deferred state. Abort" << std::endl;
+                return 1;
+            }
+            else if (status == std::future_status::timeout)
+            {
+                std::cerr << "TensorFlow C++ model loading timed out. Abort" << std::endl;
+                return 1;
+            }
+
+            auto tfmodel_load_result = future_tfmodel_load.get();
+
+            if (!tfmodel_load_result)
+            {
+                std::cerr << "Error while loading TensorFlow model from directory '" << tensorflow_model_path << "'." << std::endl;
+                return 1;
             }
 
             if (!quiet)
             {
-                std::cout << "Extracted " << labels.size() << " classes from label file" << std::endl;
+                std::cout << "Using TensorFlow model from directory '" << tensorflow_model_path << "' for 'tfpredict' algorithm" << std::endl;
             }
         }
-        catch (std::exception const & e)
-        {
-            std::cerr << "Error while parsing label file '" << tensorflow_label_file << "'. Error: " << e.what() << std::endl;
-            return 1;
-        }
-        catch (...)
-        {
-            std::cerr << "Unknown error while parsing label file '" << tensorflow_label_file << "'." << std::endl;
-            return 1;
-        }
 
-        tfpredict_processor->set_labels(std::move(labels));
-    }
-    else
-    {
-        if (!quiet)
+        // load label files
+        std::unordered_map<std::size_t, std::string> labels;
+
+        if (variables.count("tflabels"))
         {
-            std::cout << "No label file set. Ignore classes in case of using 'tfpredict' algorithm" << std::endl;
+            // read label file
+            std::ifstream file(tensorflow_label_file);
+            std::string labels_pbtxt { std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
+            file.close();
+
+            if (!file.good())
+            {
+                std::cerr << "Error while loading label file '" << tensorflow_label_file << "'." << std::endl;
+                return 1;
+            }
+
+            if (!quiet)
+            {
+                std::cout << "Loaded label file '" << tensorflow_label_file << "'" << std::endl;
+            }
+
+            // extract IDs and names from label string
+            // TODO This is quite a hack for the moment! Replace this with a more robust implementation!
+            try
+            {
+                std::vector<std::string> lines;
+                boost::split(lines, labels_pbtxt, [](char c){ return c == '\n'; });
+
+                for (std::size_t i = 0; i < (lines.size() - 5); i += 5)
+                {
+                    // extract ID
+                    std::size_t pos = lines[i + 2].find_first_of(":");
+                    std::size_t id = std::stoi(lines[i + 2].substr(pos + 2));
+
+                    // extract name
+                    pos = lines[i + 3].find_first_of(":");
+                    std::string name = lines[i + 3].substr(pos + 2);
+                    boost::algorithm::replace_first(name, "\"", "");
+                    boost::algorithm::replace_last(name, "\"", "");
+
+                    labels[id] = name;
+                }
+
+                if (!quiet)
+                {
+                    std::cout << "Extracted " << labels.size() << " classes from label file" << std::endl;
+                }
+            }
+            catch (std::exception const & e)
+            {
+                std::cerr << "Error while parsing label file '" << tensorflow_label_file << "'. Error: " << e.what() << std::endl;
+                return 1;
+            }
+            catch (...)
+            {
+                std::cerr << "Unknown error while parsing label file '" << tensorflow_label_file << "'." << std::endl;
+                return 1;
+            }
+
+            if (tfpredict_processor)
+            {
+                tfpredict_processor->set_labels(std::move(labels));
+            }
+        }
+        else
+        {
+            if (!quiet)
+            {
+                std::cout << "No label file set. Ignore classes in case of using 'tfpredict' algorithm" << std::endl;
+            }
         }
     }
 #endif
@@ -422,7 +430,10 @@ int main(int argc, char * argv[])
                                                                                boost::asynchronous::make_scheduler_interfaces(scheduler, pool, formatter_scheduler));
 
 #ifdef USE_TENSORFLOW_CC
-    processor.add_param("tfmodel_processor", tfpredict_processor);
+    if (tfpredict_processor)
+    {
+        processor.add_param("tfmodel_processor", tfpredict_processor);
+    }
 #endif
 
     // set cutoff parameters
