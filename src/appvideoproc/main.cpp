@@ -10,6 +10,7 @@
 #include <string>
 
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <boost/asynchronous/scheduler_shared_proxy.hpp>
 #include <boost/asynchronous/diagnostics/formatter.hpp>
@@ -23,6 +24,10 @@
 #include <libcvpg/videoproc/pipelines/any_pipeline.hpp>
 #include <libcvpg/videoproc/pipelines/file_to_file.hpp>
 #include <libcvpg/videoproc/pipelines/rtsp_to_file.hpp>
+
+#ifdef USE_TENSORFLOW_CC
+#include <libcvpg/imageproc/algorithms/tfpredict.hpp>
+#endif
 
 #include "progress_monitor.hpp"
 
@@ -53,6 +58,15 @@ int main(int argc, char * argv[])
     std::size_t buffered_processing_frames = 50;
     std::size_t buffered_output_frames = 20;
 
+#ifdef USE_TENSORFLOW_CC
+    // TensorFlow inferencing options
+    std::string tensorflow_model_path;
+    std::string tensorflow_model_input;
+    std::string tensorflow_model_outputs;
+    std::string tensorflow_extract_outputs;
+    std::string tensorflow_label_file;
+#endif
+
     // performance options
     std::uint32_t xcutoff = 512;
     std::uint32_t ycutoff = 512;
@@ -81,6 +95,17 @@ int main(int argc, char * argv[])
         ("output-buffer", po::value<std::size_t>(&buffered_output_frames)->default_value(50), "amount of buffered frames when writing video frames")
         ;
 
+#ifdef USE_TENSORFLOW_CC
+    po::options_description tf_inferencing_options("TensorFlow inferencing options (for 'tfpredict')", window.ws_col, window.ws_col / 2);
+    tf_inferencing_options.add_options()
+        ("tfmodel", po::value<std::string>(&tensorflow_model_path), "path to TensorFlow model used at 'tfpredict' algorithm")
+        ("tfinput", po::value<std::string>(&tensorflow_model_input), "name of input layer")
+        ("tfoutputs", po::value<std::string>(&tensorflow_model_outputs), "comma separated list of output layers")
+        ("tfextract", po::value<std::string>(&tensorflow_extract_outputs)->default_value("*"), "comma separated list of output descriptions to extract or '*' to extract all")
+        ("tflabels", po::value<std::string>(&tensorflow_label_file), "file containing labels of detection classes")
+#endif
+        ;
+
     po::options_description performance_options("performance options", window.ws_col, window.ws_col / 2);
     performance_options.add_options()
         ("xcutoff", po::value<std::uint32_t>(&xcutoff)->default_value(512), "horizontal cutoff")
@@ -91,6 +116,9 @@ int main(int argc, char * argv[])
     po::options_description cmdline_options("usage: videoproc [options]", window.ws_col, window.ws_col / 2);
     cmdline_options.add(general_options)
                    .add(video_processing_options)
+#ifdef USE_TENSORFLOW_CC
+                   .add(tf_inferencing_options)
+#endif
                    .add(performance_options);
 
     po::variables_map variables;
@@ -165,6 +193,150 @@ int main(int argc, char * argv[])
     {
         threads = std::thread::hardware_concurrency();
     }
+
+#ifdef USE_TENSORFLOW_CC
+    if (variables.count("tfmodel"))
+    {
+        if (!variables.count("tfinput"))
+        {
+            std::cerr << "TensorFlow model set but no input layer set." << std::endl;
+            return 1;
+        }
+
+        if (!variables.count("tfoutputs"))
+        {
+            std::cerr << "TensorFlow model set but no output layers set." << std::endl;
+            return 1;
+        }
+    }
+
+    // create a single-threaded world, where the TensorFlow processor will live inside
+    auto tf_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
+                            boost::asynchronous::single_thread_scheduler<
+                                boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("tfpredict_processor"));
+
+    std::shared_ptr<cvpg::imageproc::algorithms::tfpredict_processor_proxy> tfpredict_processor;
+
+    if (variables.count("tfmodel"))
+    {
+        tfpredict_processor = std::make_shared<cvpg::imageproc::algorithms::tfpredict_processor_proxy>(tf_scheduler);
+
+        auto promise_tfmodel_load = std::make_shared<std::promise<bool> >();
+        auto future_tfmodel_load = promise_tfmodel_load->get_future();
+
+        tfpredict_processor->load_model(
+            tensorflow_model_path,
+            tensorflow_model_input,
+            tensorflow_model_outputs,
+            tensorflow_extract_outputs,
+            [promise_tfmodel_load](bool status)
+            {
+                promise_tfmodel_load->set_value(status);
+            }
+        );
+
+        // wait until TensorFlow model is loaded
+        {
+            auto status = future_tfmodel_load.wait_for(std::chrono::seconds(10)); // TODO make a parameter for timeout
+
+            if (status == std::future_status::deferred)
+            {
+                std::cerr << "TensorFlow C++ model loading ended in deferred state. Abort" << std::endl;
+                return 1;
+            }
+            else if (status == std::future_status::timeout)
+            {
+                std::cerr << "TensorFlow C++ model loading timed out. Abort" << std::endl;
+                return 1;
+            }
+
+            auto tfmodel_load_result = future_tfmodel_load.get();
+
+            if (!tfmodel_load_result)
+            {
+                std::cerr << "Error while loading TensorFlow model from directory '" << tensorflow_model_path << "'." << std::endl;
+                return 1;
+            }
+
+            if (!quiet)
+            {
+                std::cout << "Using TensorFlow model from directory '" << tensorflow_model_path << "' for 'tfpredict' algorithm" << std::endl;
+            }
+        }
+
+        // load label files
+        std::unordered_map<std::size_t, std::string> labels;
+
+        if (variables.count("tflabels"))
+        {
+            // read label file
+            std::ifstream file(tensorflow_label_file);
+            std::string labels_pbtxt { std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>() };
+            file.close();
+
+            if (!file.good())
+            {
+                std::cerr << "Error while loading label file '" << tensorflow_label_file << "'." << std::endl;
+                return 1;
+            }
+
+            if (!quiet)
+            {
+                std::cout << "Loaded label file '" << tensorflow_label_file << "'" << std::endl;
+            }
+
+            // extract IDs and names from label string
+            // TODO This is quite a hack for the moment! Replace this with a more robust implementation!
+            try
+            {
+                std::vector<std::string> lines;
+                boost::split(lines, labels_pbtxt, [](char c){ return c == '\n'; });
+
+                for (std::size_t i = 0; i < (lines.size() - 5); i += 5)
+                {
+                    // extract ID
+                    std::size_t pos = lines[i + 2].find_first_of(":");
+                    std::size_t id = std::stoi(lines[i + 2].substr(pos + 2));
+
+                    // extract name
+                    pos = lines[i + 3].find_first_of(":");
+                    std::string name = lines[i + 3].substr(pos + 2);
+                    boost::algorithm::replace_first(name, "\"", "");
+                    boost::algorithm::replace_last(name, "\"", "");
+
+                    labels[id] = name;
+                }
+
+                if (!quiet)
+                {
+                    std::cout << "Extracted " << labels.size() << " classes from label file" << std::endl;
+                }
+            }
+            catch (std::exception const & e)
+            {
+                std::cerr << "Error while parsing label file '" << tensorflow_label_file << "'. Error: " << e.what() << std::endl;
+                return 1;
+            }
+            catch (...)
+            {
+                std::cerr << "Unknown error while parsing label file '" << tensorflow_label_file << "'." << std::endl;
+                return 1;
+            }
+
+            if (tfpredict_processor)
+            {
+                tfpredict_processor->set_labels(std::move(labels));
+            }
+        }
+        else
+        {
+            if (!quiet)
+            {
+                std::cout << "No label file set. Ignore classes in case of using 'tfpredict' algorithm" << std::endl;
+            }
+        }
+    }
+#endif
 
     // determine if input is a video file or a video stream
     enum class input_mode_types
@@ -269,6 +441,13 @@ int main(int argc, char * argv[])
                                              boost::asynchronous::lockfree_queue<cvpg::imageproc::scripting::diagnostics::servant_job> > >(std::string("image_processor"));
 
     cvpg::imageproc::scripting::image_processor_proxy image_processor(image_processor_scheduler, thread_pool);
+
+#ifdef USE_TENSORFLOW_CC
+    if (tfpredict_processor)
+    {
+        image_processor.add_param("tfmodel_processor", tfpredict_processor);
+    }
+#endif
 
     // create formatter to produce diagnostics in markdown format
     auto formatter_scheduler = boost::asynchronous::make_shared_scheduler_proxy<
