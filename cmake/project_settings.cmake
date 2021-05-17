@@ -2,8 +2,11 @@
 
 # set the default build type to release
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
+    message(STATUS "Build type not set. Set to 'Release' as default")
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Select the build type." FORCE)
 endif()
+
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 
 string(TOUPPER ${CMAKE_BUILD_TYPE} BUILDTYPE)
 
