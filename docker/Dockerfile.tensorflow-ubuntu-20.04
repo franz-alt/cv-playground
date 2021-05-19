@@ -5,31 +5,6 @@
 #
 # to build TensorFlow and it's C++ libraries.
 #
-# Example Usage
-# -------------
-#
-# 1. Create a volume to store created TensorFlow C++ library
-#
-#    docker volume create tensorflow-cc
-#
-# 2. Create and execute a Docker container to store the TensorFlow C++ library inside the volume
-#
-#    docker run -v tensorflow-cc:/opt/tensorflow/lib tensorflow-cc:1.0
-#
-# 3. List Docker volumes
-#
-#    docker volume ls
-#
-# 4. Determine location of Docker volume
-#
-#    docker volume inspect tensorflow-cc
-#
-#    Look for an entry like ...
-#
-#    "Mountpoint": "/var/lib/docker/volumes/tensorflow-cc/_data"
-#
-#    ... and copy data from this location to your desired location.
-#
 
 FROM cv-playground/dev:1.0
 
