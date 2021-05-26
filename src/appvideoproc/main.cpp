@@ -65,6 +65,7 @@ int main(int argc, char * argv[])
     std::string tensorflow_model_outputs;
     std::string tensorflow_extract_outputs;
     std::string tensorflow_label_file;
+    std::uint32_t tensorflow_threads = 0;
 #endif
 
     // performance options
@@ -103,6 +104,7 @@ int main(int argc, char * argv[])
         ("tfoutputs", po::value<std::string>(&tensorflow_model_outputs), "comma separated list of output layers")
         ("tfextract", po::value<std::string>(&tensorflow_extract_outputs)->default_value("*"), "comma separated list of output descriptions to extract or '*' to extract all")
         ("tflabels", po::value<std::string>(&tensorflow_label_file), "file containing labels of detection classes")
+        ("tfthreads", po::value<std::uint32_t>(&tensorflow_threads)->default_value(0), "amount of threads used by TensorFlow (0 = all available)")
 #endif
         ;
 
@@ -208,6 +210,16 @@ int main(int argc, char * argv[])
             std::cerr << "TensorFlow model set but no output layers set." << std::endl;
             return 1;
         }
+
+        if (variables.count("tfthreads"))
+        {
+            tensorflow_threads = variables["tfthreads"].as<std::uint32_t>();
+
+            if (tensorflow_threads == 0)
+            {
+                tensorflow_threads = std::thread::hardware_concurrency();
+            }
+        }
     }
 
     // create a single-threaded world, where the TensorFlow processor will live inside
@@ -219,7 +231,7 @@ int main(int argc, char * argv[])
 
     if (variables.count("tfmodel"))
     {
-        tfpredict_processor = std::make_shared<cvpg::imageproc::algorithms::tfpredict_processor_proxy>(tf_scheduler);
+        tfpredict_processor = std::make_shared<cvpg::imageproc::algorithms::tfpredict_processor_proxy>(tf_scheduler, tensorflow_threads);
 
         auto promise_tfmodel_load = std::make_shared<std::promise<bool> >();
         auto future_tfmodel_load = promise_tfmodel_load->get_future();

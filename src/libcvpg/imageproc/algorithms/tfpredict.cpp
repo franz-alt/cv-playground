@@ -13,8 +13,9 @@
 
 namespace cvpg::imageproc::algorithms {
 
-tfpredict_processor::tfpredict_processor(boost::asynchronous::any_weak_scheduler<scripting::diagnostics::servant_job> scheduler)
+tfpredict_processor::tfpredict_processor(boost::asynchronous::any_weak_scheduler<scripting::diagnostics::servant_job> scheduler, std::uint32_t threads)
     : boost::asynchronous::trackable_servant<scripting::diagnostics::servant_job, scripting::diagnostics::servant_job>(scheduler)
+    , m_threads(threads)
 {}
 
 void tfpredict_processor::load_model(std::string path, std::string input_layer, std::string output_layers, std::string extract_outputs, std::function<void(bool)> callback)
@@ -22,6 +23,9 @@ void tfpredict_processor::load_model(std::string path, std::string input_layer, 
     m_model_bundle = std::make_unique<tensorflow::SavedModelBundleLite>();
     tensorflow::SessionOptions session_options = tensorflow::SessionOptions();
     tensorflow::ConfigProto & config = session_options.config;
+    config.set_inter_op_parallelism_threads(m_threads);
+    config.set_intra_op_parallelism_threads(m_threads);
+
     tensorflow::RunOptions run_options = tensorflow::RunOptions();
     tensorflow::Status status = tensorflow::LoadSavedModel(session_options, run_options, path, { tensorflow::kSavedModelTagServe }, m_model_bundle.get());
 
