@@ -24,6 +24,7 @@ RUN apt-get -y install -y --no-install-recommends \
   cmake-curses-gui \
   libboost-all-dev \
   libpng-dev \
+  libgoogle-perftools-dev \
   ffmpeg \
   libavcodec-dev \
   libavdevice-dev \
