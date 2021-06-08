@@ -18,6 +18,13 @@ target_link_libraries(${target}
         dl
 )
 
+if(BUILD_WITH_TCMALLOC)
+    target_link_libraries(${target}
+        PRIVATE
+            ${TCMalloc_LIBRARIES}
+    )
+endif()
+
 if(BUILD_WITH_FFMPEG)
     target_link_libraries(${target} PRIVATE ${FFMPEG_LIBRARIES})
 endif()

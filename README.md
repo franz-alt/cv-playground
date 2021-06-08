@@ -83,6 +83,7 @@ The following options could be used to build the library, sample applications an
     option(BUILD_APPS "Build applications." ON)
     option(BUILD_SHARED_LIBS "Build shared instead of static libraries." ON)
     option(BUILD_TESTS "Build module tests." ON)
+    option(BUILD_WITH_TCMALLOC "Build the software with TCMalloc." OFF)
     option(BUILD_WITH_FFMPEG "Build with enabled FFmpeg support for video processing." ON)
 
 Advanced debugging could be achived with so called [sanitizers](https://hpc-wiki.info/hpc/Compiler_Sanitizers) built inside modern compilers.

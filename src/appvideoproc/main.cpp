@@ -9,6 +9,10 @@
 #include <sstream>
 #include <string>
 
+#ifdef USE_TCMALLOC
+#include <gperftools/malloc_extension.h>
+#endif
+
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -42,6 +46,10 @@ static void avlog_cb(void *, int level, const char * szFmt, va_list varg)
 
 int main(int argc, char * argv[])
 {
+#ifdef USE_TCMALLOC
+    MallocExtension::Initialize();
+#endif
+
     namespace po = boost::program_options;
 
     // general options
@@ -704,6 +712,18 @@ int main(int argc, char * argv[])
             std::cout << "Diagnostics saved at '" << diagnostics_filename << "'" << std::endl;
         }
     }
+
+#ifdef USE_TCMALLOC
+    if (!quiet)
+    {
+        char buffer[20000];
+
+        MallocExtension::instance()->GetStats(&buffer[0], sizeof(buffer));
+
+        std::cout << "TCMalloc:" << std::endl;
+        std::cout << buffer << std::endl;
+    }
+#endif
 
     return finished_with_errors ? 1 : 0;
 }

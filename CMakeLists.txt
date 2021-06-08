@@ -30,6 +30,14 @@ option(BUILD_APPS "Build applications." ON)
 option(BUILD_SHARED_LIBS "Build shared instead of static libraries." ON)
 option(BUILD_TESTS "Build module tests." ON)
 
+option(BUILD_WITH_TCMALLOC "Build the software with TCMalloc." OFF)
+
+if(BUILD_WITH_TCMALLOC)
+    find_package(TCMalloc REQUIRED)
+
+    add_definitions(-DUSE_TCMALLOC)
+endif()
+
 option(BUILD_WITH_FFMPEG "Build with enabled FFmpeg support for video processing." ON)
 
 if(BUILD_WITH_FFMPEG)
