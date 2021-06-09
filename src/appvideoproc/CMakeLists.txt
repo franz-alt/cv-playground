@@ -19,6 +19,7 @@ target_link_libraries(${target}
         ${DEFAULT_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT}
         ${FFMPEG_LIBRARIES}
+        ${SWSCALE_LIBRARIES}
         ${Boost_LIBRARIES}
         png
         dl

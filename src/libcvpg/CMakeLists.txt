@@ -189,6 +189,7 @@ if(BUILD_WITH_FFMPEG)
     target_include_directories(${target}
         PRIVATE
             $<BUILD_INTERFACE:${FFMPEG_INCLUDE_DIRS}>
+            $<BUILD_INTERFACE:${SWSCALE_INCLUDE_DIRS}>
     )
 endif()
 

@@ -13,6 +13,8 @@ extern "C" {
 #include <libavformat/avio.h>
 #include <libavutil/imgutils.h>
 #include <libavutil/opt.h>
+#include <libavutil/pixfmt.h>
+#include <libswscale/swscale.h>
 }
 
 #include <libcvpg/core/exception.hpp>
@@ -93,6 +95,24 @@ struct write_frames_task : public boost::asynchronous::continuation_task<std::ve
     {
         try
         {
+            std::size_t channels = 0;
+            AVPixelFormat pixel_format = AVPixelFormat::AV_PIX_FMT_NONE;
+
+            if constexpr (std::tuple_size<typename Image::channel_array_type>::value == 1)
+            {
+                channels = 1;
+                pixel_format = AVPixelFormat::AV_PIX_FMT_GRAY8;
+            }
+            else if constexpr (std::tuple_size<typename Image::channel_array_type>::value == 3)
+            {
+                channels = 3;
+                pixel_format = AVPixelFormat::AV_PIX_FMT_RGB24;
+            }
+            else
+            {
+                // TODO handle error
+            }
+
             AVFrame * frame = av_frame_alloc();
 
             if (!frame)
@@ -121,6 +141,12 @@ struct write_frames_task : public boost::asynchronous::continuation_task<std::ve
             std::vector<typename cvpg::videoproc::sinks::file<Image>::processing_context::buffer_info::entry> buffer;
             buffer.reserve(m_frames.size());
 
+            // pre-reserve output data as the size of the first image
+            auto image_data = m_frames.empty() ? nullptr : new std::uint8_t[m_frames.front().image().width() * m_frames.front().image().height() * channels];
+            int image_linesize[1] = { m_frames.empty() ? 0 : (static_cast<int>(m_frames.front().image().width() * channels)) };
+
+            ret = av_image_alloc(frame->data, frame->linesize, m_frames.empty() ? 0 : m_frames.front().image().width(), m_frames.empty() ? 0 : m_frames.front().image().height(), m_context->video.codec_context->pix_fmt, 32);
+
             for (auto const & inter_frame : m_frames)
             {
                 // abort if frame is a flush frame
@@ -140,37 +166,46 @@ struct write_frames_task : public boost::asynchronous::continuation_task<std::ve
 
                 auto image = inter_frame.image();
 
-                std::int32_t ret = av_image_alloc(frame->data, frame->linesize, image.width(), image.height(), m_context->video.codec_context->pix_fmt, 32);
+                std::size_t pos = 0;
 
-                if (ret < 0)
+                // convert image to byte array of suitable pixel format
+                for (std::size_t y = 0; y < image.height(); ++y)
                 {
-                    throw cvpg::exception("failed to allocate memory for raw picture buffer");
-                }
-
-                for (std::size_t y = 0; y < m_context->video.codec_context->height; y++)
-                {
-                    for (std::size_t x = 0; x < m_context->video.codec_context->width; x++)
+                    for (std::size_t x = 0; x < image.width(); ++x, pos += channels)
                     {
-                        std::uint8_t r = (&(*image.data(0)))[y * image.width() + x];
-                        std::uint8_t g = (&(*image.data(1)))[y * image.width() + x];
-                        std::uint8_t b = (&(*image.data(2)))[y * image.width() + x];
-
-                        frame->data[0][y * frame->linesize[0] + x] = ((66 * r + 129 * g + 25 * b) >> 8) + 16;
+                        if constexpr (std::tuple_size<typename Image::channel_array_type>::value == 1)
+                        {
+                            image_data[pos] = image.data(0).get()[y * image.width() + x];
+                        }
+                        else if constexpr (std::tuple_size<typename Image::channel_array_type>::value == 3)
+                        {
+                            image_data[pos] = image.data(0).get()[y * image.width() + x];
+                            image_data[pos + 1] = image.data(1).get()[y * image.width() + x];
+                            image_data[pos + 2] = image.data(2).get()[y * image.width() + x];
+                        }
                     }
                 }
 
-                for (std::size_t y = 0; y < m_context->video.codec_context->height / 2; y++)
-                {
-                    for (std::size_t x = 0; x < m_context->video.codec_context->width / 2; x++)
-                    {
-                        std::uint8_t r = (&(*image.data(0)))[y * image.width() + x];
-                        std::uint8_t g = (&(*image.data(1)))[y * image.width() + x];
-                        std::uint8_t b = (&(*image.data(2)))[y * image.width() + x];
+                // create a SWC context to convert image from RGB to source pixel format
+                auto sws_ctx = sws_getContext(image.width(),
+                                              image.height(),
+                                              pixel_format,
+                                              image.width(),
+                                              image.height(),
+                                              m_context->video.codec_context->pix_fmt,
+                                              0,
+                                              0,
+                                              0,
+                                              0);
 
-                        frame->data[1][y * frame->linesize[1] + x] = ((-38 * r + -74 * g + 112 * b) >> 8) + 128;
-                        frame->data[2][y * frame->linesize[2] + x] = ((112 * r + -94 * g + -18 * b) >> 8) + 128;
-                    }
-                }
+                // perform conversion to raw data
+                sws_scale(sws_ctx,
+                          &image_data,
+                          image_linesize,
+                          0,
+                          image.height(),
+                          frame->data,
+                          frame->linesize);
 
                 ret = avcodec_send_frame(m_context->video.codec_context, frame);
 
@@ -228,13 +263,18 @@ struct write_frames_task : public boost::asynchronous::continuation_task<std::ve
                     buffer.push_back(std::move(entry));
                 }
 
-                av_freep(frame->data);
-
                 // TODO indicate frame written
             }
 
+            if (!m_frames.empty())
+            {
+                delete[] image_data;
+            }
+
             av_packet_free(&packet);
+
             av_frame_free(&frame);
+            av_frame_unref(frame);
 
             this->this_task_result().set_value(std::move(buffer));
         }

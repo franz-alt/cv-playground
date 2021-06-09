@@ -8,6 +8,8 @@ extern "C" {
 #include <libavformat/avio.h>
 #include <libavutil/imgutils.h>
 #include <libavutil/opt.h>
+#include <libavutil/pixfmt.h>
+#include <libswscale/swscale.h>
 }
 
 #include <libcvpg/videoproc/stage_data_handler.hpp>
@@ -49,12 +51,77 @@ int decode_packet(AVPacket * packet, AVCodecContext * codec_context, AVFrame * f
             break;
         }
 
-        Image image(frame->linesize[0], frame->height, 0);
+        std::size_t channels = 0;
+        AVPixelFormat pixel_format = AVPixelFormat::AV_PIX_FMT_NONE;
 
-        // TODO use correct RGB frames here !!!
-        memcpy(image.data(0).get(), frame->data[0], frame->linesize[0] * frame->height);
-        memcpy(image.data(1).get(), frame->data[0], frame->linesize[0] * frame->height);
-        memcpy(image.data(2).get(), frame->data[0], frame->linesize[0] * frame->height);
+        if constexpr (std::tuple_size<typename Image::channel_array_type>::value == 1)
+        {
+            channels = 1;
+            pixel_format = AVPixelFormat::AV_PIX_FMT_GRAY8;
+        }
+        else if constexpr (std::tuple_size<typename Image::channel_array_type>::value == 3)
+        {
+            channels = 3;
+            pixel_format = AVPixelFormat::AV_PIX_FMT_RGB24;
+        }
+        else
+        {
+            // TODO handle error
+        }
+
+        Image image(frame->width, frame->height, 0);
+
+        // create a SWC context to convert image from source to RGB pixel format
+        auto sws_ctx = sws_getContext(codec_context->width,
+                                      codec_context->height,
+                                      codec_context->pix_fmt,
+                                      image.width(),
+                                      image.height(),
+                                      pixel_format,
+                                      0,
+                                      0,
+                                      0,
+                                      0);
+
+        AVFrame * dst = av_frame_alloc();
+        dst->data[0] = new std::uint8_t[image.width() * image.height() * channels];
+        dst->data[1] = nullptr;
+        dst->linesize[0] = image.width() * channels;
+        dst->linesize[1] = 0;
+
+        // perform conversion to RGB raw data
+        sws_scale(sws_ctx,
+                  frame->data,
+                  frame->linesize,
+                  0,
+                  image.height(),
+                  dst->data,
+                  dst->linesize);
+
+        // convert into cvpg::image format
+        for (std::size_t y = 0; y < image.height(); ++y)
+        {
+            std::size_t dst_pos = y * image.width();
+            std::size_t src_pos = dst_pos * channels;
+
+            for (std::size_t x = 0; x < image.width(); ++x, ++dst_pos, src_pos += channels)
+            {
+                if constexpr (std::tuple_size<typename Image::channel_array_type>::value == 1)
+                {
+                    image.data(0).get()[dst_pos] = dst->data[0][src_pos];
+                }
+                else if constexpr (std::tuple_size<typename Image::channel_array_type>::value == 3)
+                {
+                    image.data(0).get()[dst_pos] = dst->data[0][src_pos];
+                    image.data(1).get()[dst_pos] = dst->data[0][src_pos + 1];
+                    image.data(2).get()[dst_pos] = dst->data[0][src_pos + 2];
+                }
+            }
+        }
+
+        sws_freeContext(sws_ctx);
+
+        av_frame_free(&dst);
 
         av_frame_unref(frame);
 

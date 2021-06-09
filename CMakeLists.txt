@@ -41,7 +41,7 @@ endif()
 option(BUILD_WITH_FFMPEG "Build with enabled FFmpeg support for video processing." ON)
 
 if(BUILD_WITH_FFMPEG)
-    find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL)
+    find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL SWSCALE)
 endif()
 
 option(BUILD_WITH_TENSORFLOW_SEGMENTATION "Build with enabled Google TensorFlow C++ support for image segmentation and enable 'tfpredict' algorithm." OFF)

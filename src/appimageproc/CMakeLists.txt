@@ -26,7 +26,11 @@ if(BUILD_WITH_TCMALLOC)
 endif()
 
 if(BUILD_WITH_FFMPEG)
-    target_link_libraries(${target} PRIVATE ${FFMPEG_LIBRARIES})
+    target_link_libraries(${target}
+        PRIVATE
+            ${FFMPEG_LIBRARIES}
+            ${SWSCALE_LIBRARIES}
+    )
 endif()
 
 if(BUILD_WITH_TENSORFLOW_SEGMENTATION)
