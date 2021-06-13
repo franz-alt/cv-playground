@@ -17,6 +17,6 @@ struct callbacks
     std::function<void(std::size_t, cvpg::videoproc::update_indicator)> update;
 };
 
-} // cvpg::videoproc::pipelines::parameters
+} // namespace cvpg::videoproc::pipelines::parameters
 
 #endif // LIBCVPG_VIDEOPROC_PIPELINES_PARAMETERS_HPP

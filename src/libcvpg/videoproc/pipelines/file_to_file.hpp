@@ -102,6 +102,6 @@ struct image_rgb_8bit_file_to_file_proxy : public boost::asynchronous::servant_p
    BOOST_ASYNC_POST_MEMBER_LOG(start, "start", 1)
 };
 
-} // cvpg::videoproc::pipelines
+} // namespace cvpg::videoproc::pipelines
 
 #endif // LIBCVPG_VIDEOPROC_PIPELINES_FILE_TO_FILE_HPP
