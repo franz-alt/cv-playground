@@ -37,8 +37,8 @@ public:
 
     ~stage_data_handler() = default;
 
-    void add(T t);
-    void add(std::vector<T> t);
+    void add(T && t);
+    void add(std::vector<T> && t);
 
     void try_flush();
 

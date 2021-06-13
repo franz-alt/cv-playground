@@ -202,7 +202,7 @@ template<typename Image> void frame<Image>::finish(std::size_t context_id)
     }
 }
 
-template<typename Image> void frame<Image>::process(std::size_t context_id, videoproc::packet<videoproc::frame<Image> > packet)
+template<typename Image> void frame<Image>::process(std::size_t context_id, videoproc::packet<videoproc::frame<Image> > && packet)
 {
     auto it = m_contexts.find(context_id);
 
@@ -230,7 +230,7 @@ template<typename Image> void frame<Image>::next(std::size_t context_id, std::si
     }
 }
 
-template<typename Image> void frame<Image>::process_next_frames(std::size_t context_id, std::vector<videoproc::frame<Image> > frames)
+template<typename Image> void frame<Image>::process_next_frames(std::size_t context_id, std::vector<videoproc::frame<Image> > && frames)
 {
     auto it = m_contexts.find(context_id);
 

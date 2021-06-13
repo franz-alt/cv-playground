@@ -71,7 +71,7 @@ struct convert_to_gray_task :  public boost::asynchronous::continuation_task<std
 
                         try
                         {
-                            context->store(result_id, std::get<0>(cont_res).get(), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
+                            context->store(result_id, std::move(std::get<0>(cont_res).get()), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
 
                             result.set_value(context);
                         }

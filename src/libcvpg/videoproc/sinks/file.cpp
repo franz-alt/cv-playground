@@ -671,7 +671,7 @@ template<typename Image> void file<Image>::finish(std::size_t context_id)
     }
 }
 
-template<typename Image> void file<Image>::process(std::size_t context_id, videoproc::packet<videoproc::frame<Image> > packet)
+template<typename Image> void file<Image>::process(std::size_t context_id, videoproc::packet<videoproc::frame<Image> > && packet)
 {
     auto it = m_contexts.find(context_id);
 

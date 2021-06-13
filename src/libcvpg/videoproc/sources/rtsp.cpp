@@ -548,7 +548,7 @@ template<typename Image> void rtsp<Image>::finish(std::size_t /*context_id*/)
     // no finish needed here!
 }
 
-template<typename Image> void rtsp<Image>::process(std::size_t /*context_id*/, videoproc::packet<videoproc::frame<Image> > /*packet*/)
+template<typename Image> void rtsp<Image>::process(std::size_t /*context_id*/, videoproc::packet<videoproc::frame<Image> > && /*packet*/)
 {
     // no process needed here!
 }

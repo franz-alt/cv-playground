@@ -11,14 +11,14 @@ std::size_t processing_context::id() const
     return m_id;
 }
 
-void processing_context::store(std::uint32_t image_id, cvpg::image_gray_8bit image, std::chrono::microseconds duration)
+void processing_context::store(std::uint32_t image_id, cvpg::image_gray_8bit && image, std::chrono::microseconds duration)
 {
     m_items[image_id] = item(item::types::grayscale_8_bit_image, std::move(image));
     m_durations[image_id] = std::move(duration);
     m_last_stored = image_id;
 }
 
-void processing_context::store(std::uint32_t image_id, cvpg::image_rgb_8bit image, std::chrono::microseconds duration)
+void processing_context::store(std::uint32_t image_id, cvpg::image_rgb_8bit && image, std::chrono::microseconds duration)
 {
     m_items[image_id] = item(item::types::rgb_8_bit_image, std::move(image));
     m_durations[image_id] = std::move(duration);

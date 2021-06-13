@@ -97,7 +97,7 @@ struct threshold_task :  public boost::asynchronous::continuation_task<std::shar
 
                         try
                         {
-                            context->store(result_id, std::get<0>(cont_res).get(), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
+                            context->store(result_id, std::move(std::get<0>(cont_res).get()), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
 
                             result.set_value(context);
                         }
@@ -152,7 +152,7 @@ struct threshold_task :  public boost::asynchronous::continuation_task<std::shar
 
                         try
                         {
-                            context->store(result_id, std::get<0>(cont_res).get(), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
+                            context->store(result_id, std::move(std::get<0>(cont_res).get()), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
 
                             result.set_value(context);
                         }

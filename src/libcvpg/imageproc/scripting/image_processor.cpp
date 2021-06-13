@@ -189,7 +189,7 @@ void image_processor::compile(std::string expression, std::function<void(std::si
     }
 }
 
-void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit image, std::function<void(item)> callback)
+void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit && image, std::function<void(item)> callback)
 {
     auto it = m_compiled.find(compile_id);
 
@@ -232,7 +232,7 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit ima
     }
 }
 
-void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit image, std::function<void(item)> callback)
+void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit && image, std::function<void(item)> callback)
 {
     auto it = m_compiled.find(compile_id);
 
@@ -275,7 +275,7 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit imag
     }
 }
 
-void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_gray_8bit image, std::function<void(cvpg::image_gray_8bit)> callback, std::function<void(std::size_t, std::string)> failed_callback)
+void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_gray_8bit && image, std::function<void(cvpg::image_gray_8bit)> callback, std::function<void(std::size_t, std::string)> failed_callback)
 {
     evaluate(
         compile_id,
@@ -317,7 +317,7 @@ void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_gr
     );
 }
 
-void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_rgb_8bit image, std::function<void(cvpg::image_rgb_8bit)> callback, std::function<void(std::size_t, std::string)> failed_callback)
+void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_rgb_8bit && image, std::function<void(cvpg::image_rgb_8bit)> callback, std::function<void(std::size_t, std::string)> failed_callback)
 {
     evaluate(
         compile_id,
@@ -359,7 +359,7 @@ void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_rg
     );
 }
 
-void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit image1, cvpg::image_gray_8bit image2, std::function<void(item)> callback)
+void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit && image1, cvpg::image_gray_8bit && image2, std::function<void(item)> callback)
 {
     auto it = m_compiled.find(compile_id);
 
@@ -403,7 +403,7 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit ima
     }
 }
 
-void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit image1, cvpg::image_rgb_8bit image2, std::function<void(item)> callback)
+void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit && image1, cvpg::image_rgb_8bit && image2, std::function<void(item)> callback)
 {
     auto it = m_compiled.find(compile_id);
 
@@ -447,7 +447,7 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit imag
     }
 }
 
-void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_gray_8bit image1, cvpg::image_gray_8bit image2, std::function<void(cvpg::image_gray_8bit)> callback, std::function<void(std::size_t, std::string)> failed_callback)
+void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_gray_8bit && image1, cvpg::image_gray_8bit && image2, std::function<void(cvpg::image_gray_8bit)> callback, std::function<void(std::size_t, std::string)> failed_callback)
 {
     evaluate(
         compile_id,
@@ -490,7 +490,7 @@ void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_gr
     );
 }
 
-void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_rgb_8bit image1, cvpg::image_rgb_8bit image2, std::function<void(cvpg::image_rgb_8bit)> callback, std::function<void(std::size_t, std::string)> failed_callback)
+void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_rgb_8bit && image1, cvpg::image_rgb_8bit && image2, std::function<void(cvpg::image_rgb_8bit)> callback, std::function<void(std::size_t, std::string)> failed_callback)
 {
     evaluate(
         compile_id,

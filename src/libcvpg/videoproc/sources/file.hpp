@@ -49,7 +49,7 @@ public:
 
     void finish(std::size_t context_id);
 
-    void process(std::size_t context_id, videoproc::packet<videoproc::frame<Image> > packet);
+    void process(std::size_t context_id, videoproc::packet<videoproc::frame<Image> > && packet);
 
     void next(std::size_t context_id, std::size_t max_new_data);
 

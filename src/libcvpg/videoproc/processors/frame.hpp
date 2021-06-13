@@ -47,12 +47,12 @@ public:
 
     void finish(std::size_t context_id);
 
-    void process(std::size_t context_id, videoproc::packet<videoproc::frame<Image> > packet);
+    void process(std::size_t context_id, videoproc::packet<videoproc::frame<Image> > && packet);
 
     void next(std::size_t context_id, std::size_t max_new_data);
 
 private:
-    void process_next_frames(std::size_t context_id, std::vector<videoproc::frame<Image> > frames);
+    void process_next_frames(std::size_t context_id, std::vector<videoproc::frame<Image> > && frames);
 
     // maximum amount of frames at output buffer
     std::size_t m_max_frames_output_buffer;

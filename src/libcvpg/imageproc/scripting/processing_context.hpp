@@ -23,8 +23,8 @@ public:
     std::size_t id() const;
 
     // store an image
-    void store(std::uint32_t image_id, cvpg::image_gray_8bit image, std::chrono::microseconds duration = std::chrono::microseconds());
-    void store(std::uint32_t image_id, cvpg::image_rgb_8bit image, std::chrono::microseconds duration = std::chrono::microseconds());
+    void store(std::uint32_t image_id, cvpg::image_gray_8bit && image, std::chrono::microseconds duration = std::chrono::microseconds());
+    void store(std::uint32_t image_id, cvpg::image_rgb_8bit && image, std::chrono::microseconds duration = std::chrono::microseconds());
 
     // load an item with a specific ID
     item load(std::uint32_t image_id) const;

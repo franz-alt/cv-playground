@@ -25,7 +25,7 @@ template<typename T> stage_data_handler<T>::stage_data_handler(std::string name,
     m_out_data.reserve(max_stored_entries);
 }
 
-template<typename T> void stage_data_handler<T>::add(T t)
+template<typename T> void stage_data_handler<T>::add(T && t)
 {
     if (m_in_data.size() > m_max_stored_entries)
     {
@@ -38,7 +38,7 @@ template<typename T> void stage_data_handler<T>::add(T t)
     try_flush();
 }
 
-template<typename T> void stage_data_handler<T>::add(std::vector<T> t)
+template<typename T> void stage_data_handler<T>::add(std::vector<T> && t)
 {
     if ((m_in_data.size() + t.size()) > m_max_stored_entries)
     {

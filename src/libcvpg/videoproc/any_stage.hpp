@@ -36,7 +36,7 @@ struct any_stage_impl : boost::mpl::vector10<
     sources_has_params<void(std::size_t, std::map<std::string, std::any>), boost::type_erasure::_a>,
     sources_has_start<void(std::size_t), boost::type_erasure::_a>,
     sources_has_finish<void(std::size_t), boost::type_erasure::_a>,
-    sources_has_process<void(std::size_t, cvpg::videoproc::packet<cvpg::videoproc::frame<T> >), boost::type_erasure::_a>,
+    sources_has_process<void(std::size_t, cvpg::videoproc::packet<cvpg::videoproc::frame<T> > &&), boost::type_erasure::_a>,
     sources_has_next<void(std::size_t, std::size_t), boost::type_erasure::_a>
 > {};
 
