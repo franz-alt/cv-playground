@@ -26,13 +26,13 @@ public:
     frame(std::size_t number);
 
     // create a normal frame with a specified number and an image
-    frame(std::size_t number, Image && image);
+    frame(std::size_t number, image_type && image);
 
     // get the number of the frame
     std::size_t number() const;
 
     // get the image stored at the frame
-    Image image() const;
+    image_type image() const;
 
     // check if the frame is a flush frame
     bool flush() const;
@@ -40,7 +40,7 @@ public:
 private:
     std::size_t m_number = 0;
 
-    Image m_image;
+    image_type m_image;
 
     bool m_flush = false;
 };

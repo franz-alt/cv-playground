@@ -8,7 +8,7 @@ template<typename Image> frame<Image>::frame(std::size_t number)
     , m_flush(true)
 {}
 
-template<typename Image> frame<Image>::frame(std::size_t number, Image && image)
+template<typename Image> frame<Image>::frame(std::size_t number, image_type && image)
     : m_number(number)
     , m_image(std::forward<Image>(image))
     , m_flush(false)
@@ -19,7 +19,7 @@ template<typename Image> std::size_t frame<Image>::number() const
     return m_number;
 }
 
-template<typename Image> Image frame<Image>::image() const
+template<typename Image> typename frame<Image>::image_type frame<Image>::image() const
 {
     return m_image;
 }

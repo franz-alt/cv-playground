@@ -15,17 +15,17 @@ template<typename Frame> std::size_t packet<Frame>::number() const
     return m_number;
 }
 
-template<typename Frame> void packet<Frame>::add_frame(Frame && frame)
+template<typename Frame> void packet<Frame>::add_frame(frame_type && frame)
 {
     m_frames.push_back(std::forward<Frame>(frame));
 }
 
-template<typename Frame> std::vector<Frame> const & packet<Frame>::frames() const
+template<typename Frame> std::vector<typename packet<Frame>::frame_type> const & packet<Frame>::frames() const
 {
     return m_frames;
 }
 
-template<typename Frame> std::vector<Frame> packet<Frame>::move_frames()
+template<typename Frame> std::vector<typename packet<Frame>::frame_type> packet<Frame>::move_frames()
 {
     return std::move(m_frames);
 }

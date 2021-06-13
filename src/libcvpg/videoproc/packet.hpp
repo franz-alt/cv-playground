@@ -21,11 +21,11 @@ public:
     // create a packet with a specified number
     packet(std::size_t number = 0, bool failed = false);
 
-    // get the number of the frame
+    // get the number of the packet
     std::size_t number() const;
 
     // move an existing frame to the packet
-    void add_frame(Frame && frame);
+    void add_frame(frame_type && frame);
 
     // create a new frame in-place the packet
     template<typename... Args>
@@ -35,10 +35,10 @@ public:
     }
     
     // get a reference to the frames inside the packet
-    std::vector<Frame> const & frames() const;
+    std::vector<frame_type> const & frames() const;
 
     // move out all frames inside the packet
-    std::vector<Frame> move_frames();
+    std::vector<frame_type> move_frames();
 
     // check if the packet contains flush frames
     bool flush() const;
@@ -49,7 +49,7 @@ public:
 private:
     std::size_t m_number;
 
-    std::vector<Frame> m_frames;
+    std::vector<frame_type> m_frames;
 
     bool m_failed;
 };
