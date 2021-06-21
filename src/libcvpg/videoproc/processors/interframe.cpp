@@ -110,10 +110,6 @@ template<typename Image> void interframe<Image>::init(std::size_t context_id, st
             }
 
             deliver_done_callback();
-        },
-        [context_id, context]()
-        {
-            context->callbacks.failed(context_id, "buffer full");
         }
     );
 

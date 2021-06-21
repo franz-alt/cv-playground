@@ -24,10 +24,6 @@ TEST(test_stage_data_handler, add_frames_correct_order)
         [&deliver_counter](auto frames, std::function<void()> deliver_done_callback)
         {
             ++deliver_counter;
-        },
-        []()
-        {
-            ASSERT_TRUE(false);
         }
     );
 
@@ -59,10 +55,6 @@ TEST(test_stage_data_handler, add_frames_random_order)
         [&deliver_counter](auto frames, std::function<void()> deliver_done_callback)
         {
             ++deliver_counter;
-        },
-        []()
-        {
-            ASSERT_TRUE(false);
         }
     );
 
@@ -100,10 +92,6 @@ TEST(test_stage_data_handler, frame_missing)
         [&frames_delivered](auto frames, std::function<void()> deliver_done_callback)
         {
             frames_delivered += frames.size();
-        },
-        []()
-        {
-            ASSERT_TRUE(true);
         }
     );
 
@@ -143,10 +131,6 @@ TEST(test_stage_data_handler, try_flush)
         [&deliver_counter](auto frames, std::function<void()> deliver_done_callback)
         {
             ++deliver_counter;
-        },
-        []()
-        {
-            ASSERT_TRUE(true);
         }
     );
 
@@ -180,10 +164,6 @@ TEST(test_stage_data_handler, fill_many_entries)
         [&deliver_counter](auto frames, std::function<void()> deliver_done_callback)
         {
             ++deliver_counter;
-        },
-        []()
-        {
-            ASSERT_TRUE(true);
         }
     );
 

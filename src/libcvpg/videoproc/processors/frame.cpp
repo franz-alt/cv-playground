@@ -97,10 +97,6 @@ template<typename Image> void frame<Image>::init(std::size_t context_id, std::st
             }
 
             deliver_done_callback();
-        },
-        [context_id, context]()
-        {
-            context->callbacks.failed(context_id, "buffer full");
         }
     );
 

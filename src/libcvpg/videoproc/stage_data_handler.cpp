@@ -9,14 +9,12 @@ template<typename T> stage_data_handler<T>::stage_data_handler(std::string name,
                                                                std::size_t max_stored_entries,
                                                                std::function<void()> trigger_new_data_callback,
                                                                std::function<std::size_t()> get_deliver_amount_callback,
-                                                               std::function<void(std::vector<T>, std::function<void()>)> deliver_data_callback,
-                                                               std::function<void()> buffer_full_callback)
+                                                               std::function<void(std::vector<T>, std::function<void()>)> deliver_data_callback)
     : m_name(std::move(name))
     , m_max_stored_entries(max_stored_entries)
     , m_trigger_new_data_callback(std::move(trigger_new_data_callback))
     , m_get_deliver_amount_callback(std::move(get_deliver_amount_callback))
     , m_deliver_data_callback(std::move(deliver_data_callback))
-    , m_buffer_full_callback(std::move(buffer_full_callback))
     , m_in_data()
     , m_out_data()
     , m_next(0)
@@ -27,12 +25,6 @@ template<typename T> stage_data_handler<T>::stage_data_handler(std::string name,
 
 template<typename T> void stage_data_handler<T>::add(T && t)
 {
-    if (m_in_data.size() > m_max_stored_entries)
-    {
-        // TODO temporary disabled!
-        // m_buffer_full_callback();
-    }
-
     m_in_data.push(std::move(t));
 
     try_flush();
@@ -40,12 +32,6 @@ template<typename T> void stage_data_handler<T>::add(T && t)
 
 template<typename T> void stage_data_handler<T>::add(std::vector<T> && t)
 {
-    if ((m_in_data.size() + t.size()) > m_max_stored_entries)
-    {
-        // TODO temporary disabled!
-        // m_buffer_full_callback();
-    }
-
     for (auto & d : t)
     {
         m_in_data.push(std::move(d));

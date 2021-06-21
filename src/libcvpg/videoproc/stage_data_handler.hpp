@@ -26,8 +26,7 @@ public:
                        std::size_t max_stored_entries,
                        std::function<void()> trigger_new_data_callback,
                        std::function<std::size_t()> get_deliver_amount_callback,
-                       std::function<void(std::vector<T>, std::function<void()>)> deliver_data_callback,
-                       std::function<void()> buffer_full_callback);
+                       std::function<void(std::vector<T>, std::function<void()>)> deliver_data_callback);
 
     stage_data_handler(stage_data_handler const &) = delete;
     stage_data_handler(stage_data_handler &&) = default;
@@ -59,7 +58,6 @@ private:
     std::function<void()> m_trigger_new_data_callback;
     std::function<std::size_t()> m_get_deliver_amount_callback;
     std::function<void(std::vector<T>, std::function<void()>)> m_deliver_data_callback;
-    std::function<void()> m_buffer_full_callback;
 
     std::priority_queue<T, std::vector<T>, std::greater<T> > m_in_data;
     std::vector<T> m_out_data;

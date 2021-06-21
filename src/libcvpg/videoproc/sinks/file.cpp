@@ -520,10 +520,6 @@ template<typename Image> void file<Image>::init(std::size_t context_id, std::str
                     1
                 );
             }
-        },
-        [context_id, context]()
-        {
-            context->callbacks.failed(context_id, "buffer full");
         }
     );
 
