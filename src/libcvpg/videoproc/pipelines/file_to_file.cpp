@@ -41,7 +41,7 @@ void file_to_file<Stage>::start(std::vector<std::string> stage_parameters, pipel
                     1
                 ),
                 // parameters callback
-                [next_stage = has_next_stage ? &(m_stages[i + 1]) : nullptr](std::size_t context_id, std::map<std::string, std::any> params)
+                [next_stage = has_next_stage ? &(m_stages[i + 1]) : nullptr](std::size_t context_id, std::map<std::string, std::any> && params)
                 {
                     if (!!next_stage)
                     {
@@ -49,7 +49,7 @@ void file_to_file<Stage>::start(std::vector<std::string> stage_parameters, pipel
                     }
                 },
                 // deliver callback
-                [next_stage = has_next_stage ? &(m_stages[i + 1]) : nullptr](std::size_t context_id, auto packet)
+                [next_stage = has_next_stage ? &(m_stages[i + 1]) : nullptr](std::size_t context_id, auto && packet)
                 {
                     if (!!next_stage)
                     {
