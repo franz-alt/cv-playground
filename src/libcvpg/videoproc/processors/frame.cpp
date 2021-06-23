@@ -157,6 +157,8 @@ template<typename Image> void frame<Image>::init(std::size_t context_id, std::st
         },
         std::move(futures_compile)
     );
+
+    context->sdh_out->try_flush();
 }
 
 template<typename Image> void frame<Image>::params(std::size_t context_id, std::map<std::string, std::any> p)
@@ -207,8 +209,6 @@ template<typename Image> void frame<Image>::process(std::size_t context_id, vide
         auto & context = it->second;
 
         process_next_frames(context_id, std::move(packet.move_frames()));
-
-        context->sdh_out->try_flush();
     }
 }
 
@@ -220,7 +220,7 @@ template<typename Image> void frame<Image>::next(std::size_t context_id, std::si
     {
         auto & context = it->second;
 
-        context->status.next_waiting += max_new_data;
+        context->status.next_waiting = max_new_data;
 
         context->sdh_out->try_flush();
     }

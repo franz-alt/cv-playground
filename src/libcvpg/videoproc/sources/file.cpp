@@ -253,11 +253,11 @@ template<typename Image> void file<Image>::init(std::size_t context_id, std::str
 
             bool is_last = false;
 
-            for (auto & f : frames)
+            for (auto & frame : frames)
             {
-                is_last |= f.flush();
+                is_last |= frame.flush();
 
-                packet.add_frame(std::move(f));
+                packet.add_frame(std::move(frame));
             }
 
             context->callbacks.deliver_packet(context_id, std::move(packet));
@@ -421,17 +421,6 @@ template<typename Image> void file<Image>::start(std::size_t context_id)
         // check if input buffer is full
         if (context->sdh->full())
         {
-            // start reading new data ...
-            // TODO perform post after a certain amount of time
-            post_self(
-                [this, context_id]()
-                {
-                    start(context_id);
-                },
-                "sources::file::next",
-                1
-            );
-
             return;
         }
 
@@ -553,7 +542,7 @@ template<typename Image> void file<Image>::next(std::size_t context_id, std::siz
     {
         auto & context = it->second;
 
-        context->status.next_waiting += max_new_data;
+        context->status.next_waiting = max_new_data;
 
         context->sdh->try_flush();
     }

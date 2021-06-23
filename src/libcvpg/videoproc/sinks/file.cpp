@@ -590,6 +590,8 @@ template<typename Image> void file<Image>::init(std::size_t context_id, std::str
     }
 
     callbacks.initialized(context_id, 0);
+
+    context->sdh->try_flush();
 }
 
 template<typename Image> void file<Image>::params(std::size_t context_id, std::map<std::string, std::any> p)

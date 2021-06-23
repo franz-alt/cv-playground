@@ -425,17 +425,6 @@ template<typename Image> void rtsp<Image>::start(std::size_t context_id)
         // check if input buffer is full
         if (context->sdh->full())
         {
-            // start reading new data ...
-            // TODO perform post after a certain amount of time
-            post_self(
-                [this, context_id]()
-                {
-                    start(context_id);
-                },
-                "sources::rtsp::next",
-                1
-            );
-
             return;
         }
 
@@ -557,7 +546,7 @@ template<typename Image> void rtsp<Image>::next(std::size_t context_id, std::siz
     {
         auto & context = it->second;
 
-        context->status.next_waiting += max_new_data;
+        context->status.next_waiting = max_new_data;
 
         context->sdh->try_flush();
     }

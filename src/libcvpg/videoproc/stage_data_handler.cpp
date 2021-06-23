@@ -40,6 +40,42 @@ template<typename T> void stage_data_handler<T>::add(std::vector<T> && t)
     try_flush();
 }
 
+template<typename T> void stage_data_handler<T>::try_flush()
+{
+    try_process_input();
+
+    const std::size_t max_deliver = std::min(m_max_stored_entries, m_get_deliver_amount_callback());
+
+    if (max_deliver >= m_out_data.size())
+    {
+        if (!m_out_data.empty())
+        {
+            // deliver output buffer completly
+            m_deliver_data_callback(std::move(m_out_data), m_trigger_new_data_callback);
+            m_out_data.clear();
+        }
+        else
+        {
+            m_trigger_new_data_callback();
+        }
+    }
+    else
+    {
+        if (max_deliver > 0)
+        {
+            // deliver only 'max_deliver' entries from the beginning of the output buffer
+            std::vector<T> moved;
+            moved.reserve(max_deliver);
+
+            // move 'maxdeliver' entries from output to 'moved' vector
+            std::move(m_out_data.begin(), m_out_data.begin() + max_deliver, std::back_inserter(moved));
+            m_out_data.erase(m_out_data.begin(), m_out_data.begin() + max_deliver);
+
+            m_deliver_data_callback(std::move(moved), m_trigger_new_data_callback);
+        }
+    }
+}
+
 template<typename T> void stage_data_handler<T>::try_process_input()
 {
     bool found = true;
@@ -50,69 +86,13 @@ template<typename T> void stage_data_handler<T>::try_process_input()
 
         if (found)
         {
+            // move data from input to output buffer
             m_out_data.push_back(m_in_data.top());
-
             m_in_data.pop();
 
             ++m_next;
         }
     }
-}
-
-template<typename T> void stage_data_handler<T>::flush_output()
-{
-    const std::size_t max_deliver = m_get_deliver_amount_callback();
-
-    if (max_deliver >= m_out_data.size())
-    {
-        if (!m_out_data.empty())
-        {
-            // deliver output buffer completly
-            m_deliver_data_callback(std::move(m_out_data), m_trigger_new_data_callback);
-        }
-    }
-    else
-    {
-        if (max_deliver > 0)
-        {
-            // deliver only 'max_deliver' entries from the beginning of the output buffer
-            decltype(m_out_data) moved;
-            moved.reserve(max_deliver);
-
-            std::move(m_out_data.begin(), m_out_data.begin() + max_deliver, std::back_inserter(moved));
-
-            m_out_data.erase(m_out_data.begin(), m_out_data.begin() + max_deliver);
-
-            m_deliver_data_callback(std::move(moved), m_trigger_new_data_callback);
-        }
-    }
-}
-
-template<typename T> void stage_data_handler<T>::try_flush()
-{
-    if (m_in_data.empty())
-    {
-        m_trigger_new_data_callback();
-    }
-    else
-    {
-        try_process_input();
-
-        const std::size_t max_deliver = m_get_deliver_amount_callback();
-
-        if (max_deliver == 0)
-        {
-            // don't deliver data if next stage isn't ready to receive new data or no data available at output buffer
-            return;
-        }
-
-        if (m_out_data.empty())
-        {
-            m_trigger_new_data_callback();
-        }
-    }
-
-    flush_output();
 }
 
 template<typename T> bool stage_data_handler<T>::empty() const
@@ -122,13 +102,12 @@ template<typename T> bool stage_data_handler<T>::empty() const
 
 template<typename T> bool stage_data_handler<T>::full() const
 {
-    return m_in_data.size() >= m_max_stored_entries;
+    return free() == 0;
 }
 
 template<typename T> std::size_t stage_data_handler<T>::free() const
 {
-    return (m_out_data.size() > (2 * m_max_stored_entries)) ? 0
-                                                            : (m_max_stored_entries > m_in_data.size()) ? (m_max_stored_entries - m_in_data.size()) : 0;
+    return std::max(static_cast<int>(m_max_stored_entries - m_in_data.size() + m_out_data.size()), (int)0);
 }
 
 // manual instantiation of stage_data_handler<> for some types

@@ -49,7 +49,6 @@ public:
 
 private:
     void try_process_input();
-    void flush_output();
 
     std::string m_name;
 
@@ -59,7 +58,7 @@ private:
     std::function<std::size_t()> m_get_deliver_amount_callback;
     std::function<void(std::vector<T>, std::function<void()>)> m_deliver_data_callback;
 
-    std::priority_queue<T, std::vector<T>, std::greater<T> > m_in_data;
+    std::priority_queue<T, std::deque<T>, std::greater<T> > m_in_data;
     std::vector<T> m_out_data;
 
     std::size_t m_next;

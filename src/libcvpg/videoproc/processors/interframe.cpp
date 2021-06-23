@@ -169,6 +169,8 @@ template<typename Image> void interframe<Image>::init(std::size_t context_id, st
         },
         std::move(futures_compile)
     );
+
+    context->sdh_out->try_flush();
 }
 
 template<typename Image> void interframe<Image>::params(std::size_t context_id, std::map<std::string, std::any> p)
@@ -233,7 +235,7 @@ template<typename Image> void interframe<Image>::next(std::size_t context_id, st
     {
         auto & context = it->second;
 
-        context->status.next_waiting += max_new_data;
+        context->status.next_waiting = max_new_data;
 
         context->sdh_out->try_flush();
     }
@@ -319,7 +321,6 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
         {
             // try flush output and trigger new input in case we have not enough images
             context->sdh_out->try_flush();
-
             return;
         }
 
