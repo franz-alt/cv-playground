@@ -68,7 +68,7 @@ struct paint_meta_task :  public boost::asynchronous::continuation_task<std::sha
                 // extract color values from arguments
                 auto gray = static_cast<std::uint8_t>(std::any_cast<std::int32_t>(m_item.arguments.at(7).value()));
 
-                auto image = std::any_cast<cvpg::image_gray_8bit>(input.value());
+                auto image = std::any_cast<cvpg::image_gray_8bit>(std::move(input.value()));
 
                 auto start = std::chrono::system_clock::now();
 
@@ -106,7 +106,7 @@ struct paint_meta_task :  public boost::asynchronous::continuation_task<std::sha
                 auto green = static_cast<std::uint8_t>(std::any_cast<std::int32_t>(m_item.arguments.at(8).value()));
                 auto blue = static_cast<std::uint8_t>(std::any_cast<std::int32_t>(m_item.arguments.at(9).value()));
 
-                auto image = std::any_cast<cvpg::image_rgb_8bit>(input.value());
+                auto image = std::any_cast<cvpg::image_rgb_8bit>(std::move(input.value()));
 
                 auto start = std::chrono::system_clock::now();
 

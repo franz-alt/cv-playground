@@ -36,11 +36,11 @@ struct input_task :  public boost::asynchronous::continuation_task<std::shared_p
 
             if (input.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image)
             {
-                m_context->store(m_result_id, std::move(std::any_cast<cvpg::image_gray_8bit>(input.value())));
+                m_context->store(m_result_id, std::move(std::any_cast<cvpg::image_gray_8bit>(std::move(input.value()))));
             }
             else if (input.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image)
             {
-                m_context->store(m_result_id, std::move(std::any_cast<cvpg::image_rgb_8bit>(input.value())));
+                m_context->store(m_result_id, std::move(std::any_cast<cvpg::image_rgb_8bit>(std::move(input.value()))));
             }
             else
             {

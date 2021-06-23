@@ -62,8 +62,8 @@ struct or_task : public boost::asynchronous::continuation_task<std::shared_ptr<c
             if (input1.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image &&
                 input2.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image)
             {
-                auto image1 = std::any_cast<cvpg::image_gray_8bit>(input1.value());
-                auto image2 = std::any_cast<cvpg::image_gray_8bit>(input2.value());
+                auto image1 = std::any_cast<cvpg::image_gray_8bit>(std::move(input1.value()));
+                auto image2 = std::any_cast<cvpg::image_gray_8bit>(std::move(input2.value()));
 
                 const auto width = image1.width();
                 const auto height = image1.height();
@@ -103,8 +103,8 @@ struct or_task : public boost::asynchronous::continuation_task<std::shared_ptr<c
             else if (input1.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image &&
                      input2.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image)
             {
-                auto image1 = std::any_cast<cvpg::image_rgb_8bit>(input1.value());
-                auto image2 = std::any_cast<cvpg::image_rgb_8bit>(input2.value());
+                auto image1 = std::any_cast<cvpg::image_rgb_8bit>(std::move(input1.value()));
+                auto image2 = std::any_cast<cvpg::image_rgb_8bit>(std::move(input2.value()));
 
                 const auto width = image1.width();
                 const auto height = image1.height();

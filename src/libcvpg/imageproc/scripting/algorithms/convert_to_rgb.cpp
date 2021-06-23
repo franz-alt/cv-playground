@@ -36,7 +36,7 @@ struct convert_to_rgb_task :  public boost::asynchronous::continuation_task<std:
 
             if (input.type() == cvpg::imageproc::scripting::item::types::grayscale_8_bit_image)
             {
-                auto image = std::any_cast<cvpg::image_gray_8bit>(input.value());
+                auto image = std::any_cast<cvpg::image_gray_8bit>(std::move(input.value()));
 
                 auto start = std::chrono::system_clock::now();
 
