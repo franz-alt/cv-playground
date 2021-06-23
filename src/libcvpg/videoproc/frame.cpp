@@ -24,6 +24,11 @@ template<typename Image> typename frame<Image>::image_type frame<Image>::image()
     return m_image;
 }
 
+template<typename Image> typename frame<Image>::image_type frame<Image>::move_image()
+{
+    return std::move(m_image);
+}
+
 template<typename Image> bool frame<Image>::flush() const
 {
     return m_flush;

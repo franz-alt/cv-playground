@@ -361,7 +361,7 @@ template<typename Image> void interframe<Image>::try_process_input(std::size_t c
                 continue;
             }
 
-            images->push_back(std::any_cast<typename videoproc::frame<Image>::image_type>(frame.image()));
+            images->push_back(std::any_cast<typename videoproc::frame<Image>::image_type>(std::move(frame.move_image())));
         }
 
         if (flush_frame)

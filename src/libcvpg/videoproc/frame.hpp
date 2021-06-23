@@ -34,6 +34,8 @@ public:
     // get the image stored at the frame
     image_type image() const;
 
+    image_type move_image();
+
     // check if the frame is a flush frame
     bool flush() const;
 

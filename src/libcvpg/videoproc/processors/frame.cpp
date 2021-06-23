@@ -241,7 +241,7 @@ template<typename Image> void frame<Image>::process_next_frames(std::size_t cont
         bool flush_frame = false;
         std::size_t flush_number = 0;
 
-        for (auto const & frame : frames)
+        for (auto & frame : frames)
         {
             const auto frame_number = frame.number();
 
@@ -252,7 +252,7 @@ template<typename Image> void frame<Image>::process_next_frames(std::size_t cont
                 continue;
             }
 
-            auto image = frame.image();
+            auto image = frame.move_image();
 
             m_image_processor->evaluate_convert_if(
                 context->frames_id,

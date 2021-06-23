@@ -147,7 +147,7 @@ struct write_frames_task : public boost::asynchronous::continuation_task<std::ve
 
             ret = av_image_alloc(frame->data, frame->linesize, m_frames.empty() ? 0 : m_frames.front().image().width(), m_frames.empty() ? 0 : m_frames.front().image().height(), m_context->video.codec_context->pix_fmt, 32);
 
-            for (auto const & inter_frame : m_frames)
+            for (auto & inter_frame : m_frames)
             {
                 // abort if frame is a flush frame
                 if (inter_frame.flush())
@@ -164,7 +164,7 @@ struct write_frames_task : public boost::asynchronous::continuation_task<std::ve
 
                 frame->pts = m_context->video.frames_sent++;
 
-                auto image = inter_frame.image();
+                auto image = inter_frame.move_image();
 
                 std::size_t pos = 0;
 
