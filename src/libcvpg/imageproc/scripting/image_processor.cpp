@@ -211,13 +211,22 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit && 
             {
                 return executor(std::move(compiled), context);
             },
-            [this, context_id, callback](auto cont_res) mutable
+            [this, context_id, callback](auto cont_res)
             {
-                auto item = std::move(cont_res.get())->load();
+                try
+                {
+                    auto item = std::move(cont_res.get())->load();
 
-                this->m_context.erase(context_id);
+                    this->m_context.erase(context_id);
 
-                callback(std::move(item));
+                    callback(std::move(item));
+                }
+                catch (...)
+                {
+                    this->m_context.erase(context_id);
+
+                    callback(item());
+                }
             },
             "scope::evaluate::image_gray_8bit",
             1,
@@ -254,13 +263,22 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit && i
             {
                 return executor(std::move(compiled), context);
             },
-            [this, context_id, callback](auto cont_res) mutable
+            [this, context_id, callback](auto cont_res)
             {
-                auto item = std::move(cont_res.get())->load();
+                try
+                {
+                    auto item = std::move(cont_res.get())->load();
 
-                this->m_context.erase(context_id);
+                    this->m_context.erase(context_id);
 
-                callback(std::move(item));
+                    callback(std::move(item));
+                }
+                catch (...)
+                {
+                    this->m_context.erase(context_id);
+
+                    callback(item());
+                }
             },
             "image_processor::evaluate::image_rgb_8bit",
             1,
@@ -382,13 +400,22 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit && 
             {
                 return executor(std::move(compiled), context);
             },
-            [this, context_id, callback](auto cont_res) mutable
+            [this, context_id, callback](auto cont_res)
             {
-                auto item = std::move(cont_res.get())->load();
+                try
+                {
+                    auto item = std::move(cont_res.get())->load();
 
-                this->m_context.erase(context_id);
+                    this->m_context.erase(context_id);
 
-                callback(std::move(item));
+                    callback(std::move(item));
+                }
+                catch (...)
+                {
+                    this->m_context.erase(context_id);
+
+                    callback(item());
+                }
             },
             "image_processor::evaluate::image_gray_8bit_2x",
             1,
@@ -426,13 +453,22 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit && i
             {
                 return executor(std::move(compiled), context);
             },
-            [this, context_id, callback](auto cont_res) mutable
+            [this, context_id, callback](auto cont_res)
             {
-                auto item = std::move(cont_res.get())->load();
+                try
+                {
+                    auto item = std::move(cont_res.get())->load();
 
-                this->m_context.erase(context_id);
+                    this->m_context.erase(context_id);
 
-                callback(std::move(item));
+                    callback(std::move(item));
+                }
+                catch (...)
+                {
+                    this->m_context.erase(context_id);
+
+                    callback(item());
+                }
             },
             "image_processor::evaluate::image_rgb_8bit_2x",
             1,
