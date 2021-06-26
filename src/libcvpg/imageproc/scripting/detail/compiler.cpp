@@ -1,3 +1,6 @@
+// Copyright (c) 2020-2021 Franz Alt
+// This code is licensed under MIT license (see LICENSE.txt for details).
+
 #include <libcvpg/imageproc/scripting/detail/compiler.hpp>
 
 #include <libcvpg/imageproc/scripting/detail/graph.hpp>

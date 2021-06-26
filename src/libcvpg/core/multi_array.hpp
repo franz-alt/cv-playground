@@ -1,3 +1,6 @@
+// Copyright (c) 2020-2021 Franz Alt
+// This code is licensed under MIT license (see LICENSE.txt for details).
+
 #ifndef LIBCVPG_CORE_MULTI_ARRAY_HPP
 #define LIBCVPG_CORE_MULTI_ARRAY_HPP
 

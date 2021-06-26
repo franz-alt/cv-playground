@@ -1,3 +1,6 @@
+// Copyright (c) 2020-2021 Franz Alt
+// This code is licensed under MIT license (see LICENSE.txt for details).
+
 #ifndef LIBCVPG_IMAGEPROC_SCRIPTING_DETAIL_NODE_HPP
 #define LIBCVPG_IMAGEPROC_SCRIPTING_DETAIL_NODE_HPP
 

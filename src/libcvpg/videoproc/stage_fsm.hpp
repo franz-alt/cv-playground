@@ -1,3 +1,6 @@
+// Copyright (c) 2020-2021 Franz Alt
+// This code is licensed under MIT license (see LICENSE.txt for details).
+
 #ifndef LIBCVPG_VIDEOPROC_STAGE_FSM_HPP
 #define LIBCVPG_VIDEOPROC_STAGE_FSM_HPP
 

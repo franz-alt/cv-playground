@@ -1,3 +1,6 @@
+// Copyright (c) 2020-2021 Franz Alt
+// This code is licensed under MIT license (see LICENSE.txt for details).
+
 #include <libcvpg/videoproc/pipelines/file_to_file.hpp>
 
 #include <boost/range/adaptor/reversed.hpp>

@@ -1,3 +1,6 @@
+// Copyright (c) 2020-2021 Franz Alt
+// This code is licensed under MIT license (see LICENSE.txt for details).
+
 #ifndef PROGRESS_MONITOR_HPP
 #define PROGRESS_MONITOR_HPP
 

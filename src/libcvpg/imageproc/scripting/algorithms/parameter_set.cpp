@@ -1,3 +1,6 @@
+// Copyright (c) 2020-2021 Franz Alt
+// This code is licensed under MIT license (see LICENSE.txt for details).
+
 #include <libcvpg/imageproc/scripting/algorithms/parameter_set.hpp>
 
 namespace cvpg { namespace imageproc { namespace scripting { namespace algorithms {
