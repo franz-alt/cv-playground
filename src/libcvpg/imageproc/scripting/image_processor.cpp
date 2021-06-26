@@ -221,11 +221,17 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit && 
 
                     callback(std::move(item));
                 }
+                catch (std::exception const & e)
+                {
+                    this->m_context.erase(context_id);
+
+                    callback(item(cvpg::imageproc::scripting::item::types::error, std::string(e.what())));
+                }
                 catch (...)
                 {
                     this->m_context.erase(context_id);
 
-                    callback(item());
+                    callback(item(cvpg::imageproc::scripting::item::types::error, std::string("unknown exception")));
                 }
             },
             "scope::evaluate::image_gray_8bit",
@@ -235,9 +241,7 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit && 
     }
     else
     {
-        // TODO error reporting!?
-
-        callback(item());
+        callback(item(cvpg::imageproc::scripting::item::types::error, std::string("invalid context ID")));
     }
 }
 
@@ -273,11 +277,17 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit && i
 
                     callback(std::move(item));
                 }
+                catch (std::exception const & e)
+                {
+                    this->m_context.erase(context_id);
+
+                    callback(item(cvpg::imageproc::scripting::item::types::error, std::string(e.what())));
+                }
                 catch (...)
                 {
                     this->m_context.erase(context_id);
 
-                    callback(item());
+                    callback(item(cvpg::imageproc::scripting::item::types::error, std::string("unknown exception")));
                 }
             },
             "image_processor::evaluate::image_rgb_8bit",
@@ -287,9 +297,7 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit && i
     }
     else
     {
-        // TODO error reporting!?
-
-        callback(item());
+        callback(item(cvpg::imageproc::scripting::item::types::error, std::string("invalid context ID")));
     }
 }
 
@@ -327,9 +335,13 @@ void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_gr
                     1
                 );
             }
+            else if (item.type() == cvpg::imageproc::scripting::item::types::error)
+            {
+                failed_callback(compile_id, std::any_cast<std::string>(std::move(item.value())));
+            }
             else
             {
-                // TODO error handling !!!!
+                failed_callback(compile_id, "invalid result during evaluation of an image");
             }
         }
     );
@@ -369,9 +381,13 @@ void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_rg
                     1
                 );
             }
+            else if (item.type() == cvpg::imageproc::scripting::item::types::error)
+            {
+                failed_callback(compile_id, std::any_cast<std::string>(std::move(item.value())));
+            }
             else
             {
-                // TODO error handling !!!!
+                failed_callback(compile_id, "invalid result during evaluation of an image");
             }
         }
     );
@@ -410,11 +426,17 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit && 
 
                     callback(std::move(item));
                 }
+                catch (std::exception const & e)
+                {
+                    this->m_context.erase(context_id);
+
+                    callback(item(cvpg::imageproc::scripting::item::types::error, std::string(e.what())));
+                }
                 catch (...)
                 {
                     this->m_context.erase(context_id);
 
-                    callback(item());
+                    callback(item(cvpg::imageproc::scripting::item::types::error, std::string("unknown exception")));
                 }
             },
             "image_processor::evaluate::image_gray_8bit_2x",
@@ -424,9 +446,7 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_gray_8bit && 
     }
     else
     {
-        // TODO error reporting!?
-
-        callback(item());
+        callback(item(cvpg::imageproc::scripting::item::types::error, std::string("invalid context ID")));
     }
 }
 
@@ -463,11 +483,17 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit && i
 
                     callback(std::move(item));
                 }
+                catch (std::exception const & e)
+                {
+                    this->m_context.erase(context_id);
+
+                    callback(item(cvpg::imageproc::scripting::item::types::error, std::string(e.what())));
+                }
                 catch (...)
                 {
                     this->m_context.erase(context_id);
 
-                    callback(item());
+                    callback(item(cvpg::imageproc::scripting::item::types::error, std::string("unknown exception")));
                 }
             },
             "image_processor::evaluate::image_rgb_8bit_2x",
@@ -477,9 +503,7 @@ void image_processor::evaluate(std::size_t compile_id, cvpg::image_rgb_8bit && i
     }
     else
     {
-        // TODO error reporting!?
-
-        callback(item());
+        callback(item(cvpg::imageproc::scripting::item::types::error, std::string("invalid context ID")));
     }
 }
 
@@ -518,9 +542,13 @@ void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_gr
                     1
                 );
             }
+            else if (item.type() == cvpg::imageproc::scripting::item::types::error)
+            {
+                failed_callback(compile_id, std::any_cast<std::string>(std::move(item.value())));
+            }
             else
             {
-                // TODO error handling !!!!
+                failed_callback(compile_id, "invalid result during evaluation of an image");
             }
         }
     );
@@ -561,9 +589,13 @@ void image_processor::evaluate_convert_if(std::size_t compile_id, cvpg::image_rg
                     1
                 );
             }
+            else if (item.type() == cvpg::imageproc::scripting::item::types::error)
+            {
+                failed_callback(compile_id, std::any_cast<std::string>(std::move(item.value())));
+            }
             else
             {
-                // TODO error handling !!!!
+                failed_callback(compile_id, "invalid result during evaluation of an image");
             }
         }
     );

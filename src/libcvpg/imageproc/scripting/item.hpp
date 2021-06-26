@@ -16,6 +16,7 @@ namespace cvpg { namespace imageproc { namespace scripting {
 // - IDs
 // - numbers
 // - strings
+// - errors (messages)
 //
 class item
 {
@@ -29,7 +30,8 @@ public:
         signed_integer,
         real,
         boolean,
-        characters
+        characters,
+        error
     };
 
     item(types item = types::invalid, std::any value = std::any());
