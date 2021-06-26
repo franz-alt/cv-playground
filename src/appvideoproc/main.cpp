@@ -656,8 +656,9 @@ int main(int argc, char * argv[])
             {
                 progress_monitor->init(context_id, frames);
             },
-            [promise_pipeline](std::size_t /*context_id*/, std::string error)
+            [promise_pipeline, progress_monitor](std::size_t context_id, std::string error)
             {
+                progress_monitor->finish(context_id);
                 promise_pipeline->set_value(std::move(error));
             },
             [progress_monitor](std::size_t context_id, cvpg::videoproc::update_indicator update) mutable
