@@ -106,6 +106,7 @@ Example 'script.txt':
                           "cow",
                           "detection_scores",
                           60)
+    var combined = or(raw, cows)
 
 ### Step 4: Execute cvpg-imageproc
 
