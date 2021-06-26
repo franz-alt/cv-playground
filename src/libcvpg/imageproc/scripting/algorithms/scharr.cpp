@@ -71,10 +71,6 @@ struct scharr_task :  public boost::asynchronous::continuation_task<std::shared_
             {
                 mode = cvpg::imageproc::algorithms::scharr_operation_mode::vertical;
             }
-            else
-            {
-                // TODO error handling
-            }
 
             auto border_mode = cvpg::imageproc::algorithms::to_border_mode(border_mode_str);
 
@@ -161,10 +157,6 @@ struct scharr_task :  public boost::asynchronous::continuation_task<std::shared_
                     },
                     cvpg::imageproc::algorithms::tiling(std::move(tf))
                 );
-            }
-            else
-            {
-                // TODO error handling
             }
         }
         catch (...)

@@ -53,10 +53,6 @@ struct convert_to_gray_task :  public boost::asynchronous::continuation_task<std
             {
                 mode = cvpg::imageproc::algorithms::rgb_conversion_mode::calc_average;
             }
-            else
-            {
-                // TODO error handling
-            }
 
             if (input.type() == cvpg::imageproc::scripting::item::types::rgb_8_bit_image)
             {
@@ -82,10 +78,6 @@ struct convert_to_gray_task :  public boost::asynchronous::continuation_task<std
                     },
                     cvpg::imageproc::algorithms::convert_to_gray(std::move(image), mode)
                 );
-            }
-            else
-            {
-                // TODO error handling
             }
         }
         catch (...)

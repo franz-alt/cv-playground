@@ -110,10 +110,6 @@ struct k_means_task :  public boost::asynchronous::continuation_task<std::shared
                     cvpg::imageproc::algorithms::k_means(std::move(image), k, max_iterations, eps)
                 );
             }
-            else
-            {
-                // TODO error handling
-            }
         }
         catch (...)
         {

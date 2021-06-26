@@ -84,10 +84,6 @@ struct threshold_task :  public boost::asynchronous::continuation_task<std::shar
                     {
                         cvpg::imageproc::algorithms::threshold_inverse_gray_8bit(src1->data(0).get(), dst->data(0).get(), from_x, to_x, from_y, to_y, std::move(parameters));
                     }
-                    else
-                    {
-                        // TODO error handling
-                    }
                 };
 
                 boost::asynchronous::create_callback_continuation(
@@ -139,10 +135,6 @@ struct threshold_task :  public boost::asynchronous::continuation_task<std::shar
                         cvpg::imageproc::algorithms::threshold_inverse_gray_8bit(src1->data(1).get(), dst->data(1).get(), from_x, to_x, from_y, to_y, parameters);
                         cvpg::imageproc::algorithms::threshold_inverse_gray_8bit(src1->data(2).get(), dst->data(2).get(), from_x, to_x, from_y, to_y, std::move(parameters));
                     }
-                    else
-                    {
-                        // TODO error handling
-                    }
                 };
 
                 boost::asynchronous::create_callback_continuation(
@@ -163,10 +155,6 @@ struct threshold_task :  public boost::asynchronous::continuation_task<std::shar
                     },
                     cvpg::imageproc::algorithms::tiling(std::move(tf))
                 );
-            }
-            else
-            {
-                // TODO error handling
             }
         }
         catch (...)

@@ -42,10 +42,6 @@ struct input_task :  public boost::asynchronous::continuation_task<std::shared_p
             {
                 m_context->store(m_result_id, std::move(std::any_cast<cvpg::image_rgb_8bit>(std::move(input.value()))));
             }
-            else
-            {
-                // TODO error handling
-            }
 
             this->this_task_result().set_value(m_context);
         }

@@ -139,10 +139,6 @@ struct paint_meta_task :  public boost::asynchronous::continuation_task<std::sha
                                                             blue)
                 );
             }
-            else
-            {
-                // TODO error handling
-            }
         }
         catch (...)
         {

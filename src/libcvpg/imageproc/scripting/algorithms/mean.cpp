@@ -148,10 +148,6 @@ struct mean_task :  public boost::asynchronous::continuation_task<std::shared_pt
                     cvpg::imageproc::algorithms::tiling(std::move(tf))
                 );
             }
-            else
-            {
-                // TODO error handling
-            }
         }
         catch (...)
         {

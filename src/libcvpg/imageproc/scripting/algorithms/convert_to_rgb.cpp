@@ -59,10 +59,6 @@ struct convert_to_rgb_task :  public boost::asynchronous::continuation_task<std:
                     cvpg::imageproc::algorithms::convert_to_rgb(std::move(image))
                 );
             }
-            else
-            {
-                // TODO error handling
-            }
         }
         catch (...)
         {

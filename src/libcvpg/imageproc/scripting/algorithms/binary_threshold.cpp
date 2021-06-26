@@ -145,10 +145,6 @@ struct binary_threshold_task :  public boost::asynchronous::continuation_task<st
                             {
                                 cvpg::imageproc::algorithms::threshold_inverse_gray_8bit(src1->data(0).get(), dst->data(0).get(), from_x, to_x, from_y, to_y, std::move(parameters));
                             }
-                            else
-                            {
-                                // TODO error handling
-                            }
                         };
 
                         boost::asynchronous::create_callback_continuation(
@@ -266,10 +262,6 @@ struct binary_threshold_task :  public boost::asynchronous::continuation_task<st
                                         else if (mode_str == "inverse")
                                         {
                                             cvpg::imageproc::algorithms::threshold_inverse_gray_8bit(src1->data(0).get(), dst->data(0).get(), from_x, to_x, from_y, to_y, std::move(parameters));
-                                        }
-                                        else
-                                        {
-                                            // TODO error handling
                                         }
                                     };
 

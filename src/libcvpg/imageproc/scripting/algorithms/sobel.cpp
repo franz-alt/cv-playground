@@ -79,10 +79,6 @@ struct sobel_task :  public boost::asynchronous::continuation_task<std::shared_p
             {
                 mode = cvpg::imageproc::algorithms::sobel_operation_mode::sum_abs;
             }
-            else
-            {
-                // TODO error handling
-            }
 
             auto border_mode = cvpg::imageproc::algorithms::to_border_mode(border_mode_str);
 
@@ -169,10 +165,6 @@ struct sobel_task :  public boost::asynchronous::continuation_task<std::shared_p
                     },
                     cvpg::imageproc::algorithms::tiling(std::move(tf))
                 );
-            }
-            else
-            {
-                // TODO error handling
             }
         }
         catch (...)

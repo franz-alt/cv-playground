@@ -180,10 +180,6 @@ struct pooling_task :  public boost::asynchronous::continuation_task<std::shared
                     cvpg::imageproc::algorithms::tiling(std::move(tf))
                 );
             }
-            else
-            {
-                // TODO error handling
-            }
         }
         catch (...)
         {
