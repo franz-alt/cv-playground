@@ -50,16 +50,23 @@ struct tfpredict_task :  public boost::asynchronous::continuation_task<std::shar
                         std::move(image),
                         [result = this->this_task_result(), context = m_context, result_id = m_result_id, start](bool status, std::string message, cvpg::image_gray_8bit image)
                         {
-                            auto stop = std::chrono::system_clock::now();
-
-                            if (!status)
+                            try
                             {
-                                throw std::runtime_error(std::move(message));
+                                auto stop = std::chrono::system_clock::now();
+
+                                if (!status)
+                                {
+                                    throw std::runtime_error(std::move(message));
+                                }
+
+                                context->store(result_id, std::move(image), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
+
+                                result.set_value(context);
                             }
-
-                            context->store(result_id, std::move(image), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
-
-                            result.set_value(context);
+                            catch (...)
+                            {
+                                result.set_exception(std::current_exception());
+                            }
                         }
                     );
                 }
@@ -73,16 +80,23 @@ struct tfpredict_task :  public boost::asynchronous::continuation_task<std::shar
                         std::move(image),
                         [result = this->this_task_result(), context = m_context, result_id = m_result_id, start](bool status, std::string message, cvpg::image_rgb_8bit image)
                         {
-                            auto stop = std::chrono::system_clock::now();
-
-                            if (!status)
+                            try
                             {
-                                throw std::runtime_error(std::move(message));
+                                auto stop = std::chrono::system_clock::now();
+
+                                if (!status)
+                                {
+                                    throw std::runtime_error(std::move(message));
+                                }
+
+                                context->store(result_id, std::move(image), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
+
+                                result.set_value(context);
                             }
-
-                            context->store(result_id, std::move(image), std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
-
-                            result.set_value(context);
+                            catch (...)
+                            {
+                                result.set_exception(std::current_exception());
+                            }
                         }
                     );
                 }
