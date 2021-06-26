@@ -107,7 +107,7 @@ template<typename T> bool stage_data_handler<T>::full() const
 
 template<typename T> std::size_t stage_data_handler<T>::free() const
 {
-    return std::max(static_cast<int>(m_max_stored_entries - m_in_data.size() + m_out_data.size()), (int)0);
+    return std::min(m_max_stored_entries - m_in_data.size() + m_out_data.size(), m_max_stored_entries);
 }
 
 // manual instantiation of stage_data_handler<> for some types
