@@ -86,8 +86,10 @@ int decode_packet(AVPacket * packet, AVCodecContext * codec_context, AVFrame * f
                                       0,
                                       0);
 
+        auto raw_data = std::shared_ptr<std::uint8_t>(static_cast<std::uint8_t *>(malloc(image.width() * image.height() * channels)), [](std::uint8_t * ptr){ free(ptr); });
+
         AVFrame * dst = av_frame_alloc();
-        dst->data[0] = new std::uint8_t[image.width() * image.height() * channels];
+        dst->data[0] = raw_data.get();
         dst->data[1] = nullptr;
         dst->linesize[0] = image.width() * channels;
         dst->linesize[1] = 0;
