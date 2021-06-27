@@ -16,7 +16,6 @@ extern "C" {
 }
 
 #include <libcvpg/videoproc/stage_data_handler.hpp>
-#include <libcvpg/videoproc/stage_fsm.hpp>
 
 namespace {
 
@@ -201,8 +200,6 @@ template<typename Image> struct rtsp<Image>::processing_context
     callback_info callbacks;
 
     std::shared_ptr<stage_data_handler<videoproc::frame<Image> > > sdh;
-
-    std::shared_ptr<videoproc::stage_fsm> fsm;
 };
 
 template<typename Image> rtsp<Image>::rtsp(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
@@ -278,8 +275,6 @@ template<typename Image> void rtsp<Image>::init(std::size_t context_id, std::str
             }
         }
     );
-
-    context->fsm = std::make_shared<videoproc::stage_fsm>("sources::rtsp");
 
     m_contexts.insert({ context_id, context });
 
@@ -388,12 +383,6 @@ template<typename Image> void rtsp<Image>::init(std::size_t context_id, std::str
         context->video.frames = frames;
     }
 
-    context->fsm->on_done(videoproc::stage_fsm::state_type::initializing,
-                          [context_id, frames = context->video.frames, callback = std::move(callbacks.initialized)]()
-                          {
-                              callback(context_id, frames);
-                          });
-
     // start reading packets from stream
     av_read_play(context->video.format_context);
 
@@ -404,8 +393,7 @@ template<typename Image> void rtsp<Image>::init(std::size_t context_id, std::str
     };
 
     context->callbacks.params(context_id, std::move(params));
-
-    context->fsm->process(videoproc::stage_fsm::event_type::initialize_done);
+    callbacks.initialized(context_id, context->video.frames);
 }
 
 template<typename Image> void rtsp<Image>::params(std::size_t /*context_id*/, std::map<std::string, std::any> /*p*/)

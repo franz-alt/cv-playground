@@ -16,7 +16,6 @@ extern "C" {
 }
 
 #include <libcvpg/videoproc/stage_data_handler.hpp>
-#include <libcvpg/videoproc/stage_fsm.hpp>
 
 namespace {
 
@@ -201,8 +200,6 @@ template<typename Image> struct file<Image>::processing_context
     callback_info callbacks;
 
     std::shared_ptr<stage_data_handler<videoproc::frame<Image> > > sdh;
-
-    std::shared_ptr<videoproc::stage_fsm> fsm;
 };
 
 template<typename Image> file<Image>::file(boost::asynchronous::any_weak_scheduler<imageproc::scripting::diagnostics::servant_job> scheduler,
@@ -278,8 +275,6 @@ template<typename Image> void file<Image>::init(std::size_t context_id, std::str
             }
         }
     );
-
-    context->fsm = std::make_shared<videoproc::stage_fsm>("sources::file");
 
     m_contexts.insert({ context_id, context });
 
@@ -376,12 +371,6 @@ template<typename Image> void file<Image>::init(std::size_t context_id, std::str
         context->video.frames = frames;
     }
 
-    context->fsm->on_done(videoproc::stage_fsm::state_type::initializing,
-                          [context_id, frames = context->video.frames, callback = std::move(callbacks.initialized)]()
-                          {
-                              callback(context_id, frames);
-                          });
-
     if (avcodec_open2(context->video.codec_context, codec, nullptr) < 0)
     {
         avformat_close_input(&context->video.format_context);
@@ -400,8 +389,7 @@ template<typename Image> void file<Image>::init(std::size_t context_id, std::str
     };
 
     context->callbacks.params(context_id, std::move(params));
-
-    context->fsm->process(videoproc::stage_fsm::event_type::initialize_done);
+    callbacks.initialized(context_id, context->video.frames);
 }
 
 template<typename Image> void file<Image>::params(std::size_t /*context_id*/, std::map<std::string, std::any> /*p*/)
