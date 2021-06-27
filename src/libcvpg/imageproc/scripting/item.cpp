@@ -57,6 +57,10 @@ std::ostream & operator<<(std::ostream & out, item::types const & type)
         case item::types::characters:
             out << "characters";
             break;
+
+        case item::types::error:
+            out << "error";
+            break;
     }
 
     return out;
@@ -116,6 +120,12 @@ std::ostream & operator<<(std::ostream & out, item const & i)
             }
 
             case item::types::characters:
+            {
+                out << std::any_cast<std::string>(i.value());
+                break;
+            }
+
+            case item::types::error:
             {
                 out << std::any_cast<std::string>(i.value());
                 break;
