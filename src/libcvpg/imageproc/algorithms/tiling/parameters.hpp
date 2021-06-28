@@ -9,7 +9,7 @@
 
 #include <libcvpg/imageproc/algorithms/border_mode.hpp>
 
-namespace cvpg { namespace imageproc { namespace algorithms {
+namespace cvpg::imageproc::algorithms {
 
 struct tiling_parameters
 {
@@ -28,6 +28,6 @@ struct tiling_parameters
     cvpg::imageproc::algorithms::border_mode border_mode = cvpg::imageproc::algorithms::border_mode::ignore;
 };
 
-}}} // namespace cvpg::imageproc::algoritms
+} // namespace cvpg::imageproc::algoritms
 
 #endif // LIBCVPG_IMAGEPROC_ALGORITHMS_TILING_PARAMETERS_HPP

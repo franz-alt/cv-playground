@@ -29,7 +29,7 @@
 #include <libcvpg/imageproc/scripting/algorithms/tfpredict.hpp>
 #endif
 
-namespace cvpg { namespace imageproc { namespace scripting {
+namespace cvpg::imageproc::scripting {
 
 algorithm_set::algorithm_set()
     : m_specifications()
@@ -87,4 +87,4 @@ void algorithm_set::register_algorithm(std::shared_ptr<algorithms::base> specifi
     m_specifications.insert({ specification->name(), specification });
 }
 
-}}} // namespace cvpg::imageproc::scripting
+} // namespace cvpg::imageproc::scripting

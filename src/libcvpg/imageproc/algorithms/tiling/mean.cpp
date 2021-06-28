@@ -199,7 +199,7 @@ void mean_gray_8bit_kernel_mirror_border(std::uint8_t * src, std::uint8_t * dst,
 
 }
 
-namespace cvpg { namespace imageproc { namespace algorithms {
+namespace cvpg::imageproc::algorithms {
 
 void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
 {
@@ -267,4 +267,4 @@ void mean_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, 
     }
 }
 
-}}} // namespace cvpg::imageproc::algorithms
+} // namespace cvpg::imageproc::algorithms

@@ -10,7 +10,7 @@
 
 #include <libcvpg/imageproc/scripting/detail/sequence_node.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 class graph
 {
@@ -30,6 +30,6 @@ private:
     std::map<std::uint32_t /*id*/, std::vector<std::uint32_t> /*neighbors*/> m_successors;
 };
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_DETAIL_GRAPH_HPP

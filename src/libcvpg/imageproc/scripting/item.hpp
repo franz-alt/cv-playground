@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <ostream>
 
-namespace cvpg { namespace imageproc { namespace scripting {
+namespace cvpg::imageproc::scripting {
 
 //
 // An item represents an arbitrary type inside a script.
@@ -52,6 +52,6 @@ private:
 std::ostream & operator<<(std::ostream & out, item::types const & type);
 std::ostream & operator<<(std::ostream & out, item const & i);
 
-}}} // namespace cvpg::imageproc::scripting
+} // namespace cvpg::imageproc::scripting
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_ITEM_HPP

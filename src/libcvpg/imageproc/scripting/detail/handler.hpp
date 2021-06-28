@@ -9,7 +9,7 @@
 
 #include <boost/asynchronous/detail/continuation_impl.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting {
+namespace cvpg::imageproc::scripting {
 
 class processing_context;
 
@@ -42,6 +42,8 @@ private:
     callback_type m_callback;
 };
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace detail
+
+} // namespace cvpg::imageproc::scripting
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_DETAIL_HANDLER_HPP

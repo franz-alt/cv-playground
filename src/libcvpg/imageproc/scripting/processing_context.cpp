@@ -3,7 +3,7 @@
 
 #include <libcvpg/imageproc/scripting/processing_context.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting {
+namespace cvpg::imageproc::scripting {
 
 processing_context::processing_context(std::size_t id)
     : m_id(id)
@@ -67,4 +67,4 @@ processing_context::parameters_type processing_context::parameters() const
     return m_params;
 }
 
-}}} // namespace cvpg::imageproc::scripting
+} // namespace cvpg::imageproc::scripting

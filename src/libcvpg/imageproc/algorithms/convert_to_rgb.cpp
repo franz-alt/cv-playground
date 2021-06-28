@@ -28,7 +28,7 @@ private:
 
 }
 
-namespace cvpg { namespace imageproc { namespace algorithms {
+namespace cvpg::imageproc::algorithms {
 
 boost::asynchronous::detail::callback_continuation<image_rgb_8bit> convert_to_rgb(image_gray_8bit image)
 {
@@ -37,4 +37,4 @@ boost::asynchronous::detail::callback_continuation<image_rgb_8bit> convert_to_rg
            );
 }
 
-}}} // namespace cvpg::imageproc::algoritms
+} // namespace cvpg::imageproc::algoritms

@@ -21,7 +21,7 @@
 #include <libcvpg/imageproc/scripting/detail/compiler.hpp>
 #include <libcvpg/imageproc/scripting/diagnostics/typedefs.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting {
+namespace cvpg::imageproc::scripting {
 
 class processing_context;
 
@@ -95,6 +95,6 @@ struct image_processor_proxy : public boost::asynchronous::servant_proxy<image_p
     BOOST_ASYNC_POST_MEMBER_LOG(parameters, "parameters", 1)
 };
 
-}}} // namespace cvpg::imageproc::scripting
+} // namespace cvpg::imageproc::scripting
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_IMAGE_PROCESSOR_HPP

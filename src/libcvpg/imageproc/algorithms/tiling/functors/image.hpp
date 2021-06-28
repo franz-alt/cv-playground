@@ -11,7 +11,7 @@
 
 #include <libcvpg/imageproc/algorithms/tiling/parameters.hpp>
 
-namespace cvpg { namespace imageproc { namespace algorithms { namespace tiling_functors {
+namespace cvpg::imageproc::algorithms::tiling_functors {
 
 //
 // Functor to process a vector of images and return a single image as a result.
@@ -46,6 +46,6 @@ struct image
     std::function<boost::asynchronous::detail::callback_continuation<std::shared_ptr<result_type> >(std::shared_ptr<result_type> dst1, std::shared_ptr<result_type> dst2, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)> vertical_merge_task;
 };
 
-}}}} // namespace cvpg::imageproc::algoritms::tiling_functors
+} // namespace cvpg::imageproc::algoritms::tiling_functors
 
 #endif // LIBCVPG_IMAGEPROC_ALGORITHMS_TILING_FUNCTORS_IMAGE_HPP

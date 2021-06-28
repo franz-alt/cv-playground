@@ -17,7 +17,7 @@
 
 #include <chaiscript/chaiscript.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 class parser : public std::enable_shared_from_this<parser>
 {
@@ -65,6 +65,6 @@ private:
 
 std::ostream & operator<<(std::ostream & out, parser::items_type const & items);
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_DETAIL_PARSER_HPP

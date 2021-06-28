@@ -3,7 +3,7 @@
 
 #include <libcvpg/imageproc/scripting/detail/single_node.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 single_node::single_node(std::uint32_t item_id, handler h)
     : node()
@@ -33,4 +33,4 @@ std::ostream & operator<<(std::ostream & out, single_node const & n)
     return out;
 }
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail

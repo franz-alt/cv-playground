@@ -3,7 +3,7 @@
 
 #include <libcvpg/imageproc/scripting/detail/container_node.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 std::ostream & operator<<(std::ostream & out, container_node const & n)
 {
@@ -12,4 +12,4 @@ std::ostream & operator<<(std::ostream & out, container_node const & n)
     return out;
 }
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail

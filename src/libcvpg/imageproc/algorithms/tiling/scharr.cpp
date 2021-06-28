@@ -349,7 +349,7 @@ void scharr_gray_8bit_kernel_3x3_mirror_border(std::uint8_t * src, std::uint8_t 
 
 }
 
-namespace cvpg { namespace imageproc { namespace algorithms {
+namespace cvpg::imageproc::algorithms {
 
 void scharr_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters, scharr_operation_mode mode)
 {
@@ -423,4 +423,4 @@ void scharr_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x
     }
 }
 
-}}} // namespace cvpg::imageproc::algorithms
+} // namespace cvpg::imageproc::algorithms

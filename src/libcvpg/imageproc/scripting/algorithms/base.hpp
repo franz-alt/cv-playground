@@ -11,7 +11,7 @@
 
 #include <libcvpg/imageproc/scripting/algorithms/parameter_set.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting {
+namespace cvpg::imageproc::scripting {
 
 namespace detail {
 
@@ -47,6 +47,8 @@ public:
     virtual void on_compile(std::uint32_t item_id, std::shared_ptr<detail::compiler> compiler) const = 0;
 };
 
-}}}} // namespace cvpg::imageproc::scripting::algorithms
+} // namespace algorithms
+
+} // namespace cvpg::imageproc::scripting
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_ALGORITHMS_BASE_HPP

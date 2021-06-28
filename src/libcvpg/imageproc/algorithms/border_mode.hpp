@@ -7,7 +7,7 @@
 #include <ostream>
 #include <string>
 
-namespace cvpg { namespace imageproc { namespace algorithms {
+namespace cvpg::imageproc::algorithms {
 
 enum class border_mode
 {
@@ -20,6 +20,6 @@ std::ostream & operator<<(std::ostream & out, border_mode const & mode);
 
 border_mode to_border_mode(std::string mode_str);
 
-}}} // namespace cvpg::imageproc::algoritms
+} // namespace cvpg::imageproc::algoritms
 
 #endif // LIBCVPG_IMAGEPROC_ALGORITHMS_BORDER_MODE_HPP

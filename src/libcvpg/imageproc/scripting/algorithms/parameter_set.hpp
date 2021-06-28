@@ -10,7 +10,7 @@
 
 #include <libcvpg/imageproc/scripting/algorithms/parameter.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace algorithms {
+namespace cvpg::imageproc::scripting::algorithms {
 
 class parameter_set
 {
@@ -50,6 +50,6 @@ private:
     std::vector<parameter> m_parameters;
 };
 
-}}}} // namespace cvpg::imageproc::scripting::algorithms
+} // namespace cvpg::imageproc::scripting::algorithms
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_ALGORITHMS_PARAMETER_SET_HPP

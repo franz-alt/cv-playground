@@ -169,7 +169,7 @@ auto multiply_add(std::shared_ptr<cvpg::imageproc::scripting::processing_context
 
 } // namespace detail
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace algorithms {
+namespace cvpg::imageproc::scripting::algorithms {
 
 std::string multiply_add::name() const
 {
@@ -304,4 +304,4 @@ void multiply_add::on_compile(std::uint32_t item_id, std::shared_ptr<detail::com
     compiler->register_handler(item_id, name(), std::move(handler));
 }
 
-}}}} // namespace cvpg::imageproc::scripting::algorithms
+} // namespace cvpg::imageproc::scripting::algorithms

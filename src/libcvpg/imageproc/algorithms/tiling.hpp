@@ -12,7 +12,7 @@
 
 #include <libcvpg/imageproc/algorithms/tiling/functors/image.hpp>
 
-namespace cvpg { namespace imageproc { namespace algorithms {
+namespace cvpg::imageproc::algorithms {
 
 namespace detail {
 
@@ -423,6 +423,6 @@ boost::asynchronous::detail::callback_continuation<typename functor::result_type
            );
 }
 
-}}} // namespace cvpg::imageproc::algoritms
+} // namespace cvpg::imageproc::algoritms
 
 #endif // LIBCVPG_IMAGEPROC_ALGORITHMS_TILING_HPP

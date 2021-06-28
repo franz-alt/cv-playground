@@ -5,7 +5,7 @@
 
 #include <libcvpg/imageproc/scripting/algorithms/base.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 void parser::init(algorithm_set algorithms)
 {
@@ -78,4 +78,4 @@ std::ostream & operator<<(std::ostream & out, parser::items_type const & items)
     return out;
 }
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail

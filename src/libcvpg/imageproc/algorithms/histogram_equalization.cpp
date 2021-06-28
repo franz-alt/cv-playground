@@ -224,7 +224,7 @@ private:
 
 }
 
-namespace cvpg { namespace imageproc { namespace algorithms {
+namespace cvpg::imageproc::algorithms {
 
 boost::asynchronous::detail::callback_continuation<image_gray_8bit> histogram_equalization(image_gray_8bit image)
 {
@@ -233,4 +233,4 @@ boost::asynchronous::detail::callback_continuation<image_gray_8bit> histogram_eq
            );
 }
 
-}}} // namespace cvpg::imageproc::algoritms
+} // namespace cvpg::imageproc::algoritms

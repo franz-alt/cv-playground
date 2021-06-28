@@ -10,7 +10,7 @@
 
 #include <libcvpg/core/image.hpp>
 
-namespace cvpg { namespace imageproc { namespace algorithms {
+namespace cvpg::imageproc::algorithms {
 
 enum class rgb_conversion_mode
 {
@@ -24,6 +24,6 @@ std::ostream & operator<<(std::ostream & out, rgb_conversion_mode const & mode);
 
 boost::asynchronous::detail::callback_continuation<image_gray_8bit> convert_to_gray(image_rgb_8bit image, rgb_conversion_mode mode);
 
-}}} // namespace cvpg::imageproc::algoritms
+} // namespace cvpg::imageproc::algoritms
 
 #endif // LIBCVPG_IMAGEPROC_ALGORITHMS_CONVERT_TO_GRAY_HPP

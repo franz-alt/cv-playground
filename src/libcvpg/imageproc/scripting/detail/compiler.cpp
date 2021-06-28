@@ -6,7 +6,7 @@
 #include <libcvpg/imageproc/scripting/detail/graph.hpp>
 #include <libcvpg/imageproc/scripting/algorithms/base.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 compiler::compiler(algorithm_set algorithms)
     : m_parser(new parser())
@@ -95,4 +95,4 @@ std::shared_ptr<detail::parser> compiler::get_parser() const
     return m_parser;
 }
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail

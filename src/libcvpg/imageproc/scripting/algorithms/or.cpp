@@ -170,7 +170,7 @@ auto or_(std::shared_ptr<cvpg::imageproc::scripting::processing_context> context
 
 } // namespace detail
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace algorithms {
+namespace cvpg::imageproc::scripting::algorithms {
 
 std::string or_::name() const
 {
@@ -263,4 +263,4 @@ void or_::on_compile(std::uint32_t item_id, std::shared_ptr<detail::compiler> co
     compiler->register_handler(item_id, name(), std::move(handler));
 }
 
-}}}} // namespace cvpg::imageproc::scripting::algorithms
+} // namespace cvpg::imageproc::scripting::algorithms

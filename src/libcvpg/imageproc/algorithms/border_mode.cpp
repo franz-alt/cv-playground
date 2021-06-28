@@ -5,7 +5,7 @@
 
 #include <libcvpg/core/exception.hpp>
 
-namespace cvpg { namespace imageproc { namespace algorithms {
+namespace cvpg::imageproc::algorithms {
 
 std::ostream & operator<<(std::ostream & out, border_mode const & mode)
 {
@@ -46,4 +46,4 @@ border_mode to_border_mode(std::string mode_str)
     throw cvpg::invalid_parameter_exception("invalid border mode");
 }
 
-}}} // namespace cvpg::imageproc::algoritms
+} // namespace cvpg::imageproc::algoritms

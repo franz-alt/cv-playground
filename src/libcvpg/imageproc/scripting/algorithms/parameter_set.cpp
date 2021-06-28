@@ -3,7 +3,7 @@
 
 #include <libcvpg/imageproc/scripting/algorithms/parameter_set.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace algorithms {
+namespace cvpg::imageproc::scripting::algorithms {
 
 parameter_set::parameter_set(algorithms::parameter parameter)
     : m_parameters()
@@ -35,4 +35,4 @@ bool parameter_set::empty() const
     return m_parameters.empty();
 }
 
-}}}} // namespace cvpg::imageproc::scripting::algorithms
+} // namespace cvpg::imageproc::scripting::algorithms

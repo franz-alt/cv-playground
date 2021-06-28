@@ -6,7 +6,7 @@
 
 #include <libcvpg/imageproc/scripting/algorithms/base.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace algorithms {
+namespace cvpg::imageproc::scripting::algorithms {
 
 class sobel : public base
 {
@@ -26,6 +26,6 @@ public:
     virtual void on_compile(std::uint32_t item_id, std::shared_ptr<detail::compiler> compiler) const override;
 };
 
-}}}} // namespace cvpg::imageproc::scripting::algorithms
+} // namespace cvpg::imageproc::scripting::algorithms
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_ALGORITHMS_SOBEL_HPP

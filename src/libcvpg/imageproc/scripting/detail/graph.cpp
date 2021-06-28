@@ -23,7 +23,7 @@ struct node
 
 }
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 void graph::add_link(std::uint32_t src_id, std::uint32_t dst_id)
 {
@@ -180,4 +180,4 @@ bool graph::has_successor(std::uint32_t node_id, std::uint32_t successor_id) con
     return false;
 }
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail

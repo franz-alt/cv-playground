@@ -11,7 +11,7 @@
 #include <ostream>
 #include <string>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 class node;
 
@@ -42,6 +42,6 @@ private:
 
 std::ostream & operator<<(std::ostream & out, sequence_node const & s);
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_DETAIL_SEQUENCE_NODE_HPP

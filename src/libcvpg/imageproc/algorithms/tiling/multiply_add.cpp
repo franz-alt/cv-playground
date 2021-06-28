@@ -3,7 +3,7 @@
 
 #include <libcvpg/imageproc/algorithms/tiling/multiply_add.hpp>
 
-namespace cvpg { namespace imageproc { namespace algorithms {
+namespace cvpg::imageproc::algorithms {
 
 void multiply_add_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
 {
@@ -31,4 +31,4 @@ void multiply_add_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t 
     }
 }
 
-}}} // namespace cvpg::imageproc::algorithms
+} // namespace cvpg::imageproc::algorithms

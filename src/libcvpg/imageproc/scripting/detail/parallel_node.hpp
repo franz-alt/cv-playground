@@ -12,7 +12,7 @@
 #include <ostream>
 #include <string>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 class parallel_node : public container_node
 {
@@ -41,6 +41,6 @@ private:
 
 std::ostream & operator<<(std::ostream & out, parallel_node const & p);
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_DETAIL_PARALLEL_NODE_HPP

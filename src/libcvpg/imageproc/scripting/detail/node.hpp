@@ -8,7 +8,7 @@
 #include <memory>
 #include <string>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 class node
 {
@@ -25,6 +25,6 @@ private:
     std::function<void()> m_callback;
 };
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_DETAIL_NODE_HPP

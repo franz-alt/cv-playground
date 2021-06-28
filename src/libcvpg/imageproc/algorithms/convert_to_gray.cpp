@@ -82,7 +82,7 @@ private:
 
 }
 
-namespace cvpg { namespace imageproc { namespace algorithms {
+namespace cvpg::imageproc::algorithms {
 
 std::ostream & operator<<(std::ostream & out, rgb_conversion_mode const & mode)
 {
@@ -115,4 +115,4 @@ boost::asynchronous::detail::callback_continuation<image_gray_8bit> convert_to_g
            );
 }
 
-}}} // namespace cvpg::imageproc::algoritms
+} // namespace cvpg::imageproc::algoritms

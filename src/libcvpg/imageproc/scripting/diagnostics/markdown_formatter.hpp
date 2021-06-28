@@ -82,7 +82,7 @@ void format(std::stringstream & ss, std::size_t /* index */, std::string const &
 
 }
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace diagnostics {
+namespace cvpg::imageproc::scripting::diagnostics {
 
 struct parameters
 {
@@ -141,6 +141,6 @@ protected:
     parameter_type m_params;
 };
 
-}}}} // namespace cvpg::imageproc::scripting::diagnostics
+} // namespace cvpg::imageproc::scripting::diagnostics
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_DIAGNOSTICS_MARKDOWN_FORMATTER_HPP

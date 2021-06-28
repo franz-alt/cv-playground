@@ -5,7 +5,7 @@
 
 #include <libcvpg/imageproc/scripting/image_processor.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 handler::handler()
     : m_callback()
@@ -25,4 +25,4 @@ handler::result_type handler::operator()(argument_type argument)
     return m_callback(std::move(argument));
 }
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail

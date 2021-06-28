@@ -5,7 +5,7 @@
 
 #include <libcvpg/core/image.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting {
+namespace cvpg::imageproc::scripting {
 
 item::item(types item, std::any value)
     : m_type(item)
@@ -140,4 +140,4 @@ std::ostream & operator<<(std::ostream & out, item const & i)
     return out;
 }
 
-}}} // namespace cvpg::imageproc::scripting
+} // namespace cvpg::imageproc::scripting

@@ -14,7 +14,7 @@
 #include <libcvpg/imageproc/scripting/detail/handler.hpp>
 #include <libcvpg/imageproc/scripting/detail/parser.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 class sequence_node;
 
@@ -49,6 +49,6 @@ private:
     std::unordered_set<std::uint32_t> m_compiled;
 };
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_DETAIL_COMPILER_HPP

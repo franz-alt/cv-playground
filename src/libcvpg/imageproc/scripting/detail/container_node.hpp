@@ -12,7 +12,7 @@
 #include <ostream>
 #include <string>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 class container_node : public node
 {
@@ -39,6 +39,6 @@ public:
 
 std::ostream & operator<<(std::ostream & out, container_node const & c);
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_DETAIL_CONTAINER_NODE_HPP

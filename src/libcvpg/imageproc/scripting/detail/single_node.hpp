@@ -14,7 +14,7 @@
 #include <libcvpg/imageproc/scripting/detail/handler.hpp>
 #include <libcvpg/imageproc/scripting/detail/single_node.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 class single_node : public node
 {
@@ -37,6 +37,6 @@ private:
 
 std::ostream & operator<<(std::ostream & out, single_node const & n);
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_DETAIL_SINGLE_NODE_HPP

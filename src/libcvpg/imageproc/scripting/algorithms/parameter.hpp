@@ -15,7 +15,7 @@
 
 #include <libcvpg/imageproc/scripting/item.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace algorithms {
+namespace cvpg::imageproc::scripting::algorithms {
 
 class parameter
 {
@@ -147,6 +147,6 @@ std::function<bool(std::any)> constant(T constant_value)
            };
 }
 
-}}}} // namespace cvpg::imageproc::scripting::algorithms
+} // namespace cvpg::imageproc::scripting::algorithms
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_ALGORITHMS_PARAMETER_HPP

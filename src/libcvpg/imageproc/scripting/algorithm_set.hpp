@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace cvpg { namespace imageproc { namespace scripting {
+namespace cvpg::imageproc::scripting {
 
 namespace algorithms {
 
@@ -32,6 +32,6 @@ private:
     std::map<std::string, std::shared_ptr<algorithms::base> > m_specifications;
 };
 
-}}} // namespace cvpg::imageproc::scripting
+} // namespace cvpg::imageproc::scripting
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_ALGORITHM_SET_HPP

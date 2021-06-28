@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-namespace cvpg { namespace imageproc { namespace algorithms {
+namespace cvpg::imageproc::algorithms {
 
 void threshold_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
 {
@@ -53,4 +53,4 @@ void threshold_inverse_gray_8bit(std::uint8_t * src, std::uint8_t * dst, std::si
     }
 }
 
-}}} // namespace cvpg::imageproc::algorithms
+} // namespace cvpg::imageproc::algorithms

@@ -3,7 +3,7 @@
 
 #include <libcvpg/imageproc/algorithms/tiling/convert_to_gray.hpp>
 
-namespace cvpg { namespace imageproc { namespace algorithms {
+namespace cvpg::imageproc::algorithms {
 
 void convert_to_gray_8bit(std::uint8_t * src1, std::uint8_t * src2, std::uint8_t * src3, std::uint8_t * dst, std::size_t from_x, std::size_t to_x, std::size_t from_y, std::size_t to_y, cvpg::imageproc::algorithms::tiling_parameters parameters)
 {
@@ -34,4 +34,4 @@ void convert_to_gray_8bit(std::uint8_t * src1, std::uint8_t * src2, std::uint8_t
     }
 }
 
-}}} // namespace cvpg::imageproc::algorithms
+} // namespace cvpg::imageproc::algorithms

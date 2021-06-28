@@ -32,7 +32,7 @@ bool is_valid(std::vector<std::any> const & set, std::string value)
 
 }
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace algorithms {
+namespace cvpg::imageproc::scripting::algorithms {
 
 parameter::parameter(std::string name,
                      std::string description,
@@ -400,4 +400,4 @@ std::ostream & operator<<(std::ostream & out, parameter const & p)
     return out;
 }
 
-}}}} // namespace cvpg::imageproc::scripting::algorithms
+} // namespace cvpg::imageproc::scripting::algorithms

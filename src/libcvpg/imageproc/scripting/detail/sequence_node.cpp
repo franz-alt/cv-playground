@@ -5,7 +5,7 @@
 
 #include <sstream>
 
-namespace cvpg { namespace imageproc { namespace scripting { namespace detail {
+namespace cvpg::imageproc::scripting::detail {
 
 // void sequence_node::operator()(std::shared_ptr<scope> s)
 // {
@@ -90,4 +90,4 @@ std::ostream & operator<<(std::ostream & out, sequence_node const & s)
     return out;
 }
 
-}}}} // namespace cvpg::imageproc::scripting::detail
+} // namespace cvpg::imageproc::scripting::detail

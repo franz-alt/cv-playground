@@ -14,7 +14,7 @@
 #include <libcvpg/core/image.hpp>
 #include <libcvpg/imageproc/scripting/item.hpp>
 
-namespace cvpg { namespace imageproc { namespace scripting {
+namespace cvpg::imageproc::scripting {
 
 class processing_context
 {
@@ -55,6 +55,6 @@ private:
     parameters_type m_params;
 };
 
-}}} // namespace cvpg::imageproc::scripting
+} // namespace cvpg::imageproc::scripting
 
 #endif // LIBCVPG_IMAGEPROC_SCRIPTING_PROCESSING_CONTEXT_HPP

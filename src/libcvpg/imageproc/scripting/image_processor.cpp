@@ -144,7 +144,7 @@ auto executor(cvpg::imageproc::scripting::detail::compiler::result compiled,
 
 }
 
-namespace cvpg { namespace imageproc { namespace scripting {
+namespace cvpg::imageproc::scripting {
 
 image_processor::image_processor(boost::asynchronous::any_weak_scheduler<diagnostics::servant_job> scheduler,
                                  boost::asynchronous::any_shared_scheduler_proxy<diagnostics::servant_job> pool,
@@ -614,4 +614,4 @@ void image_processor::parameters(std::function<void(parameters_type)> callback) 
     callback(m_params);
 }
 
-}}} // namespace cvpg::imageproc::scripting
+} // namespace cvpg::imageproc::scripting
