@@ -127,4 +127,4 @@ To build the project with TensorFlow support read the [TensorFlow](./doc/TensorF
 
 Copyright (c) 2020-2021 Franz Alt
 
-This project is distributed under the [MIT License](https://opensource.org/licenses/MIT), see [LICENSE](./LICENSE) for more information.
+This project is distributed under the [MIT License](https://opensource.org/licenses/MIT), see [LICENSE.txt](./LICENSE.txt) for more information.
