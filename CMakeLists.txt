@@ -9,7 +9,11 @@ include(${CMAKE_SOURCE_DIR}/cmake/project_settings.cmake)
 
 project(cv-playground VERSION ${CVPG_VERSION} LANGUAGES CXX)
 
+# force C++ standard without fall-back and without compiler extensions
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 add_library(${PROJECT_NAME} INTERFACE)
