@@ -231,3 +231,45 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
         DESTINATION "${INSTALL_INCLUDE_DIR}/${target}"
         FILES_MATCHING
         PATTERN "*.hpp")
+
+# define GNU standard installation directories
+include(GNUInstallDirs)
+
+# set some directories and files
+set(CONFIG_INSTALL_DIR  "${CMAKE_INSTALL_LIBDIR}/cmake/${target}")
+
+set(GENERATED_DIR       "${CMAKE_CURRENT_BINARY_DIR}/generated")
+set(VERSION_CONFIG_FILE "${GENERATED_DIR}/${target}ConfigVersion.cmake")
+set(PROJECT_CONFIG_FILE "${GENERATED_DIR}/${target}Config.cmake")
+set(TARGETS_CONFIG_FILE "${GENERATED_DIR}/${target}Targets.cmake")
+
+# use helpers functions for creating config files that can be included by other projects to find and use a package.
+include(CMakePackageConfigHelpers)
+
+# create version file for project
+write_basic_package_version_file(
+    "${VERSION_CONFIG_FILE}"
+    VERSION "${CVPG_VERSION}"
+    COMPATIBILITY SameMajorVersion
+)
+
+# create configuration file for project
+configure_package_config_file(
+    "${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in"
+    "${PROJECT_CONFIG_FILE}" INSTALL_DESTINATION "${CONFIG_INSTALL_DIR}"
+)
+
+# export project targets to configuration file
+export(
+    TARGETS ${target}
+    FILE "${TARGETS_CONFIG_FILE}"
+)
+
+# install configuration files to installation directory
+install(
+    FILES
+        ${PROJECT_CONFIG_FILE}
+        ${VERSION_CONFIG_FILE}
+    DESTINATION
+        ${CONFIG_INSTALL_DIR}
+)
