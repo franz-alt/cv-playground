@@ -5,7 +5,7 @@ set(CVPG_VERSION_MINOR 1)
 set(CVPG_VERSION_PATCH 0)
 set(CVPG_VERSION "${CVPG_VERSION_MAJOR}.${CVPG_VERSION_MINOR}.${CVPG_VERSION_PATCH}")
 
-include(${CMAKE_SOURCE_DIR}/cmake/project_settings.cmake)
+include(cmake/project_settings.cmake)
 
 project(cv-playground VERSION ${CVPG_VERSION} LANGUAGES CXX)
 
