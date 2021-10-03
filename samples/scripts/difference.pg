@@ -1,0 +1,4 @@
+var input = input("rgb", 8)
+var input_gray = convert_to_gray(input, "calc_average")
+var smoothed = mean(input_gray, 11, 11)
+var difference = diff(input_gray, smoothed, 0)

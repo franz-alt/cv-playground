@@ -1,0 +1,129 @@
+#
+# Based on the article 'Tensorflow 2.x C++ API for object detection (inference)' at
+#
+#   https://medium.com/@reachraktim/using-the-new-tensorflow-2-x-c-api-for-object-detection-inference-ad4b7fd5fecc
+#
+# to build TensorFlow and it's C++ libraries.
+#
+
+FROM cv-playground/dev:1.0
+
+# environment variables
+ENV PROTOCOL_BUFFERS_SOURCE=/protocol_buffers
+ENV TENSORFLOW_SOURCE=/tensorflow
+ENV TENSORFLOW_CC_LIB_DESTINATION=/opt/tensorflow/lib
+
+# library versions
+ENV PROTOCOL_BUFFERS_VERSION=3.14.0
+# use version < 4 for this TensorFlow 2.4.1 (!!!)
+ENV BAZEL_VERSION=3.7.2
+ENV TENSORFLOW_VERSION=2.4.1
+
+RUN apt-get -y update
+
+# install dependencies
+RUN apt-get install -y --no-install-recommends \
+  build-essential \
+  python3-dev \
+  python3-pip \
+  python \
+  wget \
+  autoconf \
+  automake \
+  libtool \
+  curl \
+  unzip \
+  patch \
+  curl \
+  gnupg
+
+# install numpy, wheel and keras_preprocessing
+RUN python3 -m pip install -U --user pip numpy wheel
+RUN python3 -m pip install -U --user keras_preprocessing --no-deps
+
+# download and install Google's Protocol Buffers
+RUN mkdir -p ${PROTOCOL_BUFFERS_SOURCE}
+
+WORKDIR ${PROTOCOL_BUFFERS_SOURCE}
+
+RUN wget --max-redirect 3 --progress=bar:force -c https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOCOL_BUFFERS_VERSION}/protobuf-all-${PROTOCOL_BUFFERS_VERSION}.tar.gz
+RUN tar xvf protobuf-all-${PROTOCOL_BUFFERS_VERSION}.tar.gz
+
+WORKDIR protobuf-${PROTOCOL_BUFFERS_VERSION}
+
+RUN ./configure
+RUN make -j`nproc`
+RUN make install
+RUN ldconfig
+
+# download and install Google's build system Bazel
+RUN curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor > bazel.gpg && \
+    mv bazel.gpg /etc/apt/trusted.gpg.d/ && \
+    echo "deb [arch=amd64] https://storage.googleapis.com/bazel-apt stable jdk1.8" | tee /etc/apt/sources.list.d/bazel.list && \
+    apt-get update -y && apt install bazel-${BAZEL_VERSION} -y && \
+    ln -s /usr/bin/bazel-${BAZEL_VERSION} /usr/bin/bazel && \
+    ldconfig
+
+# checkout Git repository and build TensorFlow
+RUN mkdir -p ${TENSORFLOW_SOURCE}
+
+RUN git clone https://github.com/tensorflow/tensorflow.git ${TENSORFLOW_SOURCE}
+
+WORKDIR ${TENSORFLOW_SOURCE}
+
+RUN git checkout v${TENSORFLOW_VERSION}
+
+ENV PYTHON_BIN_PATH=/usr/bin/python3
+ENV PYTHON_LIB_PATH=/usr/lib/python3/dist-packages
+ENV TF_NEED_GCP=0
+ENV TF_NEED_CUDA=0
+ENV TF_NEED_HDFS=0
+ENV TF_NEED_OPENCL=0
+ENV TF_NEED_JEMALLOC=1
+ENV TF_ENABLE_XLA=0
+ENV TF_NEED_VERBS=0
+ENV TF_CUDA_CLANG=0
+ENV TF_NEED_MKL=0
+ENV TF_DOWNLOAD_MKL=0
+ENV TF_NEED_AWS=0
+ENV TF_NEED_MPI=0
+ENV TF_NEED_GDR=0
+ENV TF_NEED_S3=0
+ENV TF_NEED_OPENCL_SYCL=0
+ENV TF_SET_ANDROID_WORKSPACE=0
+ENV TF_NEED_COMPUTECPP=0
+ENV GCC_HOST_COMPILER_PATH=/usr/bin/gcc
+ENV CC_OPT_FLAGS="-march=native"
+ENV TF_NEED_KAFKA=0
+ENV TF_NEED_TENSORRT=0
+
+RUN ./configure
+
+RUN bazel build \
+  --jobs=8 \
+  --config=v2 \
+  --copt=-O3 \
+  --copt=-m64 \
+  --copt=-march=native \
+  --config=opt \
+  --verbose_failures \
+  //tensorflow:tensorflow_cc \
+  //tensorflow:install_headers \
+  //tensorflow:tensorflow \
+  //tensorflow:tensorflow_framework \
+  //tensorflow/tools/lib_package:libtensorflow
+
+# collect data of TensorFlow's C++ library
+RUN mkdir -p ${TENSORFLOW_CC_LIB_DESTINATION}
+
+RUN cp -r ${TENSORFLOW_SOURCE}/bazel-bin/tensorflow/* ${TENSORFLOW_CC_LIB_DESTINATION}/
+
+WORKDIR ${TENSORFLOW_CC_LIB_DESTINATION}
+
+# create additional symbolic links for libtensorflow.so and libtensorflow_cc.so
+RUN ln -s libtensorflow.so.${TENSORFLOW_VERSION} libtensorflow.so && \
+    ln -s libtensorflow.so.${TENSORFLOW_VERSION} libtensorflow.so.2 && \
+    ln -s libtensorflow_cc.so.${TENSORFLOW_VERSION} libtensorflow_cc.so && \
+    ln -s libtensorflow_cc.so.${TENSORFLOW_VERSION} libtensorflow_cc.so.2
+
+WORKDIR /usr/src

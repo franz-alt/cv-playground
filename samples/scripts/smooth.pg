@@ -1,0 +1,2 @@
+var input = input("rgb", 8)
+var smoothed = mean(input, 5, 5)

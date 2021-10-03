@@ -1,0 +1,2 @@
+var input = input("rgb", 8)
+var brighten = multiply_add(input, 2.0, -30)
